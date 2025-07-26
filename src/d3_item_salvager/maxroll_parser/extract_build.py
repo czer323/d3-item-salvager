@@ -1,48 +1,46 @@
 """
 Loader for Diablo 3 build profile JSON files (e.g., from reference/profile_object_*.json).
-Handles quirks and extracts the 'data' key containing build profiles.
+Provides robust parsing and extraction of build profiles and item usages for production use.
 """
 
 import json
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-
-@dataclass
-class ProfileData:
-    """Represents a Diablo 3 build profile with basic information."""
-
-    name: str
-    class_name: str
-    # Add more fields as needed
-
-
-@dataclass
-class ItemUsageData:
-    """Represents an item usage in a build profile."""
-
-    profile_name: str
-    item_id: str
-    slot: str
-    usage_context: str
-    # Add more fields as needed
+from .types import BuildProfileData, BuildProfileItems
 
 
 class BuildProfileParser:
     """
     Parses Diablo 3 build profile JSON files and provides methods
     to extract normalized profiles and item usages.
-    Functional design: each method transforms or extracts a specific aspect of the data.
+
+    Args:
+        file_path: Path to the build profile JSON file.
+
+    Attributes:
+        file_path: Path to the build profile JSON file.
+        raw_json: Raw loaded JSON data.
+        build_data: Parsed build data from the 'data' key.
+        profiles: List of ProfileData objects extracted from the build.
     """
 
     def __init__(self, file_path: str | Path) -> None:
-        self.file_path = Path(file_path)
+        self.file_path: Path = Path(file_path)
         self.raw_json: dict[str, Any] = self._load_json()
         self.build_data: dict[str, Any] = self._extract_data()
-        self.profiles: list[ProfileData] = self._extract_profiles()
+        self.profiles: list[BuildProfileData] = self._extract_profiles()
 
     def _load_json(self) -> dict[str, Any]:
+        """
+        Load and parse the build profile JSON file.
+
+        Returns:
+            dict[str, Any]: Loaded JSON object.
+
+        Raises:
+            ValueError: If the file cannot be parsed as JSON.
+        """
         try:
             with self.file_path.open(encoding="utf-8") as f:
                 content = f.read()
@@ -53,6 +51,16 @@ class BuildProfileParser:
         return obj
 
     def _extract_data(self) -> dict[str, Any]:
+        """
+        Extract and parse the 'data' key from the loaded JSON.
+
+        Returns:
+            dict[str, Any]: Parsed build data.
+
+        Raises:
+            ValueError: If 'data' key is missing or cannot be parsed.
+            TypeError: If parsed 'data' is not a dict.
+        """
         obj = self.raw_json
         if not isinstance(obj, dict) or "data" not in obj:
             msg = "Build profile JSON missing top-level 'data' key."
@@ -69,27 +77,38 @@ class BuildProfileParser:
             raise TypeError(msg)
         return data
 
-    def _extract_profiles(self) -> list[ProfileData]:
+    def _extract_profiles(self) -> list[BuildProfileData]:
+        """
+        Extract build profiles from the parsed build data.
+
+        Returns:
+            list[ProfileData]: List of extracted profiles.
+        """
         profiles_raw = self.build_data.get("profiles", [])
-        result: list[ProfileData] = []
+        result: list[BuildProfileData] = []
         for profile_dict in profiles_raw:
             name = profile_dict.get("name", "")
             class_name = profile_dict.get("class", "")
-            result.append(ProfileData(name=name, class_name=class_name))
+            result.append(BuildProfileData(name=name, class_name=class_name))
         return result
 
-    def extract_usages(self) -> list[ItemUsageData]:
-        """Extracts item usages from the build profiles, referencing profile_name only."""
+    def extract_usages(self) -> list[BuildProfileItems]:
+        """
+        Extract item usages from the build profiles.
+
+        Returns:
+            list[ItemUsageData]: List of item usages for all profiles.
+        """
         profiles_raw = self.build_data.get("profiles", [])
-        item_usages: list[ItemUsageData] = []
+        item_usages: list[BuildProfileItems] = []
         for profile_dict in profiles_raw:
-            profile_name = profile_dict.get("name")
+            profile_name = profile_dict.get("name", "")
             # Main items
             items = profile_dict.get("items", {})
             for slot, item in items.items():
                 item_id = item.get("id")
                 item_usages.append(
-                    ItemUsageData(
+                    BuildProfileItems(
                         profile_name=profile_name,
                         item_id=item_id,
                         slot=slot,
@@ -102,7 +121,7 @@ class BuildProfileParser:
                 kanai_id = kanai.get(slot)
                 if kanai_id:
                     item_usages.append(
-                        ItemUsageData(
+                        BuildProfileItems(
                             profile_name=profile_name,
                             item_id=kanai_id,
                             slot=slot,
@@ -117,33 +136,11 @@ class BuildProfileParser:
                         raw_item.get("id") if isinstance(raw_item, dict) else raw_item
                     )
                     item_usages.append(
-                        ItemUsageData(
+                        BuildProfileItems(
                             profile_name=profile_name,
                             item_id=item_id,
                             slot=slot,
                             usage_context="follower",
                         )
                     )
-        print(f"extract_usages: total usages extracted: {len(item_usages)}")
         return item_usages
-
-
-if __name__ == "__main__":
-    import sys
-
-    # Usage: python -m src.d3_item_salvager.maxroll_parser.build_loader <profile_json_path>
-    if len(sys.argv) < 2:
-        print(
-            "Usage: python -m src.d3_item_salvager.maxroll_parser.build_loader <profile_json_path>"
-        )
-        sys.exit(1)
-    json_path = sys.argv[1]
-    print(f"Loading build profile from {json_path}")
-    parser = BuildProfileParser(json_path)
-    print(f"Profiles loaded: {len(parser.profiles)}")
-    for idx, profile in enumerate(parser.profiles):
-        print(f"Profile {idx}: name={profile.name}, class={profile.class_name}")
-    usages = parser.extract_usages()
-    print(f"\nExtracted {len(usages)} item usages:")
-    for usage in usages:
-        print(usage)

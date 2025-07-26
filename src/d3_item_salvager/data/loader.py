@@ -3,8 +3,8 @@
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, select
 
-from src.d3_item_salvager.data.db import get_session
-from src.d3_item_salvager.data.models import Build, Item, ItemUsage, Profile
+from d3_item_salvager.data.db import get_session
+from d3_item_salvager.data.models import Build, Item, ItemUsage, Profile
 
 
 def insert_item_usages_with_validation(usages: list[dict], session: Session) -> None:
@@ -103,7 +103,10 @@ def insert_items_from_dict(
                 )
                 session.add(item)
                 success_count += 1
-            except (ValueError, SQLAlchemyError) as e:
+            except ValueError as e:
+                errors.append((item_data, str(e)))
+                raise
+            except SQLAlchemyError as e:
                 errors.append((item_data, str(e)))
         try:
             session.commit()
@@ -209,7 +212,7 @@ def validate_item_data(item_data: dict[str, str], session: Session) -> None:
         raise ValueError(msg)
     existing: Item | None = session.get(Item, item_data["id"])
     if existing:
-        msg = f"Duplicate item ID '{item_data['id']}' detected. Skipping insertion."
+        msg = f"Duplicate item ID '{item_data['id']}' detected."
         print(msg)
         raise ValueError(msg)
 

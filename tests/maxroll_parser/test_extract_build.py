@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from d3_item_salvager.maxroll_parser import build_loader
+from d3_item_salvager.maxroll_parser import extract_build
 
 
 def test_load_build_profile_success() -> None:
@@ -18,7 +18,8 @@ def test_load_build_profile_success() -> None:
         / "reference"
         / "profile_object_298017784.json"
     )
-    data = build_loader.load_build_profile(ref_path)
+    parser = extract_build.BuildProfileParser(ref_path)
+    data = parser.build_data
     assert isinstance(data, (dict, list))
     # Check for at least one profile or expected keys
     if isinstance(data, dict):
@@ -33,7 +34,7 @@ def test_load_build_profile_missing_file(tmp_path: Path) -> None:
     """
     missing_path = tmp_path / "not_found.json"
     with pytest.raises(ValueError, match="Could not parse build profile JSON"):
-        build_loader.load_build_profile(missing_path)
+        extract_build.BuildProfileParser(missing_path)
 
 
 def test_load_build_profile_invalid_json(tmp_path: Path) -> None:
@@ -43,7 +44,7 @@ def test_load_build_profile_invalid_json(tmp_path: Path) -> None:
     bad_json = tmp_path / "bad.json"
     bad_json.write_text("not really json", encoding="utf-8")
     with pytest.raises(ValueError, match="Could not parse build profile JSON"):
-        build_loader.load_build_profile(bad_json)
+        extract_build.BuildProfileParser(bad_json)
 
 
 def test_extract_profiles_and_items_usage_output() -> None:
@@ -55,11 +56,11 @@ def test_extract_profiles_and_items_usage_output() -> None:
         / "reference"
         / "profile_object_298017784.json"
     )
-    data = build_loader.load_build_profile(ref_path)
-    usages = build_loader.extract_profiles_and_items(data)
+    parser = extract_build.BuildProfileParser(ref_path)
+    usages = parser.extract_usages()
     assert isinstance(usages, list)
     assert usages, "Should return at least one item usage record"
     for usage in usages:
-        assert isinstance(usage, dict)
-        for key in ("profile_name", "item_id", "slot", "usage_context"):
-            assert key in usage
+        assert isinstance(usage, extract_build.BuildProfileItems)
+        for field in ("profile_name", "item_id", "slot", "usage_context"):
+            assert hasattr(usage, field)

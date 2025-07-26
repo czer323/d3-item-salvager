@@ -4,14 +4,16 @@ Script to extract and print all unique item types from reference/data.json.
 
 from pathlib import Path
 
-from src.d3_item_salvager.maxroll_parser.data_loader import load_master_data
+from d3_item_salvager.maxroll_parser.extract_data import DataParser
 
 REFERENCE_DIR = Path.cwd() / "reference"
 ITEMS_FILE = REFERENCE_DIR / "data.json"
 
 
 def main() -> None:
-    item_dict = load_master_data(ITEMS_FILE)
+    """Main function to extract and print unique item types from the data file."""
+    loader = DataParser(ITEMS_FILE)
+    item_dict = loader.items
     types = set()
     for item in item_dict.values():
         item_type = item.get("type", "")

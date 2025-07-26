@@ -8,15 +8,15 @@ Script to load reference data into the Diablo 3 Item Salvager database.
 
 from pathlib import Path
 
-from src.d3_item_salvager.data.db import create_db_and_tables, get_session
-from src.d3_item_salvager.data.loader import (
+from d3_item_salvager.data.db import create_db_and_tables, get_session
+from d3_item_salvager.data.loader import (
     insert_build,
     insert_item_usages_with_validation,
     insert_items_from_dict,
     insert_profiles,
 )
-from src.d3_item_salvager.maxroll_parser.build_loader import BuildProfileParser
-from src.d3_item_salvager.maxroll_parser.data_loader import load_master_data
+from d3_item_salvager.maxroll_parser.extract_build import BuildProfileParser
+from d3_item_salvager.maxroll_parser.extract_data import DataParser
 
 REFERENCE_DIR = Path.cwd() / "reference"
 ITEMS_FILE = REFERENCE_DIR / "data.json"
@@ -24,12 +24,19 @@ PROFILE_FILE = REFERENCE_DIR / "profile_object_861723133.json"
 
 
 def load_items() -> None:
-    """Load items from reference/data.json and insert into the database using load_master_data."""
+    """Load items from reference/data.json and insert into the database using DataParser."""
     print(f"Loading items from {ITEMS_FILE}...")
     try:
-        item_dict = load_master_data(ITEMS_FILE)
-    except Exception as e:
-        print(f"Error loading items with parser: {e}")
+        loader = DataParser(ITEMS_FILE)
+        item_dict = loader.items
+    except FileNotFoundError as e:
+        print(f"File not found: {e}")
+        return
+    except ValueError as e:
+        print(f"Value error while loading items: {e}")
+        return
+    except RuntimeError as e:
+        print(f"Runtime error while loading items: {e}")
         return
     with get_session() as session:
         insert_items_from_dict(item_dict, session)
@@ -55,8 +62,12 @@ def insert_build_and_profiles(
         print(
             f"Inserted build, {len(profiles)} profiles, and {len(usages)} item usages."
         )
-    except Exception as e:
-        print(f"Error: {e}")
+    except FileNotFoundError as e:
+        print(f"File not found: {e}")
+    except ValueError as e:
+        print(f"Value error: {e}")
+    except RuntimeError as e:
+        print(f"Runtime error: {e}")
 
 
 def main() -> None:

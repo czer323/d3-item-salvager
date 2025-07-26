@@ -1,72 +1,123 @@
+"""
+Module for fetching Diablo 3 build guides from Maxroll's Meilisearch API.
+Provides a class-based interface for guide retrieval and future extension.
+"""
+
 import json
+import logging
+from pathlib import Path
 
 import requests
 
-# Meilisearch API endpoint and Bearer token for fetching all builds
-MEILISEARCH_URL = "https://meilisearch-proxy.maxroll.gg/indexes/wp_posts_1/search"
-MEILISEARCH_BEARER = "35679298edc476d0b9f9638cdb90d362235a62550bea39d59544f694cc9d90b9"
+from .get_guide_cache_utils import (
+    load_guides_from_cache,
+    save_guides_to_cache,
+)
+from .types import GuideInfo
 
 
-def fetch_all_guides_meilisearch(limit: int = 21) -> list[dict[str, str]]:
-    """Fetches all Diablo 3 build guides from Maxroll's Meilisearch API with pagination.
-
-    Args:
-        limit: Number of results per page (default 21, as used by the site).
-
-    Returns:
-        List of dictionaries with 'name' and 'url' keys.
+class MaxrollGuideFetcher:
     """
-    headers = {
-        "accept": "*/*",
-        "authorization": f"Bearer {MEILISEARCH_BEARER}",
-        "content-type": "application/json",
-    }
-    offset = 0
-    all_guides = []
-    seen_urls = set()
-    debug_printed = 0
-    while True:
-        body = {"q": "", "facets": [], "limit": limit, "offset": offset}
-        resp = requests.post(
-            MEILISEARCH_URL, headers=headers, data=json.dumps(body), timeout=10
+    Fetches Diablo 3 build guides from Maxroll's Meilisearch API.
+    Provides a public method for guide retrieval.
+    """
+
+    def __init__(
+        self,
+        api_url: str = "https://meilisearch-proxy.maxroll.gg/indexes/wp_posts_1/search",
+        bearer_token: str = "35679298edc476d0b9f9638cdb90d362235a62550bea39d59544f694cc9d90b9",
+        logger: logging.Logger | None = None,
+        cache_ttl: int = 604800,  # seconds
+        cache_file: str | None = None,
+    ) -> None:
+        self.api_url = api_url
+        self.bearer_token = bearer_token
+        self.logger = logger or logging.getLogger(__name__)
+        self.cache_ttl = cache_ttl
+        # Default cache file location: <project-root>/cache/maxroll_guides.json
+        if cache_file is None:
+            self.cache_path = Path(Path.cwd(), "cache", "maxroll_guides.json")
+        else:
+            self.cache_path = Path(cache_file)
+        # Load cache on instantiation
+        self._cached_guides = load_guides_from_cache(
+            self.cache_path, self.cache_ttl, self.logger
         )
-        resp.raise_for_status()
-        data = resp.json()
-        hits = data.get("hits", [])
-        if not hits:
-            break
-        # Print a few sample hits for inspection
-        if debug_printed < 5:
-            print("\n--- Sample hit(s) from Meilisearch API ---")
-            for i, hit in enumerate(hits[:3]):
-                print(f"Hit {i + 1}: {json.dumps(hit, indent=2)[:500]}...\n")
-            debug_printed += 1
-        for hit in hits:
-            url = hit.get("permalink", "")
-            if url.startswith("https://maxroll.gg/d3/guides/") and url not in seen_urls:
-                # Extract build slug from URL
-                build_slug = url.split("/d3/guides/")[-1].strip("/")
-                # Convert slug to readable name
-                name = build_slug.replace("-", " ").replace("guide", "Guide").strip()
-                name = " ".join(
-                    [w.capitalize() if w != "Guide" else w for w in name.split()]
+
+    def _fetch_guides_from_api(self, limit: int = 21) -> list[GuideInfo]:
+        """
+        Fetch guides from Maxroll API.
+        """
+        headers = {
+            "accept": "*/*",
+            "authorization": f"Bearer {self.bearer_token}",
+            "content-type": "application/json",
+        }
+        offset = 0
+        all_guides: list[GuideInfo] = []
+        seen_urls = set()
+        try:
+            while True:
+                body = {"q": "", "facets": [], "limit": limit, "offset": offset}
+                resp = requests.post(
+                    self.api_url, headers=headers, data=json.dumps(body), timeout=10
                 )
-                all_guides.append({"name": name, "url": url})
-                seen_urls.add(url)
-        if len(hits) < limit:
-            break
-        offset += limit
-    return all_guides
+                resp.raise_for_status()
+                data = resp.json()
+                hits = data.get("hits", [])
+                if not hits:
+                    break
+                for hit in hits:
+                    url = hit.get("permalink", "")
+                    if (
+                        url.startswith("https://maxroll.gg/d3/guides/")
+                        and url not in seen_urls
+                    ):
+                        build_slug = url.split("/d3/guides/")[-1].strip("/")
+                        name = (
+                            build_slug.replace("-", " ")
+                            .replace("guide", "Guide")
+                            .strip()
+                        )
+                        name = " ".join(
+                            [
+                                w.capitalize() if w != "Guide" else w
+                                for w in name.split()
+                            ]
+                        )
+                        all_guides.append(GuideInfo(name=name, url=url))
+                        seen_urls.add(url)
+                if len(hits) < limit:
+                    break
+                offset += limit
+        except requests.RequestException:
+            self.logger.exception("Failed to fetch guides from API")
+            return []
+        self.logger.info("Fetched %d guides from API", len(all_guides))
 
+        if all_guides:
+            save_guides_to_cache(all_guides, self.cache_path, self.logger)
+        return all_guides
 
-def main() -> None:
-    """Fetches and prints deduplicated build guide names and URLs."""
-    # Use Meilisearch API for full list; fallback to HTML if needed
-    guides = fetch_all_guides_meilisearch()
-    for guide in guides:
-        print(f"{guide['name']}: {guide['url']}")
-    print(f"\nTotal guides found: {len(guides)}")
+    def fetch_guides(self, limit: int = 21) -> list[GuideInfo]:
+        """
+        Fetch all Diablo 3 build guides from Maxroll's Meilisearch API with caching.
+        """
+        if self._cached_guides is not None:
+            return self._cached_guides
+        guides = self._fetch_guides_from_api(limit=limit)
+        return guides
+
+    def print_guides(self, limit: int = 21) -> None:
+        """
+        Fetch and print deduplicated build guide names and URLs.
+        """
+        guides = self.fetch_guides(limit=limit)
+        for guide in guides:
+            print(f"{guide.name}: {guide.url}")
+        print(f"\nTotal guides found: {len(guides)}")
 
 
 if __name__ == "__main__":
-    main()
+    logging.basicConfig(level=logging.INFO)
+    MaxrollGuideFetcher().print_guides()

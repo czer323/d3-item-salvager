@@ -8,8 +8,8 @@ import pytest
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, SQLModel, create_engine, select
 
-from src.d3_item_salvager.data.models import Build, Item, ItemUsage, Profile
-from src.d3_item_salvager.data.queries import (
+from d3_item_salvager.data.models import Build, Item, ItemUsage, Profile
+from d3_item_salvager.data.queries import (
     get_all_item_usages,
     get_all_items,
     get_item_usages_by_context,

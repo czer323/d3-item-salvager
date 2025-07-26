@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 from sqlmodel import Session, select
 
-from src.d3_item_salvager.data.models import Item, ItemUsage, Profile
+from d3_item_salvager.data.models import Item, ItemUsage, Profile
 
 
 def get_items_by_class(session: Session, class_name: str) -> Sequence[Item]:

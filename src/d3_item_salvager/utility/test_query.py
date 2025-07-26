@@ -1,7 +1,7 @@
 from sqlmodel import select
 
-from src.d3_item_salvager.data.db import get_session
-from src.d3_item_salvager.data.queries import Item, ItemUsage, Profile
+from d3_item_salvager.data.db import get_session
+from d3_item_salvager.data.queries import Item, ItemUsage, Profile
 
 with get_session() as session:
     statement = (
