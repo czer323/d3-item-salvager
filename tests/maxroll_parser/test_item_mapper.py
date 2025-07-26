@@ -9,7 +9,7 @@ def test_map_item_ids_to_data_basic() -> None:
     """
     Test mapping a list of item IDs to their corresponding item data.
     """
-    item_dict, _ = data_loader.load_master_data()
+    item_dict = data_loader.load_master_data()
     # Use a few known item IDs from the master data (if available)
     # For robustness, just grab the first 2 IDs from the dict
     item_ids = list(item_dict.keys())[:2]
@@ -25,7 +25,7 @@ def test_map_item_ids_to_data_missing() -> None:
     """
     Test that missing item IDs return None in the result.
     """
-    item_dict, _ = data_loader.load_master_data()
+    item_dict = data_loader.load_master_data()
     item_ids = ["not_a_real_id", "another_fake_id"]
     mapped = item_mapper.map_item_ids_to_data(item_ids, item_dict)
     assert mapped == [None, None]

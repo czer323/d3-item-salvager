@@ -9,6 +9,7 @@ from pathlib import Path
 
 
 def extract_data_value(profile_path: str | Path) -> dict:
+    """Extracts the 'data' value from a build profile JSON file."""
     path = Path(profile_path)
     with path.open(encoding="utf-8") as f:
         content = f.read()
@@ -21,6 +22,7 @@ def extract_data_value(profile_path: str | Path) -> dict:
 
 
 def main() -> None:
+    """Main function to run the utility."""
     if len(sys.argv) < 2:
         print("Usage: python export_profile_data.py <profile_json_path>")
         sys.exit(1)

@@ -44,3 +44,22 @@ def test_load_build_profile_invalid_json(tmp_path: Path) -> None:
     bad_json.write_text("not really json", encoding="utf-8")
     with pytest.raises(ValueError, match="Could not parse build profile JSON"):
         build_loader.load_build_profile(bad_json)
+
+
+def test_extract_profiles_and_items_usage_output() -> None:
+    """
+    Test that extract_profiles_and_items returns correct minimal item usage records.
+    """
+    ref_path = (
+        Path(__file__).parent.parent.parent
+        / "reference"
+        / "profile_object_298017784.json"
+    )
+    data = build_loader.load_build_profile(ref_path)
+    usages = build_loader.extract_profiles_and_items(data)
+    assert isinstance(usages, list)
+    assert usages, "Should return at least one item usage record"
+    for usage in usages:
+        assert isinstance(usage, dict)
+        for key in ("profile_name", "item_id", "slot", "usage_context"):
+            assert key in usage

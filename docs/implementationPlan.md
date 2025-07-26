@@ -14,7 +14,6 @@ The goal of this project is to programmatically extract item data from Diablo 3 
   - Class (e.g., Barbarian, Wizard, etc.)
   - Item ID
   - Item Name
-  - Item Image URL
   - Slot (e.g., neck, ring, weapon, etc.)
   - Usage Context (main, follower, kanai)
 - Store the extracted data in a structured, queryable format (e.g., CSV, JSON, or database) suitable for powering a web UI and supporting advanced queries.
@@ -29,7 +28,6 @@ The goal of this project is to programmatically extract item data from Diablo 3 
 | class_name         | Character class for the build               |
 | item_id            | Unique item identifier (from master item list) |
 | item_name          | Name of the item                            |
-| item_image_url     | URL to the item's image                     |
 | slot               | Equipment slot (e.g., neck, ring, weapon)   |
 | usage_context      | How the item is used (main, follower, kanai); one row per item/context/build/profile |
 | set_status         | Set/Legendary status (if available)         |
@@ -56,8 +54,8 @@ Each build variant/profile is uniquely identified by its name or key in the buil
      - For each profile/variant (identified by name/key):
        - For each equipped item, follower item, and Kanai's Cube item:
          - Correlate the item ID with the master item list (from `reference/data.json` or `https://assets-ng.maxroll.gg/d3planner/data.json`).
-         - Extract slot, item name, item image URL, set/legendary status, notes, and other relevant fields.
-         - Record the build guide title, URL, build variant/profile name, class, item ID, item name, image URL, slot, usage context (main, follower, kanai), and metadata.
+         - Extract slot, item name, set/legendary status, notes, and other relevant fields.
+         - Record the build guide title, URL, build variant/profile name, class, item ID, item name, slot, usage context (main, follower, kanai), and metadata.
      - Guides that reference the same d3planner profile ID are recorded separately, always linking the guide URL/title to each profile.
      - Items that appear in multiple usage contexts or builds are represented by multiple rows, each with the correct context and linkage.
    - This approach ensures a comprehensive, queryable index of all items in all builds, with full context and metadata.
