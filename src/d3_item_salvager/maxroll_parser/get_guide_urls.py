@@ -8,12 +8,15 @@ import logging
 from pathlib import Path
 
 import requests
+from dotenv import load_dotenv
 
 from .get_guide_cache_utils import (
     load_guides_from_cache,
     save_guides_to_cache,
 )
 from .types import GuideInfo
+
+load_dotenv()
 
 
 class MaxrollGuideFetcher:
@@ -25,7 +28,7 @@ class MaxrollGuideFetcher:
     def __init__(
         self,
         api_url: str = "https://meilisearch-proxy.maxroll.gg/indexes/wp_posts_1/search",
-        bearer_token: str = "35679298edc476d0b9f9638cdb90d362235a62550bea39d59544f694cc9d90b9",
+        bearer_token: str | None = None,
         logger: logging.Logger | None = None,
         cache_ttl: int = 604800,  # seconds
         cache_file: str | None = None,

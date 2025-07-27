@@ -11,3 +11,4 @@ wheels/
 .github
 .mypy_cache
 d3_items.db
+.env
