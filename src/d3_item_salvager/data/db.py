@@ -2,8 +2,10 @@
 
 from sqlmodel import Session, SQLModel, create_engine
 
-DATABASE_URL = "sqlite:///d3_items.db"
-engine = create_engine(DATABASE_URL, echo=True)
+from d3_item_salvager.config import get_config
+
+config = get_config()
+engine = create_engine(config.database.url, echo=True)
 
 
 def create_db_and_tables() -> None:

@@ -144,3 +144,37 @@ The web UI allows users to:
 - Add support for user-defined item ignore/keep lists and persistent user settings.
 - Test with provided reference HTML files and real data.
 - Document usage, configuration, and extensibility.
+
+Here is the recommended build order for your modules, based on their dependencies and best practices:
+
+1. **Configuration Management**  
+   (All modules require config; build first.)
+
+2. **Logging and Observability**  
+   (Needed for error handling, debugging, and all modules.)
+
+3. **Error Handling and Custom Exceptions**  
+   (Ensures consistent error reporting across modules.)
+
+4. **Utility/Helper Modules**  
+   (Can be built early and used everywhere.)
+
+5. **Dependency Injection / Application Factory**  
+   (Required before API/services and for wiring dependencies.)
+
+6. **Data Models**  
+   (Foundation for migration/versioning and service layer.)
+
+7. **Migration and Versioning**  
+   (Manages schema changes for data models and services.)
+
+8. **Service Layer / Business Logic**  
+   (Depends on data models, config, error handling, and DI.)
+
+9. **Task Scheduling / Background Jobs**  
+   (Orchestrates business logic; depends on services and logging.)
+
+10. **Security Module**  
+    (Implemented last, as it wraps and protects API/services.)
+
+This order ensures each module has its dependencies available, supports incremental development, and enables early testing and integration.

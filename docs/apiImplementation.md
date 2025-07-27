@@ -1,5 +1,8 @@
 # Diablo 3 Build Guide Item Scraper – API Implementation Plan
 
+**Status Note (July 2025):**
+The API module described here is planned but not yet implemented. This document supersedes any API-related planning or claims in `databaseImplementation.md`. For current database and query logic, see `databaseImplementation.md` and the data module. The API will depend on the data/query layer for all backend access. Separation of concerns between data and API modules is intentional and future milestones will be tracked here.
+
 ## Overview
 
 This document outlines the API design, endpoints, and integration considerations for serving Diablo 3 build guide data to a web UI or other clients. The API is implemented as a separate module, decoupled from the database logic for maintainability and scalability.
@@ -18,7 +21,7 @@ This document outlines the API design, endpoints, and integration considerations
 
 ## Directory Structure
 
-```
+```directory
 src/
   d3_item_salvager/
     api/

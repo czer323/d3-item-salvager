@@ -1,8 +1,10 @@
 # Diablo 3 Build Guide Item Scraper – Database Implementation Plan
 
+This document defines the requirements and expectations for the database and query/data layer. API implementation is specified in `apiImplementation.md`, which supersedes any API-related planning here. Separation of concerns between data and API modules is required; API and web UI are tracked in their respective documents.
+
 ## Overview
 
-This document outlines the database design, tooling, and workflow for storing, querying, and serving scraped Diablo 3 build guide data. The goal is to enable fast, flexible queries and seamless API access for a web UI.
+The database and data layer must store, query, and serve scraped Diablo 3 build guide data. The design enables fast, flexible queries and seamless API access for a web UI.
 
 ---
 
@@ -18,7 +20,7 @@ This document outlines the database design, tooling, and workflow for storing, q
 **Best Practices:**
 
 - Use SQLModel for all model definitions, with type annotations and Field for PKs, indexes, defaults, and FKs.
-- Always import all models before calling SQLModel.metadata.create_all(engine).
+- Import all models before calling SQLModel.metadata.create_all(engine).
 - Use context-managed Session(engine) for all DB operations.
 - Use Field(index=True) for indexed columns.
 - Use Field(foreign_key="tablename.column") for relationships.
@@ -35,7 +37,7 @@ src/
       db.py            # Database engine/session setup
       loader.py        # Functions to insert scraped data (ingestion/ETL only)
       queries.py       # Query/filter logic (filter by class, build, slot, usage context, etc.)
-      api.py           # FastAPI endpoints for querying data (should use queries.py for DB access)
+      api.py           # FastAPI endpoints for querying data (specified in apiImplementation.md)
     ...
 tests/
   data/
@@ -53,7 +55,7 @@ docs/
 
 ### Model Definitions (SQLModel)
 
-All models are defined in `models.py` with type annotations and Field for PKs, FKs, and indexes. This structure supports flexible queries and future extensibility.
+All models are defined in `models.py` with type annotations and Field for PKs, FKs, and indexes. This structure supports flexible queries and extensibility.
 
 ```python
 from typing import Optional
@@ -76,7 +78,8 @@ class Item(SQLModel, table=True):
     type: str  # Note: 'type' directly correlates to the 'slot' concept in builds and item usage.
     quality: str
 
-# Note: Continue reviewing other item objects in the data to confirm attribute naming consistency (e.g., 'type' vs 'slot').
+
+# Item objects must use consistent attribute naming (e.g., 'type' vs 'slot').
 
 class ItemUsage(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -101,12 +104,12 @@ class ItemUsage(SQLModel, table=True):
 
 **Indexes:**
 
-- On profile_id, item_id, slot, usage_context for fast queries
+- Indexes on profile_id, item_id, slot, usage_context for fast queries
 
 **Extensibility:**
 
-- If user-specific data is needed, add a separate table for user preferences.
-- ItemUsage can be extended with more fields (e.g., notes, stat overrides) if needed.
+- User-specific data is supported by adding a separate table for user preferences.
+- ItemUsage can be extended with additional fields (e.g., notes, stat overrides).
 
 **Best practice:**
 
@@ -120,12 +123,12 @@ class ItemUsage(SQLModel, table=True):
 1. Scrape build guides and profiles
 2. Parse and normalize data
 3. Insert into database using loader functions (use Session(engine) and SQLModel models)
-4. Query and analyze data for downstream use (API, web UI, etc.)
+4. Query and analyze data for downstream use (API and web UI are specified in `apiImplementation.md`)
 
 ## Migration and Versioning
 
-- Use Alembic for schema migrations if needed
-- Document schema changes and provide migration scripts
+- Alembic is used for schema migrations.
+- Schema changes and migration scripts are documented as the project evolves.
 
 ---
 
@@ -133,7 +136,8 @@ class ItemUsage(SQLModel, table=True):
 
 - Use a separate SQLite database for tests (e.g., sqlite:///testing.db)
 - Create tables at test startup, clean up after tests
-- Unit tests for loader functions and query logic (API endpoints tested separately)
+- Unit tests for loader functions and query logic
+- API endpoint tests are specified in `apiImplementation.md`
 - Use pytest and coverage tools
 - **Windows-specific note:** When using SQLite for tests, always call `engine.dispose()` before deleting the database file in test teardown to avoid file locking errors. This ensures all connections are closed and the file can be removed cleanly.
 
@@ -141,34 +145,33 @@ class ItemUsage(SQLModel, table=True):
 
 ## Key Functions
 
-- `create_db_and_tables()` – Initialize database and tables
+- `create_db_and_tables()` – Initializes database and tables
 - `insert_build(title, url)`
 - `insert_profile(build_id, name, class_name)`
-- `insert_item(id, name, type, set_status, notes)`
-- `insert_item_usage(profile_id, item_id, usage_context)`
+- `insert_item(id, name, type)`  # set_status and notes are not required
+- `insert_item_usage(profile_id, item_id, usage_context)` # item_id must match Item.id type
 - `query_items(...)` – Flexible query logic for downstream use
 
 ---
 
 ## Considerations for API/Web Integration
 
-- Ensure all queries are fast and support filtering/grouping as needed by the frontend or API
-- Use SQLModel's select, offset, limit, and index features for efficient queries
-- Plan for future migration to scalable DB if needed
+- API and web integration are specified in `apiImplementation.md`.
+- Queries must be fast and support filtering/grouping for API/frontend needs.
+- Use SQLModel's select, offset, limit, and index features for efficient queries.
+- Migration to a scalable DB is supported.
 
 ---
 
 ## Step-by-Step Implementation Plan
 
-Here’s the most logical step-by-step approach for implementation:
-
 1. **Set up the project environment and database schema**
    - Create models.py with Build, Profile, Item, and ItemUsage classes.
    - Write a script to initialize the SQLite database.
 
-2. **Implement basic loader and query functions**
+2. **Implement loader and query functions**
    - Insert sample data (hardcoded items, builds, profiles, usages).
-   - Add simple queries to fetch items and usage contexts, validating relationships.
+   - Add queries to fetch items and usage contexts, validating relationships.
 
 3. **Expand loader to handle real data**
    - Parse and insert data from reference data.json and sample build/profile JSONs.
@@ -177,25 +180,17 @@ Here’s the most logical step-by-step approach for implementation:
 
 4. **Implement query/filter logic**
    - Support filtering by class, build, slot, usage context, etc.
-   - Test queries for correctness and performance.
    - Add unit tests for loader and query logic.
 
-5. **Build API layer with FastAPI**
-   - Expose endpoints for querying items, builds, profiles, and usages.
-   - Support filtering/grouping for frontend needs.
-   - Test API endpoints.
+5. **API layer with FastAPI**
+   - Specified in `apiImplementation.md`.
 
-6. **Develop web UI or CLI**
-   - Start with a minimal interface for displaying items and usage contexts.
-   - Iterate to add filtering, grouping, and user preference features.
-   - Test UI with real data and API.
+6. **Web UI or CLI**
+   - Specified in frontend documentation.
 
-7. **Finalize migration/versioning, documentation, and testing**
-   - Add Alembic support for schema migrations.
-   - Document usage, configuration, and extensibility.
-   - Perform end-to-end testing and review for performance and maintainability.
-
-This incremental approach ensures you build a solid foundation and can iterate quickly toward the final product.
+7. **Migration/versioning, documentation, and testing**
+   - Alembic support and documentation required.
+   - End-to-end testing and review for performance and maintainability required.
 
 ---
 
@@ -205,7 +200,7 @@ This incremental approach ensures you build a solid foundation and can iterate q
 - **db.py**: Engine/session setup, model imports (ensures tables are registered)
 - **loader.py**: Data ingestion, ETL, insert/bulk load functions only
 - **queries.py**: Query/filter logic, reusable select/filter functions, business rules
-- **api.py**: FastAPI endpoints, should use queries.py for DB access
+- **api.py**: API endpoints specified in `apiImplementation.md`
 
 **Best practice:**
 
@@ -213,3 +208,20 @@ This incremental approach ensures you build a solid foundation and can iterate q
 - Centralize engine and model imports in db.py for table registration.
 - Use relative imports within the package for maintainability.
 - Structure code so that query/filter logic is reusable for API, CLI, and tests.
+
+---
+
+## Schema and Data Layer Requirements
+
+- Item model primary key is `str` (not `int`) for item uniqueness; this must be documented in API/data schemas.
+- ItemUsage.item_id type must match Item.id type (`str`).
+- set_status and notes fields are not required in Item model or insert function.
+
+## API and Integration Requirements
+
+- API endpoints and integration are specified in `apiImplementation.md`.
+
+## Migration and Extensibility Requirements
+
+- Alembic is required for migrations.
+- End-to-end testing and review for performance and maintainability are required.
