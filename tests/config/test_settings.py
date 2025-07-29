@@ -1,38 +1,54 @@
 """Unit tests for config loading and validation."""
 
 import pytest
+from pydantic import ValidationError
 
 from d3_item_salvager.config import get_config, reset_config
+from d3_item_salvager.config.base import MaxrollParserConfig
+
+
+# Reset config before each test to ensure fresh singleton
+@pytest.fixture(autouse=True)
+def reset_config_fixture() -> None:
+    reset_config()
+
+
+# Fixture to set required env var for all tests except validation failure
+@pytest.fixture(autouse=True)
+def set_required_env(
+    monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
+) -> None:
+    if request.node.name != "test_config_validation_failure":
+        monkeypatch.setenv("MAXROLL_BEARER_TOKEN", "prodtoken")
 
 
 def test_config_loads_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that config loads default values when env vars are not set."""
+    """Config loads defaults when environment variables are unset."""
     monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.setenv("MAXROLL_BEARER_TOKEN", "prodtoken")
 
     reset_config()
     config = get_config()
-    assert config.database.url is not None
-    assert config.scraper.user_agent == "Mozilla/5.0"
-    assert config.scraper.timeout == 10
+    assert config.database.url == "sqlite:///d3_items.db"
+    assert config.maxroll_parser.bearer_token == "prodtoken"
 
 
 def test_config_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that config values are overridden by environment variables."""
+    """Config values are overridden by environment variables."""
     monkeypatch.setenv("DATABASE_URL", "sqlite:///test.db")
-    monkeypatch.setenv("SCRAPER_USER_AGENT", "TestAgent")
-    monkeypatch.setenv("SCRAPER_TIMEOUT", "5")
+    monkeypatch.setenv("MAXROLL_BEARER_TOKEN", "dummy-token")
 
     reset_config()
     config = get_config()
     assert config.database.url == "sqlite:///test.db"
-    assert config.scraper.user_agent == "TestAgent"
-    assert config.scraper.timeout == 5
+    assert config.maxroll_parser.bearer_token == "dummy-token"
 
 
 def test_config_validation_failure(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that config validation fails if required fields are missing."""
-    monkeypatch.delenv("DATABASE_URL", raising=False)
-
+    """Config validation fails if a required field is missing."""
     reset_config()
+    monkeypatch.delenv("MAXROLL_BEARER_TOKEN", raising=False)
+    with pytest.raises(ValidationError):
+        MaxrollParserConfig()
     with pytest.raises(RuntimeError, match="Configuration validation failed"):
         get_config()

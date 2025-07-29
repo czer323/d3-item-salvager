@@ -15,7 +15,7 @@ src/d3_item_salvager/workers/
 
 ## Tools & Libraries
 
-- `APScheduler` or `Celery` or `Dramatiq` (choose based on needs)
+- `Dramatiq`
 - Python stdlib
 
 ## Design Patterns

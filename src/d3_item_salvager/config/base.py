@@ -1,29 +1,31 @@
 """Base config dataclasses and shared types."""
 
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
 class DatabaseConfig(BaseSettings):
+    """Database configuration."""
+
     model_config = {"env_prefix": "DATABASE_"}
-    """Database configuration.
-
-    Args:
-        url: Database connection string (e.g., sqlite:///d3_items.db)
-        pool_size: Number of connections in the pool
-    """
-
+    # Production defaults
     url: str = "sqlite:///d3_items.db"
-    pool_size: int = 5
 
 
-class ScraperConfig(BaseSettings):
-    model_config = {"env_prefix": "SCRAPER_"}
-    """Scraper configuration.
+class MaxrollParserConfig(BaseSettings):
+    """
+    Data source configuration for switching between environments.
 
     Args:
-        user_agent: HTTP User-Agent string for requests
-        timeout: Request timeout in seconds
+        mode: Environment mode ('dev', 'prod', etc.).
+        data_paths: Mapping of mode to data.json path or URL.
+        build_paths: Mapping of mode to build object path or URL.
     """
 
-    user_agent: str = "Mozilla/5.0"
-    timeout: int = 10
+    model_config = {"env_prefix": "MAXROLL_"}
+
+    bearer_token: str = Field(..., description="Bearer token for Maxroll API")
+    data_paths: str = "https://assets-ng.maxroll.gg/d3planner/data.json"
+    build_paths: str = "https://assets-ng.maxroll.gg/d3planner/profile_object.json"
+    guide_paths: str = "https://meilisearch-proxy.maxroll.gg/indexes/wp_posts_1/search"
+    api_url: str = "https://meilisearch-proxy.maxroll.gg/indexes/wp_posts_1/search"

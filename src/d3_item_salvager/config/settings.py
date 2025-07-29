@@ -1,8 +1,9 @@
 """Main AppConfig definition and config loader."""
 
+from pydantic import ValidationError
 from pydantic_settings import BaseSettings
 
-from .base import DatabaseConfig, ScraperConfig
+from .base import DatabaseConfig, MaxrollParserConfig
 
 
 class AppConfig(BaseSettings):
@@ -14,7 +15,7 @@ class AppConfig(BaseSettings):
     """
 
     database: DatabaseConfig
-    scraper: ScraperConfig
+    maxroll_parser: MaxrollParserConfig
 
 
 class _ConfigSingleton:
@@ -27,10 +28,10 @@ class _ConfigSingleton:
         """Get the singleton instance of AppConfig."""
         if cls._instance is None:
             try:
-                db_config = DatabaseConfig()
-                scraper_config = ScraperConfig()
-                cls._instance = AppConfig(database=db_config, scraper=scraper_config)
-            except Exception as e:
+                cls._instance = AppConfig(
+                    database=DatabaseConfig(), maxroll_parser=MaxrollParserConfig()
+                )
+            except ValidationError as e:
                 msg = f"Configuration validation failed: {e}"
                 raise RuntimeError(msg) from e
         return cls._instance

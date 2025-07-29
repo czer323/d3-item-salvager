@@ -1,3 +1,7 @@
+"""
+Demo script for manual database queries. Not a unit test; not collected by pytest.
+"""
+
 from sqlmodel import select
 
 from d3_item_salvager.data.db import get_session

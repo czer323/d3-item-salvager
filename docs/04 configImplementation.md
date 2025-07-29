@@ -10,7 +10,6 @@ Centralizes all configuration for the project (API, DB, scraping, web UI, enviro
 src/d3_item_salvager/config/
     __init__.py
     base.py           # Base config dataclasses
-    env.py            # Env var loading logic
     cli.py            # CLI arg parsing (if needed)
     settings.py       # Project-wide settings object
 ```
@@ -18,9 +17,8 @@ src/d3_item_salvager/config/
 ## Tools & Libraries
 
 - `pydantic` (for type-safe config models)
-- `os` (env vars)
-- `argparse` (CLI args, optional)
-- `dotenv` (optional, for .env files)
+- `pydantic-settings` (env vars)
+- `typer` (CLI args, optional)
 
 ## Design Patterns
 
@@ -30,30 +28,26 @@ src/d3_item_salvager/config/
 
 ## Key Classes & Functions
 
-- `BaseConfig`: Abstract base for all config objects (optional, use Pydantic `BaseSettings` for each config section)
-- `DatabaseConfig`: Database config class with sensible defaults and `env_prefix` for environment variable mapping
-- `ScraperConfig`: Scraper config class with sensible defaults and `env_prefix` for environment variable mapping
-- `AppConfig`: Main config object, aggregates all sub-configs
-- `get_config()`: Singleton accessor for config
-- `reset_config()`: Helper to reset the config singleton for test isolation
+- `_ConfigSingleton`: Private class for managing config singleton state (no global variables)
 
 ## Implementation Details
 
-- All config fields must be documented with Google-style docstrings
-- Each config class must set `model_config = {"env_prefix": ...}` to enable environment variable overrides (e.g., `DATABASE_URL`, `SCRAPER_USER_AGENT`)
+- Validate config at startup and fail fast on errors. Use exception chaining (`raise ... from e`) for error traceability.
+- Never use global variables for config; always inject via `get_config()`. Singleton state is managed by a private class, not globals.
 - Support overrides for dev/test/prod via environment variables and `.env` file (automatically loaded by Pydantic Settings)
 - Validate config at startup and fail fast on errors
 - Never use global variables for config; always inject via `get_config()`
-- Provide `reset_config()` for test isolation and flexibility
-- Example usage:
+- Use `pytest.raises` for exception assertions in tests
+- Add type annotations to test functions for clarity
+- Remove unused imports and group imports for lint compliance
 
-  ```python
+```python
   from d3_item_salvager.config import get_config
   config = get_config()
   db_url = config.database.url
-  ```
+```
 
-- If CLI config is needed, use `argparse` and merge with env/.env config (integration planned, not yet implemented)
+- If CLI config is needed, use `typer` for parsing command-line arguments and integrating with Pydantic settings.
 
 ## Testing & Extensibility
 
