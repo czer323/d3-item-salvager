@@ -2,7 +2,6 @@
 """Tests for Maxroll guide cache utilities."""
 
 import json
-import logging
 from pathlib import Path
 
 import pytest
@@ -21,12 +20,6 @@ def test_cache_path(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def test_dummy_logger() -> logging.Logger:
-    """Fixture to provide a dummy logger for testing."""
-    return logging.getLogger("test_logger")
-
-
-@pytest.fixture
 def test_sample_guides() -> list[GuideInfo]:
     """Sample guides for testing."""
     return [
@@ -37,14 +30,11 @@ def test_sample_guides() -> list[GuideInfo]:
 
 def test_save_and_load_guides_cache(
     test_cache_path: Path,
-    test_dummy_logger: logging.Logger,
     test_sample_guides: list[GuideInfo],
 ) -> None:
     """Test saving and loading guides from cache."""
-    save_guides_to_cache(test_sample_guides, test_cache_path, test_dummy_logger)
-    loaded = load_guides_from_cache(
-        test_cache_path, cache_ttl=9999, logger=test_dummy_logger
-    )
+    save_guides_to_cache(test_sample_guides, test_cache_path)
+    loaded = load_guides_from_cache(test_cache_path, cache_ttl=9999)
     assert loaded is not None
     assert len(loaded) == 2
     assert loaded[0].name == "Test Guide 1"
@@ -53,50 +43,33 @@ def test_save_and_load_guides_cache(
 
 def test_cache_expiry(
     test_cache_path: Path,
-    test_dummy_logger: logging.Logger,
     test_sample_guides: list[GuideInfo],
 ) -> None:
     """Test that cache expires after TTL."""
-    save_guides_to_cache(test_sample_guides, test_cache_path, test_dummy_logger)
-    loaded = load_guides_from_cache(
-        test_cache_path, cache_ttl=-1, logger=test_dummy_logger
-    )
+    save_guides_to_cache(test_sample_guides, test_cache_path)
+    loaded = load_guides_from_cache(test_cache_path, cache_ttl=-1)
     assert loaded is None
 
 
-def test_load_guides_cache_missing_file(
-    test_dummy_logger: logging.Logger,
-) -> None:
+def test_load_guides_cache_missing_file() -> None:
     """Test loading from a non-existent cache file."""
     missing_path = Path("not_a_real_cache_file.json")
-    assert (
-        load_guides_from_cache(missing_path, cache_ttl=9999, logger=test_dummy_logger)
-        is None
-    )
+    assert load_guides_from_cache(missing_path, cache_ttl=9999) is None
 
 
 def test_load_guides_cache_invalid_json(
     test_cache_path: Path,
-    test_dummy_logger: logging.Logger,
 ) -> None:
     """Test loading from a cache file with invalid JSON."""
     test_cache_path.write_text("not valid json", encoding="utf-8")
-    assert (
-        load_guides_from_cache(
-            test_cache_path, cache_ttl=9999, logger=test_dummy_logger
-        )
-        is None
-    )
+    assert load_guides_from_cache(test_cache_path, cache_ttl=9999) is None
 
 
 def test_load_guides_cache_missing_keys(
     test_cache_path: Path,
-    test_dummy_logger: logging.Logger,
 ) -> None:
     """Test loading from a cache file with missing keys."""
     bad_data = {"guides": [{"foo": "bar"}, {"name": "OnlyName"}]}
     test_cache_path.write_text(json.dumps(bad_data), encoding="utf-8")
-    loaded = load_guides_from_cache(
-        test_cache_path, cache_ttl=9999, logger=test_dummy_logger
-    )
+    loaded = load_guides_from_cache(test_cache_path, cache_ttl=9999)
     assert loaded == []

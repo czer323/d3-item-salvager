@@ -7,6 +7,8 @@ import json
 import sys
 from pathlib import Path
 
+from loguru import logger
+
 
 def extract_data_value(profile_path: str | Path) -> dict:
     """Extracts the 'data' value from a build profile JSON file."""
@@ -24,11 +26,12 @@ def extract_data_value(profile_path: str | Path) -> dict:
 def main() -> None:
     """Main function to run the utility."""
     if len(sys.argv) < 2:
-        print("Usage: python export_profile_data.py <profile_json_path>")
+        logger.error("Usage: python export_profile_data.py <profile_json_path>")
         sys.exit(1)
     profile_path = sys.argv[1]
     data = extract_data_value(profile_path)
-    print(json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False))
+    logger.info("Extracted profile data:")
+    logger.info(json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False))
 
 
 if __name__ == "__main__":

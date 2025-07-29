@@ -3,7 +3,7 @@
 from pydantic import ValidationError
 from pydantic_settings import BaseSettings
 
-from .base import DatabaseConfig, MaxrollParserConfig
+from .base import DatabaseConfig, LoggingConfig, MaxrollParserConfig
 
 
 class AppConfig(BaseSettings):
@@ -11,11 +11,13 @@ class AppConfig(BaseSettings):
 
     Args:
         database: Database configuration
-        scraper: Scraper configuration
+        maxroll_parser: MaxrollParserConfig
+        logging: LoggingConfig
     """
 
     database: DatabaseConfig
     maxroll_parser: MaxrollParserConfig
+    logging: LoggingConfig
 
 
 class _ConfigSingleton:
@@ -29,7 +31,9 @@ class _ConfigSingleton:
         if cls._instance is None:
             try:
                 cls._instance = AppConfig(
-                    database=DatabaseConfig(), maxroll_parser=MaxrollParserConfig()
+                    database=DatabaseConfig(),
+                    maxroll_parser=MaxrollParserConfig(),
+                    logging=LoggingConfig(),
                 )
             except ValidationError as e:
                 msg = f"Configuration validation failed: {e}"

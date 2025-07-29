@@ -1,16 +1,15 @@
 """Utility functions for caching guides from Maxroll."""
 
 import json
-import logging
 import time
 from pathlib import Path
+
+from loguru import logger
 
 from .types import GuideInfo
 
 
-def load_guides_from_cache(
-    cache_path: Path, cache_ttl: int, logger: logging.Logger
-) -> list[GuideInfo] | None:
+def load_guides_from_cache(cache_path: Path, cache_ttl: int) -> list[GuideInfo] | None:
     """
     Load guides from cache file if fresh.
     """
@@ -38,9 +37,7 @@ def load_guides_from_cache(
     return None
 
 
-def save_guides_to_cache(
-    guides: list[GuideInfo], cache_path: Path, logger: logging.Logger
-) -> None:
+def save_guides_to_cache(guides: list[GuideInfo], cache_path: Path) -> None:
     """
     Save guides to cache file.
     """

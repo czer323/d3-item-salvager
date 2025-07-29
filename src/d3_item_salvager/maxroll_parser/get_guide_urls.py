@@ -4,10 +4,10 @@ Provides a class-based interface for guide retrieval and future extension.
 """
 
 import json
-import logging
 from pathlib import Path
 
 import requests
+from loguru import logger
 
 from d3_item_salvager.config import get_config
 
@@ -32,14 +32,12 @@ class MaxrollGuideFetcher:
         self,
         api_url: str = DEFAULT_MAXROLL_API_URL,
         bearer_token: str | None = DEFAULT_BEARER_TOKEN,
-        logger: logging.Logger | None = None,
         cache_ttl: int = 604800,  # seconds
         cache_file: str | None = None,
         limit: int = 21,
     ) -> None:
         self.api_url = api_url
         self.bearer_token = bearer_token
-        self.logger = logger or logging.getLogger(__name__)
         self.cache_ttl = cache_ttl
         self.limit = limit
         # Default cache file location: <project-root>/cache/maxroll_guides.json
@@ -48,9 +46,7 @@ class MaxrollGuideFetcher:
         else:
             self.cache_path = Path(cache_file)
         # Load cache on instantiation
-        self._cached_guides = load_guides_from_cache(
-            self.cache_path, self.cache_ttl, self.logger
-        )
+        self._cached_guides = load_guides_from_cache(self.cache_path, self.cache_ttl)
 
     def _fetch_hits_from_api(self) -> list[dict]:
         """
@@ -79,7 +75,7 @@ class MaxrollGuideFetcher:
                     break
                 offset += self.limit
         except requests.RequestException:
-            self.logger.exception("Failed to fetch hits from API")
+            logger.exception("Failed to fetch hits from API")
             return []
         return all_hits
 
@@ -107,9 +103,9 @@ class MaxrollGuideFetcher:
         """
         hits = self._fetch_hits_from_api()
         all_guides = self._extract_guide_links_from_hits(hits)
-        self.logger.info("Fetched %d guides from API", len(all_guides))
+        logger.info("Fetched %d guides from API", len(all_guides))
         if all_guides:
-            save_guides_to_cache(all_guides, self.cache_path, self.logger)
+            save_guides_to_cache(all_guides, self.cache_path)
         return all_guides
 
     def fetch_guides(self) -> list[GuideInfo]:
@@ -124,9 +120,9 @@ class MaxrollGuideFetcher:
                 data = json.load(f)
             hits = data.get("hits", [])
             guides = self._extract_guide_links_from_hits(hits)
-            self.logger.info("Fetched %d guides from local file", len(guides))
+            logger.info("Fetched %d guides from local file", len(guides))
             if guides:
-                save_guides_to_cache(guides, self.cache_path, self.logger)
+                save_guides_to_cache(guides, self.cache_path)
             return guides
         # Otherwise, hit the API
         guides = self._fetch_guides_from_api()
@@ -134,9 +130,9 @@ class MaxrollGuideFetcher:
 
     def print_guides(self) -> None:
         """
-        Fetch and print deduplicated build guide names and URLs.
+        Fetch and log deduplicated build guide names and URLs.
         """
         guides = self.fetch_guides()
         for guide in guides:
-            print(f"{guide.name}: {guide.url}")
-        print(f"\nTotal guides found: {len(guides)}")
+            logger.info("{}: {}", guide.name, guide.url)
+        logger.info("Total guides found: {}", len(guides))

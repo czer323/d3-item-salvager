@@ -2,6 +2,7 @@
 Demo script for manual database queries. Not a unit test; not collected by pytest.
 """
 
+from loguru import logger
 from sqlmodel import select
 
 from d3_item_salvager.data.db import get_session
@@ -22,5 +23,5 @@ with get_session() as session:
     seen = set()
     for item in necro_cube_items:
         if item.id not in seen:
-            print(f"name='{item.name}' type='{item.type}'")
+            logger.info("name='{}' type='{}'", item.name, item.type)
             seen.add(item.id)

@@ -12,6 +12,15 @@ class DatabaseConfig(BaseSettings):
     url: str = "sqlite:///d3_items.db"
 
 
+class LoggingConfig(BaseSettings):
+    """Logging configuration for Loguru and observability hooks."""
+
+    enabled: bool = True
+    level: str = "INFO"
+    metrics_enabled: bool = False
+    log_file: str = "logs/app.log"
+
+
 class MaxrollParserConfig(BaseSettings):
     """
     Data source configuration for switching between environments.
