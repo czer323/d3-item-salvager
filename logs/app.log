@@ -148,3 +148,23 @@
 2025-07-29 18:16:14.748 | INFO     | d3_item_salvager.logging.setup:wrapper:23 - Finished dummy_timed_func in 0.00s
 2025-07-29 18:16:14.749 | INFO     | d3_item_salvager.logging.setup:wrapper:37 - Calling dummy_contextual_func
 2025-07-29 18:16:14.750 | INFO     | d3_item_salvager.logging.setup:wrapper:39 - Finished dummy_contextual_func
+2025-07-29 19:48:53.074 | INFO     | test_setup:test_setup_logger_runs:76 - Logger setup test message.
+2025-07-29 19:48:53.078 | INFO     | d3_item_salvager.logging.setup:wrapper:21 - Started dummy_timed_func
+2025-07-29 19:48:53.078 | INFO     | d3_item_salvager.logging.setup:wrapper:23 - Finished dummy_timed_func in 0.00s
+2025-07-29 19:48:53.081 | INFO     | d3_item_salvager.logging.setup:wrapper:37 - Calling dummy_contextual_func
+2025-07-29 19:48:53.081 | INFO     | d3_item_salvager.logging.setup:wrapper:39 - Finished dummy_contextual_func
+2025-07-29 19:58:09.892 | INFO     | test_setup:test_setup_logger_runs:76 - Logger setup test message.
+2025-07-29 19:58:09.895 | INFO     | d3_item_salvager.logging.setup:wrapper:21 - Started dummy_timed_func
+2025-07-29 19:58:09.895 | INFO     | d3_item_salvager.logging.setup:wrapper:23 - Finished dummy_timed_func in 0.00s
+2025-07-29 19:58:09.897 | INFO     | d3_item_salvager.logging.setup:wrapper:37 - Calling dummy_contextual_func
+2025-07-29 19:58:09.897 | INFO     | d3_item_salvager.logging.setup:wrapper:39 - Finished dummy_contextual_func
+2025-07-29 20:01:05.451 | INFO     | test_setup:test_setup_logger_runs:76 - Logger setup test message.
+2025-07-29 20:01:05.455 | INFO     | d3_item_salvager.logging.setup:wrapper:21 - Started dummy_timed_func
+2025-07-29 20:01:05.455 | INFO     | d3_item_salvager.logging.setup:wrapper:23 - Finished dummy_timed_func in 0.00s
+2025-07-29 20:01:05.457 | INFO     | d3_item_salvager.logging.setup:wrapper:37 - Calling dummy_contextual_func
+2025-07-29 20:01:05.457 | INFO     | d3_item_salvager.logging.setup:wrapper:39 - Finished dummy_contextual_func
+2025-07-29 20:25:55.412 | INFO     | test_setup:test_setup_logger_runs:76 - Logger setup test message.
+2025-07-29 20:25:55.414 | INFO     | d3_item_salvager.logging.setup:wrapper:21 - Started dummy_timed_func
+2025-07-29 20:25:55.414 | INFO     | d3_item_salvager.logging.setup:wrapper:23 - Finished dummy_timed_func in 0.00s
+2025-07-29 20:25:55.415 | INFO     | d3_item_salvager.logging.setup:wrapper:37 - Calling dummy_contextual_func
+2025-07-29 20:25:55.416 | INFO     | d3_item_salvager.logging.setup:wrapper:39 - Finished dummy_contextual_func

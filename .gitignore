@@ -13,3 +13,5 @@ wheels/
 d3_items.db
 .env
 dev.db
+.coverage
+logs/

@@ -15,6 +15,7 @@ dependencies = [
     "sqlmodel>=0.0.24",
     "typer>=0.16.0",
     "loguru>=0.7.3",
+    "fastapi>=0.116.1",
 ]
 
 [dependency-groups]
