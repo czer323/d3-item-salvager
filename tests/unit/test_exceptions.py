@@ -1,3 +1,4 @@
+# pylint: disable=too-few-public-methods
 """Unit tests for custom exceptions in d3_item_salvager.exceptions module."""
 
 from fastapi import FastAPI

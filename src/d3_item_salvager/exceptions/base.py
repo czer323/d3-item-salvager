@@ -39,4 +39,8 @@ class BaseError(Exception):
         Returns:
             str: String describing the error type, message, code, and context.
         """
-        return f"{self.__class__.__name__}(message={self.message!r}, code={self.code}, context={self.context})"
+        return (
+            f"{self.__class__.__name__}(message={self.message!r}, "
+            f"code={self.code}, "
+            f"context={self.context})"
+        )

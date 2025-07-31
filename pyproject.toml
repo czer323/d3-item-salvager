@@ -26,6 +26,11 @@ dev = [
     "pytest-mock>=3.14.1",
     "pytest-cov>=6.2.1",
     "prometheus-client>=0.22.1",
+    "pre-commit>=4.2.0",
+    "pyright>=1.1.403",
+    "pylint>=3.3.7",
+    "pre-commit-update>=0.8.0",
+    "mypy>=1.17.0",
 ]
 
 [build-system]
@@ -36,10 +41,26 @@ build-backend = "hatchling.build"
 packages = ["src/d3_item_salvager"]
 
 [tool.pytest.ini_options]
-pythonpath = "src"
+pythonpath = ["src", "."]
 addopts = ["-v", "--color=yes"]
 testpaths = ["tests"]
 python_files = "test_*.py"
 
 [tool.mypy]
-plugins = ['pydantic.mypy']
+python_version = "3.12"
+mypy_path = "src"
+plugins = ['pydantic.mypy', 'sqlalchemy.ext.mypy.plugin']
+#strict = true
+
+[tool.pre-commit-update]
+# dry_run = true
+# dry_run_mode = "strict"
+# all_versions = false
+# verbose = true
+# warnings = true
+# preview = false
+# jobs = 10
+# exclude = ["isort"]
+# keep = ["ruff"]
+# bleeding_edge = ["pylint"]
+# tag_prefix = [["black", "custom-tag-schema-v"]]

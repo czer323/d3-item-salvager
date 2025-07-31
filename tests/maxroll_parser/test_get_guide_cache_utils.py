@@ -15,8 +15,10 @@ from d3_item_salvager.maxroll_parser.types import GuideInfo
 
 @pytest.fixture
 def test_cache_path(tmp_path: Path) -> Path:
-    """Fixture to provide a temporary cache path for testing."""
-    return tmp_path / "test_guides_cache.json"
+    """Fixture to provide a temporary cache path for testing in a temp subdir."""
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir(exist_ok=True)
+    return cache_dir / "test_guides_cache.json"
 
 
 @pytest.fixture

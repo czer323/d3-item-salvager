@@ -17,37 +17,27 @@ def insert_item_usages_with_validation(usages: list[dict], session: Session) -> 
     """
     errors = []
     success_count = 0
-
-    def raise_profile_error(profile_name: str) -> None:
-        msg = f"Profile name '{profile_name}' does not exist."
-        raise ValueError(msg)
-
-    def raise_item_error(item_id: str) -> None:
-        msg = f"Item ID {item_id} does not exist."
-        raise ValueError(msg)
-
-    # Build a mapping of profile names to Profile objects
-    profiles = session.exec(select(Profile)).all()
-    profile_map = {p.name: p for p in profiles}
+    profile_map = {p.name: p for p in session.exec(select(Profile)).all()}
 
     for usage in usages:
-        profile_name = usage["profile_name"]
-        item_id = usage["item_id"]
-        slot = usage["slot"]
-        usage_context = usage["usage_context"]
-        profile = profile_map.get(profile_name)
+        profile = profile_map.get(usage["profile_name"])
         if profile is None:
-            raise_profile_error(profile_name)
-        item = session.get(Item, item_id)
+            msg = f"Profile name '{usage['profile_name']}' does not exist."
+            raise ValueError(msg)
+        item = session.get(Item, usage["item_id"])
         if item is None:
-            raise_item_error(item_id)
-        item_usage = ItemUsage(
-            profile=profile,
-            item=item,
-            slot=slot,
-            usage_context=usage_context,
+            msg = f"Item ID {usage['item_id']} does not exist."
+            raise ValueError(msg)
+        assert profile.id is not None, "Profile id cannot be None"
+        assert item.id is not None, "Item id cannot be None"
+        session.add(
+            ItemUsage(
+                profile_id=profile.id,
+                item_id=item.id,
+                slot=usage["slot"],
+                usage_context=usage["usage_context"],
+            )
         )
-        session.add(item_usage)
         success_count += 1
     try:
         session.commit()
@@ -247,8 +237,8 @@ def insert_profiles(profiles: list[dict], build_id: int, session: Session) -> No
     errors = []
     success_count = 0
     for profile_data in profiles:
-        name = profile_data.get("name")
-        class_name = profile_data.get("class_name", "Unknown")
+        name = profile_data.get("name", "Unknown Profile")
+        class_name = profile_data.get("class_name", "Unknown Class")
         profile = Profile(build_id=build_id, name=name, class_name=class_name)
         session.add(profile)
         success_count += 1

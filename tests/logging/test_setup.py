@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-few-public-methods
 """
 Unit tests for logger setup and decorators using pytest and pytest-mock.
 
@@ -68,10 +69,31 @@ def dummy_config_metrics_importerror() -> DummyConfig:
     return DummyConfig(enabled=False, metrics_enabled=True, level="INFO")
 
 
-def test_setup_logger_runs() -> None:
+def test_setup_logger_runs(mocker: MockerFixture) -> None:
     """
     Test that setup_logger runs without error and logger can log a message.
     """
+
+    class DummyLoggingConfig:
+        """Dummy logging config for logger setup test."""
+
+        enabled: bool = False
+        metrics_enabled: bool = False
+        log_file: str = "dummy.log"
+        level: str = "INFO"
+
+    class DummyConfig:
+        """Dummy config container for logger setup test."""
+
+        logging: DummyLoggingConfig
+
+        def __init__(self) -> None:
+            self.logging = DummyLoggingConfig()
+
+    mocker.patch(
+        "d3_item_salvager.logging.setup.get_config",
+        return_value=DummyConfig(),
+    )
     setup_logger()
     logger.info("Logger setup test message.")
 

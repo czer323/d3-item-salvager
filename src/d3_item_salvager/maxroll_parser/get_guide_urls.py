@@ -4,12 +4,11 @@ Provides a class-based interface for guide retrieval and future extension.
 """
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 import requests
 from loguru import logger
-
-from d3_item_salvager.config import get_config
 
 from .get_guide_cache_utils import (
     load_guides_from_cache,
@@ -17,9 +16,24 @@ from .get_guide_cache_utils import (
 )
 from .types import GuideInfo
 
-CONFIG = get_config()
-DEFAULT_MAXROLL_API_URL = CONFIG.maxroll_parser.api_url
-DEFAULT_BEARER_TOKEN = CONFIG.maxroll_parser.bearer_token
+
+@dataclass
+class GuideFetcherConfig:
+    """Configuration for Maxroll guide fetcher.
+
+    Args:
+        api_url: Maxroll API endpoint (must be provided)
+        bearer_token: API bearer token (must be provided)
+        cache_ttl: Cache time-to-live in seconds
+        cache_file: Path to cache file (optional)
+        limit: API fetch limit per request
+    """
+
+    api_url: str
+    bearer_token: str
+    cache_ttl: int = 604800  # seconds
+    cache_file: str | None = None
+    limit: int = 21
 
 
 class MaxrollGuideFetcher:
@@ -28,23 +42,17 @@ class MaxrollGuideFetcher:
     Provides a public method for guide retrieval.
     """
 
-    def __init__(
-        self,
-        api_url: str = DEFAULT_MAXROLL_API_URL,
-        bearer_token: str | None = DEFAULT_BEARER_TOKEN,
-        cache_ttl: int = 604800,  # seconds
-        cache_file: str | None = None,
-        limit: int = 21,
-    ) -> None:
-        self.api_url = api_url
-        self.bearer_token = bearer_token
-        self.cache_ttl = cache_ttl
-        self.limit = limit
+    def __init__(self, config: GuideFetcherConfig) -> None:
+        self.config = config
+        self.api_url = config.api_url
+        self.bearer_token = config.bearer_token
+        self.cache_ttl = config.cache_ttl
+        self.limit = config.limit
         # Default cache file location: <project-root>/cache/maxroll_guides.json
-        if cache_file is None:
+        if config.cache_file is None:
             self.cache_path = Path(Path.cwd(), "cache", "maxroll_guides.json")
         else:
-            self.cache_path = Path(cache_file)
+            self.cache_path = Path(config.cache_file)
         # Load cache on instantiation
         self._cached_guides = load_guides_from_cache(self.cache_path, self.cache_ttl)
 
@@ -52,6 +60,7 @@ class MaxrollGuideFetcher:
         """
         Fetch raw hits from Maxroll API.
         """
+        assert self.api_url is not None, "api_url must not be None"
         headers = {
             "accept": "*/*",
             "authorization": f"Bearer {self.bearer_token}",
@@ -114,7 +123,7 @@ class MaxrollGuideFetcher:
         """
         if self._cached_guides is not None:
             return self._cached_guides
-        if Path(self.api_url).is_file():
+        if self.api_url is not None and Path(self.api_url).is_file():
             # Local file: parse JSON and extract guide links
             with open(self.api_url, encoding="utf-8") as f:
                 data = json.load(f)

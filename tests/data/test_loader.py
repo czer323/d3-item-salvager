@@ -1,89 +1,51 @@
 """Unit tests for loader functions using a temporary SQLite database."""
 
-import os
-import tempfile
 from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import pytest
 from sqlalchemy.engine import Engine
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import Session
 
 from d3_item_salvager.data.loader import (
     insert_item_usages_with_validation,
     insert_items_from_dict,
 )
-from d3_item_salvager.data.models import Build, Item, ItemUsage, Profile
+from d3_item_salvager.data.models import Item, ItemUsage, Profile
 from d3_item_salvager.data.queries import (
     get_all_item_usages,
     get_all_items,
     get_item_usages_with_names,
 )
+from tests.fakes.test_db_utils import insert_sample_data, temp_db_engine
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
 @pytest.fixture(name="db_engine")
-def temp_db() -> Generator[Engine, None, None]:
-    """Create a temporary SQLite database and yield its engine."""
-    db_fd, db_path = tempfile.mkstemp(suffix=".db")
-    engine = create_engine(f"sqlite:///{db_path}", echo=False)
-    SQLModel.metadata.create_all(engine)
-    yield engine
-    engine.dispose()
-    os.close(db_fd)
-    os.remove(db_path)
-
-
-def insert_sample_data(engine: Engine) -> None:
-    """Insert sample builds, profiles, items, and item usages into the database."""
-    with Session(engine) as session:
-        build = Build(title="Sample Build", url="https://example.com/build")
-        session.add(build)
-        session.commit()
-        session.refresh(build)
-
-        profile = Profile(
-            build_id=build.id, name="Sample Profile", class_name="Barbarian"
-        )
-        session.add(profile)
-        session.commit()
-        session.refresh(profile)
-
-        item = Item(
-            id="item_001", name="Sample Sword", type="weapon", quality="legendary"
-        )
-        session.add(item)
-        session.commit()
-
-        usage = ItemUsage(
-            profile_id=profile.id,
-            item_id=item.id,
-            slot="mainhand",
-            usage_context="main",
-        )
-        session.add(usage)
-        session.commit()
+def db_engine_fixture() -> Generator[Engine, None, None]:
+    """Fixture to provide a temporary SQLite database engine for testing."""
+    yield from temp_db_engine()
 
 
 # Test 1: Insert valid items and usages, verify correct DB state and query results
 def test_loader_and_queries(db_engine: Engine) -> None:
     """Test that sample data is inserted and query functions return expected results."""
-    insert_sample_data(db_engine)
     with Session(db_engine) as session:
+        insert_sample_data(session)
         items: Sequence[Item] = get_all_items(session)
         usages: Sequence[ItemUsage] = get_all_item_usages(session)
         usage_with_names: Sequence[tuple[ItemUsage, str]] = get_item_usages_with_names(
             session
         )
         assert len(items) == 1
-        assert items[0].name == "Sample Sword"
+        assert items[0].name == "Test Sword"
         assert len(usages) == 1
         assert usages[0].slot == "mainhand"
         assert len(usage_with_names) == 1
         usage, name = usage_with_names[0]
-        assert name == "Sample Sword"
+        assert name == "Test Sword"
         assert usage.slot == "mainhand"
         assert usage.usage_context == "main"
     db_engine.dispose()

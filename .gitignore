@@ -15,3 +15,5 @@ d3_items.db
 dev.db
 .coverage
 logs/
+precommit_logs
+cache/

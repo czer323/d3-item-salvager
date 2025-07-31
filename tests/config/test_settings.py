@@ -10,6 +10,7 @@ from d3_item_salvager.config.base import MaxrollParserConfig
 # Reset config before each test to ensure fresh singleton
 @pytest.fixture(autouse=True)
 def reset_config_fixture() -> None:
+    """Reset the config singleton before each test."""
     reset_config()
 
 
@@ -18,6 +19,7 @@ def reset_config_fixture() -> None:
 def set_required_env(
     monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
 ) -> None:
+    """Set required environment variable for tests."""
     if request.node.name != "test_config_validation_failure":
         monkeypatch.setenv("MAXROLL_BEARER_TOKEN", "prodtoken")
 
@@ -49,6 +51,6 @@ def test_config_validation_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     reset_config()
     monkeypatch.delenv("MAXROLL_BEARER_TOKEN", raising=False)
     with pytest.raises(ValidationError):
-        MaxrollParserConfig()
+        MaxrollParserConfig()  # type: ignore[call-arg]
     with pytest.raises(RuntimeError, match="Configuration validation failed"):
         get_config()

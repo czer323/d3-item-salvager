@@ -10,7 +10,7 @@ from typing import Any
 from .types import BuildProfileData, BuildProfileItems
 
 
-class BuildProfileParser:
+class BuildProfileParser:  # pylint: disable=too-few-public-methods
     """
     Parses Diablo 3 build profile JSON files and provides methods
     to extract normalized profiles and item usages.
@@ -107,19 +107,20 @@ class BuildProfileParser:
             items = profile_dict.get("items", {})
             for slot, item in items.items():
                 item_id = item.get("id")
-                item_usages.append(
-                    BuildProfileItems(
-                        profile_name=profile_name,
-                        item_id=item_id,
-                        slot=slot,
-                        usage_context="main",
+                if item_id is not None:
+                    item_usages.append(
+                        BuildProfileItems(
+                            profile_name=profile_name,
+                            item_id=item_id,
+                            slot=slot,
+                            usage_context="main",
+                        )
                     )
-                )
             # Kanai's Cube items
             kanai = profile_dict.get("kanai", {})
             for slot in ("weapon", "armor", "jewelry"):
                 kanai_id = kanai.get(slot)
-                if kanai_id:
+                if kanai_id is not None:
                     item_usages.append(
                         BuildProfileItems(
                             profile_name=profile_name,
@@ -135,12 +136,13 @@ class BuildProfileParser:
                     item_id = (
                         raw_item.get("id") if isinstance(raw_item, dict) else raw_item
                     )
-                    item_usages.append(
-                        BuildProfileItems(
-                            profile_name=profile_name,
-                            item_id=item_id,
-                            slot=slot,
-                            usage_context="follower",
+                    if item_id is not None:
+                        item_usages.append(
+                            BuildProfileItems(
+                                profile_name=profile_name,
+                                item_id=item_id,
+                                slot=slot,
+                                usage_context="follower",
+                            )
                         )
-                    )
         return item_usages

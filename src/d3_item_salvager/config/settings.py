@@ -32,7 +32,7 @@ class _ConfigSingleton:
             try:
                 cls._instance = AppConfig(
                     database=DatabaseConfig(),
-                    maxroll_parser=MaxrollParserConfig(),
+                    maxroll_parser=MaxrollParserConfig(),  # type: ignore[reportCallIssue]
                     logging=LoggingConfig(),
                 )
             except ValidationError as e:

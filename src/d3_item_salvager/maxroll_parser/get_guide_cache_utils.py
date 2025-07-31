@@ -44,7 +44,9 @@ def save_guides_to_cache(guides: list[GuideInfo], cache_path: Path) -> None:
     try:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         with cache_path.open("w", encoding="utf-8") as f:
-            json.dump({"guides": [g.__dict__ for g in guides]}, f, indent=2)
+            json_str = json.dumps({"guides": [g.__dict__ for g in guides]}, indent=2)
+            f.write(json_str)
+            f.write("\n")
         logger.info("Saved %d guides to file cache", len(guides))
     except (OSError, TypeError, ValueError) as e:
         logger.warning("Failed to save cache file: %s", e)
