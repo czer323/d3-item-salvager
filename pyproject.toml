@@ -31,6 +31,7 @@ dev = [
     "pylint>=3.3.7",
     "pre-commit-update>=0.8.0",
     "mypy>=1.17.0",
+    "ruff>=0.12.7",
 ]
 
 [build-system]

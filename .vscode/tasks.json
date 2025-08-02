@@ -3,8 +3,20 @@
     "tasks": [
         {
             "type": "shell",
-            "label": "Run pytest with hatch",
-            "command": "hatch run pytest",
+            "label": "Run pytest with uv",
+            "command": "uv run --frozen pytest",
+            "group": "test"
+        },
+        {
+            "type": "shell",
+            "label": "Run pre-commit check",
+            "command": "uv run pre-commit run --all-files",
+            "group": "test"
+        },
+        {
+            "label": "Run GitHub Actions workflow locally with act",
+            "type": "shell",
+            "command": "gh act -W .github/workflows/ci_v2.yml --rm",
             "group": "test"
         }
     ]

@@ -1,101 +1,115 @@
 repos:
-  - repo: https://gitlab.com/vojko.pribudic.foss/pre-commit-update
-    rev: v0.8.0 # Insert the latest tag here
-    hooks:
-      - id: pre-commit-update
-        # Example args (use your own configuration)
-        #args: [--dry-run, --exclude, black, --keep, isort, --tag-prefix, black, custom-version-v]
+    - repo: https://gitlab.com/vojko.pribudic.foss/pre-commit-update
+      rev: v0.8.0 # Insert the latest tag here
+      hooks:
+          - id: pre-commit-update
+            # Example args (use your own configuration)
+            #args: [--dry-run, --exclude, black, --keep, isort, --tag-prefix, black, custom-version-v]
 
-  - repo: local
-    hooks:
-      - id: clean-precommit-logs
-        name: clean precommit logs
-        entry: powershell.exe -Command "Write-Host 'Deleting log files:'; $files = Get-ChildItem precommit_logs; if ($files) { $files | ForEach-Object { Write-Host $_.Name; Remove-Item $_.FullName -Force } } else { Write-Host 'No log files found.' }"
-        language: system
-        always_run: true
-        stages: [pre-commit]
-        files: ^precommit_logs/.*$
-      # - id: mypy-local
-      #   name: mypy-local
-      #   entry: uv run mypy
-      #   args:
-      #     [--exclude, .venv/Lib/site-packages/d3_item_salvager-0.1.0.dist-info]
-      #   language: system
-      #   types: [python]
-      #   log_file: precommit_logs/mypy-local.log
-      - id: pyright
-        name: pyright
-        entry: uv run pyright
-        language: system
-        types: [python]
-        log_file: precommit_logs/pyright.log
-      - id: pylint
-        name: pylint
-        entry: uv run pylint
-        language: system
-        types: [python]
-        require_serial: true
-        log_file: precommit_logs/pylint.log
-      - id: pytest
-        name: pytest
-        entry: uv run pytest tests
-        language: system
-        pass_filenames: false
-        types: [python]
-        log_file: precommit_logs/pytest.log
+    - repo: local
+      hooks:
+          - id: clean-precommit-logs
+            name: clean precommit logs
+            entry:
+                powershell.exe -Command "Write-Host 'Deleting log files:'; $files
+                = Get-ChildItem precommit_logs; if ($files) { $files | ForEach-Object
+                { Write-Host $_.Name; Remove-Item $_.FullName -Force } } else {
+                Write-Host 'No log files found.' }"
+            language: system
+            always_run: true
+            stages: [pre-commit]
+            files: ^precommit_logs/.*$
+            # - id: mypy-local
+            #   name: mypy-local
+            #   entry: uv run mypy
+            #   args:
+            #     [--exclude, .venv/Lib/site-packages/d3_item_salvager-0.1.0.dist-info]
+            #   language: system
+            #   types: [python]
+            #   log_file: precommit_logs/mypy-local.log
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    # Ruff version.
-    rev: v0.12.7
-    hooks:
-      # Run the linter.
-      - id: ruff-check
-        args: [--fix]
-        log_file: precommit_logs/ruff-check.log
+    - repo: https://github.com/astral-sh/uv-pre-commit
+      rev: 0.8.4
+      hooks:
+          - id: uv-lock
+          - id: uv-export
 
-      # Run the formatter.
-      - id: ruff-format
-        log_file: precommit_logs/ruff-format.log
+    - repo: https://github.com/astral-sh/ruff-pre-commit
+      # Ruff version.
+      rev: v0.12.7
+      hooks:
+          # Run the linter.
+          - id: ruff-check
+            args: [--fix]
+            log_file: precommit_logs/ruff-check.log
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.17.0
-    hooks:
-      - id: mypy
-        additional_dependencies:
-          - pydantic
-          - types-requests
-          - sqlalchemy
-          - sqlmodel
-        log_file: precommit_logs/mypy.log
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
-    hooks:
-      - id: check-added-large-files
-      - id: check-ast
-        types: [python]
-      - id: check-merge-conflict
-      - id: detect-private-key
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
-      - id: check-yaml
-        types: [yaml]
-      - id: check-json
-        types: [json]
-      - id: check-toml
-        types: [toml]
-      - id: check-case-conflict
-      - id: check-illegal-windows-names
-      - id: check-symlinks
-      - id: check-xml
-        types: [xml]
-      - id: debug-statements
-        types: [python]
-      - id: destroyed-symlinks
-      - id: name-tests-test
-        args: [--pytest-test-first]
-        types: [python]
-      - id: no-commit-to-branch
-        args: [--branch, main, --branch, staging]
-      - id: pretty-format-json
-        args: [--autofix, --indent, "4", --no-sort-keys]
-        types: [json]
+            # Run the formatter.
+          - id: ruff-format
+            log_file: precommit_logs/ruff-format.log
+
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v5.0.0
+      hooks:
+          - id: check-added-large-files
+          - id: check-ast
+            types: [python]
+          - id: check-merge-conflict
+          - id: detect-private-key
+          - id: trailing-whitespace
+          - id: end-of-file-fixer
+          - id: check-yaml
+            types: [yaml]
+          - id: check-json
+            types: [json]
+          - id: check-toml
+            types: [toml]
+          - id: check-case-conflict
+          - id: check-illegal-windows-names
+          - id: check-symlinks
+          - id: check-xml
+            types: [xml]
+          - id: debug-statements
+            types: [python]
+          - id: destroyed-symlinks
+          - id: name-tests-test
+            args: [--pytest-test-first]
+            types: [python]
+          - id: no-commit-to-branch
+            args: [--branch, main, --branch, staging]
+          - id: pretty-format-json
+            args: [--autofix, --indent, "4", --no-sort-keys]
+            types: [json]
+
+    - repo: https://github.com/pre-commit/mirrors-mypy
+      rev: v1.17.1
+      hooks:
+          - id: mypy
+            additional_dependencies:
+                - pydantic
+                - types-requests
+                - sqlalchemy
+                - sqlmodel
+            log_file: precommit_logs/mypy.log
+
+    - repo: local
+      hooks:
+          - id: pyright
+            name: pyright
+            entry: uv run pyright
+            language: system
+            types: [python]
+            log_file: precommit_logs/pyright.log
+          - id: pylint
+            name: pylint
+            entry: uv run pylint
+            language: system
+            types: [python]
+            require_serial: true
+            log_file: precommit_logs/pylint.log
+          - id: pytest
+            name: pytest
+            entry: uv run pytest tests
+            language: system
+            pass_filenames: false
+            types: [python]
+            log_file: precommit_logs/pytest.log
