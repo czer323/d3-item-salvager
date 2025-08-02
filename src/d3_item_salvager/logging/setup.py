@@ -9,7 +9,7 @@ from typing import cast
 
 from loguru import logger
 
-from d3_item_salvager.config.settings import get_config
+from d3_item_salvager.config.settings import AppConfig, get_config
 
 
 def log_timing[T](func: Callable[..., T]) -> Callable[..., T]:
@@ -44,24 +44,26 @@ def log_contextual[T](context: dict) -> Callable[[Callable[..., T]], Callable[..
     return decorator
 
 
-def setup_logger() -> None:
+def setup_logger(app_config: AppConfig | None = None) -> None:
     """Configure Loguru logger for the project using config settings."""
-    config = get_config().logging
+    if app_config is None:
+        app_config = get_config()
+    logging_config = app_config.logging
     logger.remove()
     logger.add(
         sys.stderr,
         format="<green>{time}</green> | <cyan>{name}</cyan>:<yellow>{function}</yellow>:<magenta>{line}</magenta> | <level>{message}</level>",  # pylint: disable=line-too-long
         colorize=True,
     )
-    if config.enabled:
+    if logging_config.enabled:
         logger.add(
-            config.log_file,
-            level=config.level,
+            logging_config.log_file,
+            level=logging_config.level,
             rotation="1 week",
             retention="10 days",
             compression="zip",
         )
-    if config.metrics_enabled:
+    if logging_config.metrics_enabled:
         try:
             from prometheus_client import (  # pylint: disable=import-outside-toplevel
                 start_http_server,

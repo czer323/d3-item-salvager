@@ -102,24 +102,24 @@ repos:
     hooks:
       - id: pyright
         name: pyright
-        entry: pyright
+        entry: uv run pyright
         language: system
         types: [python]
-        #log_file: precommit_logs/pyright.log
+        log_file: precommit_logs/pyright.log
       - id: pylint
         name: pylint
-        entry: pylint
+        entry: uv run pylint
         language: system
         types: [python]
         require_serial: true
-        #log_file: precommit_logs/pylint.log
+        log_file: precommit_logs/pylint.log
       - id: pytest
         name: pytest
-        entry: pytest tests
+        entry: uv run pytest tests
         language: system
         pass_filenames: false
         types: [python]
-        #log_file: precommit_logs/pytest.log
+        log_file: precommit_logs/pytest.log
 
 ci:
   autofix_prs: true
