@@ -88,24 +88,34 @@ repos:
           - sqlmodel
         #log_file: precommit_logs/mypy.log
 
+  # - repo: https://github.com/RobertCraigie/pyright-python
+  #   rev: v1.1.403
+  #   hooks:
+  #     - id: pyright
+  #       additional_dependencies:
+  #         - pydantic
+  #         - types-requests
+  #         - sqlalchemy
+  #         - sqlmodel
+
   - repo: local
     hooks:
       - id: pyright
         name: pyright
-        entry: uv run pyright
+        entry: pyright
         language: system
         types: [python]
         #log_file: precommit_logs/pyright.log
       - id: pylint
         name: pylint
-        entry: uv run pylint
+        entry: pylint
         language: system
         types: [python]
         require_serial: true
         #log_file: precommit_logs/pylint.log
       - id: pytest
         name: pytest
-        entry: uv run pytest tests
+        entry: pytest tests
         language: system
         pass_filenames: false
         types: [python]
@@ -116,4 +126,4 @@ ci:
   autofix_commit_msg: "[pre-commit.ci] Fixing issues with pre-commit"
   autoupdate_schedule: weekly
   autoupdate_commit_msg: "[pre-commit.ci] pre-commit automatically updated revs."
-  skip: [] # Optionally list ids of hooks to skip on CI
+  skip: [pylint, pyright] # Optionally list ids of hooks to skip on CI
