@@ -6,6 +6,12 @@ from pathlib import Path
 
 import pytest
 
+from d3_item_salvager.config.base import (
+    DatabaseConfig,
+    LoggingConfig,
+    MaxrollParserConfig,
+)
+from d3_item_salvager.config.settings import AppConfig
 from d3_item_salvager.maxroll_parser.get_guide_cache_utils import (
     load_guides_from_cache,
     save_guides_to_cache,
@@ -30,13 +36,27 @@ def test_sample_guides() -> list[GuideInfo]:
     ]
 
 
+def make_test_config(cache_path: Path, cache_ttl: int = 9999) -> AppConfig:
+    """Create a temporary AppConfig for testing."""
+    return AppConfig(
+        database=DatabaseConfig(),
+        maxroll_parser=MaxrollParserConfig(
+            bearer_token="test-token",
+            cache_file=cache_path,
+            cache_ttl=cache_ttl,
+        ),
+        logging=LoggingConfig(),
+    )
+
+
 def test_save_and_load_guides_cache(
     test_cache_path: Path,
     test_sample_guides: list[GuideInfo],
 ) -> None:
     """Test saving and loading guides from cache."""
-    save_guides_to_cache(test_sample_guides, test_cache_path)
-    loaded = load_guides_from_cache(test_cache_path, cache_ttl=9999)
+    config = make_test_config(test_cache_path, cache_ttl=9999)
+    save_guides_to_cache(test_sample_guides, config)
+    loaded = load_guides_from_cache(config)
     assert loaded is not None
     assert len(loaded) == 2
     assert loaded[0].name == "Test Guide 1"
@@ -48,15 +68,17 @@ def test_cache_expiry(
     test_sample_guides: list[GuideInfo],
 ) -> None:
     """Test that cache expires after TTL."""
-    save_guides_to_cache(test_sample_guides, test_cache_path)
-    loaded = load_guides_from_cache(test_cache_path, cache_ttl=-1)
+    config = make_test_config(test_cache_path, cache_ttl=-1)
+    save_guides_to_cache(test_sample_guides, config)
+    loaded = load_guides_from_cache(config)
     assert loaded is None
 
 
 def test_load_guides_cache_missing_file() -> None:
     """Test loading from a non-existent cache file."""
     missing_path = Path("not_a_real_cache_file.json")
-    assert load_guides_from_cache(missing_path, cache_ttl=9999) is None
+    config = make_test_config(missing_path, cache_ttl=9999)
+    assert load_guides_from_cache(config) is None
 
 
 def test_load_guides_cache_invalid_json(
@@ -64,7 +86,8 @@ def test_load_guides_cache_invalid_json(
 ) -> None:
     """Test loading from a cache file with invalid JSON."""
     test_cache_path.write_text("not valid json", encoding="utf-8")
-    assert load_guides_from_cache(test_cache_path, cache_ttl=9999) is None
+    config = make_test_config(test_cache_path, cache_ttl=9999)
+    assert load_guides_from_cache(config) is None
 
 
 def test_load_guides_cache_missing_keys(
@@ -73,5 +96,6 @@ def test_load_guides_cache_missing_keys(
     """Test loading from a cache file with missing keys."""
     bad_data = {"guides": [{"foo": "bar"}, {"name": "OnlyName"}]}
     test_cache_path.write_text(json.dumps(bad_data), encoding="utf-8")
-    loaded = load_guides_from_cache(test_cache_path, cache_ttl=9999)
+    config = make_test_config(test_cache_path, cache_ttl=9999)
+    loaded = load_guides_from_cache(config)
     assert loaded == []

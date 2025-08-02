@@ -1,5 +1,7 @@
 """Base config dataclasses and shared types."""
 
+from pathlib import Path
+
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -38,3 +40,6 @@ class MaxrollParserConfig(BaseSettings):
     build_paths: str = "https://assets-ng.maxroll.gg/d3planner/profile_object.json"
     guide_paths: str = "https://meilisearch-proxy.maxroll.gg/indexes/wp_posts_1/search"
     api_url: str = "https://meilisearch-proxy.maxroll.gg/indexes/wp_posts_1/search"
+    cache_ttl: int = 604800  # seconds
+    cache_file: Path = Path("cache/maxroll_guides.json")
+    limit: int = 21

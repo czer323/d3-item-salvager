@@ -2,17 +2,20 @@
 
 import json
 import time
-from pathlib import Path
 
 from loguru import logger
+
+from d3_item_salvager.config.settings import AppConfig
 
 from .types import GuideInfo
 
 
-def load_guides_from_cache(cache_path: Path, cache_ttl: int) -> list[GuideInfo] | None:
+def load_guides_from_cache(config: AppConfig) -> list[GuideInfo] | None:
     """
-    Load guides from cache file if fresh.
+    Load guides from cache file if fresh, using cache TTL and cache path from AppConfig.
     """
+    cache_path = config.maxroll_parser.cache_file
+    cache_ttl = config.maxroll_parser.cache_ttl
     now = time.time()
     if cache_path.exists():
         try:
@@ -37,10 +40,17 @@ def load_guides_from_cache(cache_path: Path, cache_ttl: int) -> list[GuideInfo] 
     return None
 
 
-def save_guides_to_cache(guides: list[GuideInfo], cache_path: Path) -> None:
+def save_guides_to_cache(
+    guides: list[GuideInfo],
+    config: AppConfig,
+) -> None:
     """
-    Save guides to cache file.
+    Save guides to cache file using config.maxroll_parser.cache_file (Path).
     """
+    cache_path = config.maxroll_parser.cache_file
+    if cache_path is None:
+        logger.warning("No cache path available in config.")
+        return
     try:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         with cache_path.open("w", encoding="utf-8") as f:
