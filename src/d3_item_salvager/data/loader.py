@@ -1,13 +1,17 @@
 """Loader functions for inserting sample data into the Diablo 3 Item Salvager database."""
 
+from collections.abc import Sequence
+
 from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from d3_item_salvager.data.db import get_session
 from d3_item_salvager.data.models import Build, Item, ItemUsage, Profile
 
 
-def insert_item_usages_with_validation(usages: list[dict], session: Session) -> None:
+def insert_item_usages_with_validation(
+    usages: Sequence[ItemUsage], session: Session
+) -> None:
     """
     Insert item usages into the database, validating that profile_name and item_id exist.
 
@@ -15,29 +19,22 @@ def insert_item_usages_with_validation(usages: list[dict], session: Session) -> 
         usages: List of dicts with keys: profile_name, item_id, slot, usage_context.
         session: Active database session.
     """
-    errors = []
+    errors: list[tuple[dict[str, str], str]] = []
     success_count = 0
-    profile_map = {p.name: p for p in session.exec(select(Profile)).all()}
-
     for usage in usages:
-        profile = profile_map.get(usage["profile_name"])
+        # Validate that profile_id and item_id exist in the database
+        if usage.profile_id is None:
+            msg = "Profile id cannot be None."
+            raise ValueError(msg)
+        profile = session.get(Profile, usage.profile_id)
         if profile is None:
-            msg = f"Profile name '{usage['profile_name']}' does not exist."
+            msg = f"Profile id '{usage.profile_id}' does not exist."
             raise ValueError(msg)
-        item = session.get(Item, usage["item_id"])
+        item = session.get(Item, usage.item_id)
         if item is None:
-            msg = f"Item ID {usage['item_id']} does not exist."
+            msg = f"Item ID {usage.item_id} does not exist."
             raise ValueError(msg)
-        assert profile.id is not None, "Profile id cannot be None"
-        assert item.id is not None, "Item id cannot be None"
-        session.add(
-            ItemUsage(
-                profile_id=profile.id,
-                item_id=item.id,
-                slot=usage["slot"],
-                usage_context=usage["usage_context"],
-            )
-        )
+        session.add(usage)
         success_count += 1
     try:
         session.commit()
@@ -225,7 +222,9 @@ def insert_build(
     print(f"Inserted build: {build_title} (ID: {build.id})")
 
 
-def insert_profiles(profiles: list[dict], build_id: int, session: Session) -> None:
+def insert_profiles(
+    profiles: Sequence[Profile], build_id: int, session: Session
+) -> None:
     """
     Insert Profile records for a given build into the database.
 
@@ -236,10 +235,9 @@ def insert_profiles(profiles: list[dict], build_id: int, session: Session) -> No
     """
     errors = []
     success_count = 0
-    for profile_data in profiles:
-        name = profile_data.get("name", "Unknown Profile")
-        class_name = profile_data.get("class_name", "Unknown Class")
-        profile = Profile(build_id=build_id, name=name, class_name=class_name)
+    for profile in profiles:
+        # Ensure build_id is set correctly
+        profile.build_id = build_id
         session.add(profile)
         success_count += 1
     try:

@@ -1,10 +1,8 @@
 """Unit tests for config loading and validation."""
 
 import pytest
-from pydantic import ValidationError
 
 from d3_item_salvager.config import get_config, reset_config
-from d3_item_salvager.config.base import MaxrollParserConfig
 
 
 # Reset config before each test to ensure fresh singleton
@@ -50,7 +48,6 @@ def test_config_validation_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     """Config validation fails if a required field is missing."""
     reset_config()
     monkeypatch.delenv("MAXROLL_BEARER_TOKEN", raising=False)
-    with pytest.raises(ValidationError):
-        MaxrollParserConfig()  # type: ignore[call-arg]
+    # Should not raise ValidationError, but should raise RuntimeError from get_config
     with pytest.raises(RuntimeError, match="Configuration validation failed"):
         get_config()

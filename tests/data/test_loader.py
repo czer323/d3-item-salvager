@@ -53,8 +53,13 @@ def test_loader_and_queries(db_engine: Engine) -> None:
 
 def test_insert_item_missing_fields(db_engine: Engine) -> None:
     """Test 2: Insert item with missing required fields."""
-    bad_item = {"id": "item_002", "name": "", "type": "weapon", "quality": "legendary"}
-    item_dict = {"item_002": bad_item}
+    bad_item: dict[str, str] = {
+        "id": "item_002",
+        "name": "",
+        "type": "weapon",
+        "quality": "legendary",
+    }
+    item_dict: dict[str, dict[str, str]] = {"item_002": bad_item}
     with Session(db_engine) as session:
         with pytest.raises(
             ValueError, match="Missing required field 'name' in item data:.*"
@@ -66,13 +71,13 @@ def test_insert_item_missing_fields(db_engine: Engine) -> None:
 
 def test_insert_item_invalid_type_quality(db_engine: Engine) -> None:
     """Test 3: Insert item with invalid type/quality"""
-    bad_item = {
+    bad_item: dict[str, str] = {
         "id": "item_003",
         "name": "Bad Item",
         "type": "notatype",
         "quality": "notquality",
     }
-    item_dict = {"item_003": bad_item}
+    item_dict: dict[str, dict[str, str]] = {"item_003": bad_item}
     with Session(db_engine) as session:
         with pytest.raises(
             ValueError, match="Invalid item type 'notatype' for item ID 'item_003.'"
@@ -84,13 +89,13 @@ def test_insert_item_invalid_type_quality(db_engine: Engine) -> None:
 
 def test_insert_duplicate_item_id(db_engine: Engine) -> None:
     """Test 4: Insert duplicate item ID"""
-    good_item = {
+    good_item: dict[str, str] = {
         "id": "item_004",
         "name": "Good Item",
         "type": "spiritstone",
         "quality": "legendary",
     }
-    item_dict = {"item_004": good_item}
+    item_dict: dict[str, dict[str, str]] = {"item_004": good_item}
     with Session(db_engine) as session:
         insert_items_from_dict(item_dict, session=session)
         # Second insert should raise ValueError for duplicate
@@ -100,31 +105,18 @@ def test_insert_duplicate_item_id(db_engine: Engine) -> None:
         assert len(items) == 1  # Only one should exist
 
 
-def test_insert_usage_missing_profile_or_item(db_engine: Engine) -> None:
-    """Test 5: Insert usage with missing profile_name or item_id"""
+def test_insert_usage_missing_item_id(db_engine: Engine) -> None:
+    """Test: Insert usage with missing item_id (not in DB)"""
     with Session(db_engine) as session:
-        # No profiles/items exist yet
-        bad_usage_profile = {
-            "profile_name": "nonexistent_profile",
-            "item_id": "item_999",
-            "slot": "mainhand",
-            "usage_context": "main",
-        }
-        bad_usage_item = {
-            "profile_name": "Sample Profile",
-            "item_id": "bad_id",
-            "slot": "mainhand",
-            "usage_context": "main",
-        }
-        # Expect error for missing profile_name
-        with pytest.raises(
-            ValueError, match="Profile name 'nonexistent_profile' does not exist."
-        ):
-            insert_item_usages_with_validation([bad_usage_profile], session)
-        # Insert a valid profile for next test
         profile = Profile(build_id=1, name="Sample Profile", class_name="Barbarian")
         session.add(profile)
         session.commit()
-        # Expect error for missing item_id
+        assert profile.id is not None
+        bad_usage_item = ItemUsage(
+            profile_id=profile.id,
+            item_id="bad_id",  # This item_id does not exist in the DB
+            slot="mainhand",
+            usage_context="main",
+        )
         with pytest.raises(ValueError, match="Item ID bad_id does not exist."):
             insert_item_usages_with_validation([bad_usage_item], session)

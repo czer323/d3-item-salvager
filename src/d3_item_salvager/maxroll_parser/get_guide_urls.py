@@ -5,6 +5,7 @@ Provides a class-based interface for guide retrieval and future extension.
 
 import json
 from pathlib import Path
+from typing import Any
 
 import requests
 from loguru import logger
@@ -29,7 +30,7 @@ class MaxrollGuideFetcher:
         # Load cache on instantiation
         self._cached_guides = load_guides_from_cache(self.app_config)
 
-    def _fetch_hits_from_api(self) -> list[dict]:
+    def _fetch_hits_from_api(self) -> list[dict[str, Any]]:
         """
         Fetch raw hits from Maxroll API.
         """
@@ -43,16 +44,21 @@ class MaxrollGuideFetcher:
             "content-type": "application/json",
         }
         offset = 0
-        all_hits: list[dict] = []
+        all_hits: list[dict[str, Any]] = []
         try:
             while True:
-                body = {"q": "", "facets": [], "limit": limit, "offset": offset}
+                body: dict[str, Any] = {
+                    "q": "",
+                    "facets": [],
+                    "limit": limit,
+                    "offset": offset,
+                }
                 resp = requests.post(
                     api_url, headers=headers, data=json.dumps(body), timeout=10
                 )
                 resp.raise_for_status()
                 data = resp.json()
-                hits = data.get("hits", [])
+                hits: list[dict[str, Any]] = data.get("hits", [])
                 if not hits:
                     break
                 all_hits.extend(hits)
@@ -64,12 +70,14 @@ class MaxrollGuideFetcher:
             return []
         return all_hits
 
-    def _extract_guide_links_from_hits(self, hits: list[dict]) -> list[GuideInfo]:
+    def _extract_guide_links_from_hits(
+        self, hits: list[dict[str, Any]]
+    ) -> list[GuideInfo]:
         """
         Extract guide links from hits.
         """
         all_guides: list[GuideInfo] = []
-        seen_urls = set()
+        seen_urls: set[str] = set()
         for hit in hits:
             url = hit.get("permalink", "")
             if url.startswith("https://maxroll.gg/d3/guides/") and url not in seen_urls:

@@ -17,7 +17,7 @@ def load_guides_from_cache(config: AppConfig) -> list[GuideInfo] | None:
     cache_path = config.maxroll_parser.cache_file
     cache_ttl = config.maxroll_parser.cache_ttl
     now = time.time()
-    if cache_path.exists():
+    if cache_path is not None and cache_path.exists():
         try:
             cache_stat = cache_path.stat()
             cache_age = now - cache_stat.st_mtime
@@ -48,15 +48,17 @@ def save_guides_to_cache(
     Save guides to cache file using config.maxroll_parser.cache_file (Path).
     """
     cache_path = config.maxroll_parser.cache_file
-    if cache_path is None:
-        logger.warning("No cache path available in config.")
-        return
-    try:
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        with cache_path.open("w", encoding="utf-8") as f:
-            json_str = json.dumps({"guides": [g.__dict__ for g in guides]}, indent=2)
-            f.write(json_str)
-            f.write("\n")
-        logger.info("Saved %d guides to file cache", len(guides))
-    except (OSError, TypeError, ValueError) as e:
-        logger.warning("Failed to save cache file: %s", e)
+    if cache_path is not None:
+        try:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            with cache_path.open("w", encoding="utf-8") as f:
+                json_str = json.dumps(
+                    {"guides": [g.__dict__ for g in guides]}, indent=2
+                )
+                f.write(json_str)
+                f.write("\n")
+            logger.info("Saved %d guides to file cache", len(guides))
+        except (OSError, TypeError, ValueError) as e:
+            logger.warning("Failed to save cache file: %s", e)
+    else:
+        logger.warning("Cache path is None, cannot save guides to cache.")

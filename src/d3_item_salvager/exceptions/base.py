@@ -1,5 +1,7 @@
 """Base exception class for all domain errors in the d3_item_salvager application."""
 
+from typing import Any
+
 
 class BaseError(Exception):
     """Base exception for all domain errors.
@@ -20,7 +22,9 @@ class BaseError(Exception):
         ... )
     """
 
-    def __init__(self, message: str, code: int, context: dict | None = None) -> None:
+    def __init__(
+        self, message: str, code: int, context: dict[str, Any] | None = None
+    ) -> None:
         """Initialize a BaseError.
 
         Args:
@@ -31,7 +35,7 @@ class BaseError(Exception):
         super().__init__(message)
         self.message = message
         self.code = code
-        self.context = context or {}
+        self.context: dict[str, Any] = context or {}
 
     def __str__(self) -> str:
         """Return a string representation of the error.

@@ -37,7 +37,7 @@ def guide_fetcher_config_fixture(tmp_path: Path) -> AppConfig:
     )
 
 
-def sample_meilisearch_response() -> dict:
+def sample_meilisearch_response() -> dict[str, list[dict[str, str]]]:
     """Simulate a sample response from Meilisearch for testing."""
     return {
         "hits": [
@@ -86,7 +86,7 @@ def test__extract_guide_links_from_hits_basic(
     guide_fetcher_config: AppConfig,
 ) -> None:
     """Test extracting guide links from basic hits list."""
-    hits = [
+    hits: list[dict[str, str]] = [
         {"permalink": "https://maxroll.gg/d3/guides/test-build-1"},
         {"permalink": "https://maxroll.gg/d3/guides/test-build-2"},
         {"permalink": "https://maxroll.gg/d3/news/ignore-this"},
@@ -113,7 +113,10 @@ def test__extract_guide_links_from_hits_missing_permalink(
     guide_fetcher_config: AppConfig,
 ) -> None:
     """Test extracting guide links when some hits are missing permalink."""
-    hits = [{}, {"permalink": "https://maxroll.gg/d3/guides/valid-build"}]
+    hits: list[dict[str, str]] = [
+        {},
+        {"permalink": "https://maxroll.gg/d3/guides/valid-build"},
+    ]
     fetcher = MaxrollGuideFetcher(guide_fetcher_config)
     guides = fetcher._extract_guide_links_from_hits(hits)
     assert len(guides) == 1
@@ -124,7 +127,7 @@ def test_fetch_guides_local_file(
     tmp_path: Path, guide_fetcher_config: AppConfig
 ) -> None:
     """Test fetching guides from a local file with valid hits."""
-    local_json = {
+    local_json: dict[str, list[dict[str, str]]] = {
         "hits": [
             {"permalink": "https://maxroll.gg/d3/guides/local-build-1"},
             {"permalink": "https://maxroll.gg/d3/guides/local-build-2"},
@@ -157,7 +160,7 @@ def test_fetch_guides_local_file_no_hits(
     tmp_path: Path, guide_fetcher_config: AppConfig
 ) -> None:
     """Test fetching guides from a local file with no hits."""
-    local_json: dict[str, list] = {"hits": []}
+    local_json: dict[str, list[dict[str, str]]] = {"hits": []}
     local_path = tmp_path / "empty_guides.json"
     with local_path.open("w", encoding="utf-8") as f:
         json.dump(local_json, f)
@@ -180,7 +183,7 @@ def test_fetch_guides_local_file_missing_hits(
     tmp_path: Path, guide_fetcher_config: AppConfig
 ) -> None:
     """Test fetching guides from a local file missing 'hits' key."""
-    local_json: dict[str, list] = {"not_hits": []}
+    local_json: dict[str, list[dict[str, str]]] = {"not_hits": []}
     local_path = tmp_path / "missing_hits.json"
     with local_path.open("w", encoding="utf-8") as f:
         json.dump(local_json, f)

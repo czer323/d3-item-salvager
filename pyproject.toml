@@ -51,7 +51,7 @@ python_files = "test_*.py"
 python_version = "3.12"
 mypy_path = "src"
 plugins = ['pydantic.mypy', 'sqlalchemy.ext.mypy.plugin']
-#strict = true
+strict = true
 
 [tool.pre-commit-update]
 # dry_run = true

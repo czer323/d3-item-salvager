@@ -35,7 +35,7 @@ class MaxrollParserConfig(BaseSettings):
 
     model_config = {"env_prefix": "MAXROLL_"}
 
-    bearer_token: str = Field(..., description="Bearer token for Maxroll API")
+    bearer_token: str | None = Field(None, description="Bearer token for Maxroll API")
     data_paths: str = "https://assets-ng.maxroll.gg/d3planner/data.json"
     build_paths: str = "https://assets-ng.maxroll.gg/d3planner/profile_object.json"
     guide_paths: str = "https://meilisearch-proxy.maxroll.gg/indexes/wp_posts_1/search"
