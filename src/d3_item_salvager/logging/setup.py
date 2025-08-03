@@ -5,7 +5,7 @@ import sys
 import time
 from collections.abc import Callable
 from functools import wraps
-from typing import cast
+from typing import Any, cast
 
 from loguru import logger
 
@@ -26,7 +26,9 @@ def log_timing[T](func: Callable[..., T]) -> Callable[..., T]:
     return cast("Callable[..., T]", wrapper)
 
 
-def log_contextual[T](context: dict) -> Callable[[Callable[..., T]], Callable[..., T]]:
+def log_contextual[T](
+    context: dict[str, Any],
+) -> Callable[[Callable[..., T]], Callable[..., T]]:
     """Decorator to bind contextual information to log records."""
 
     def decorator(func: Callable[..., T]) -> Callable[..., T]:

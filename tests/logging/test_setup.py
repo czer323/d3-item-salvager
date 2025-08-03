@@ -11,6 +11,7 @@ import builtins
 import sys
 import types
 from pathlib import Path
+from typing import Any
 
 import pytest
 from loguru import logger
@@ -189,8 +190,8 @@ def test_setup_logger_metrics_importerror(
 
     def fake_import(
         name: str,
-        globals_: dict | None = None,
-        locals_: dict | None = None,
+        globals_: dict[str, Any] | None = None,
+        locals_: dict[str, object] | None = None,
         fromlist: tuple[str, ...] | list[str] | None = (),
         level: int = 0,
     ) -> object:

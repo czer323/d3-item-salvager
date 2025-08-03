@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from d3_item_salvager.maxroll_parser import extract_build
+from d3_item_salvager.maxroll_parser.types import BuildProfileItems
 
 
 def test_load_build_profile_success() -> None:
@@ -61,6 +62,6 @@ def test_extract_profiles_and_items_usage_output() -> None:
     assert isinstance(usages, list)
     assert usages, "Should return at least one item usage record"
     for usage in usages:
-        assert isinstance(usage, extract_build.BuildProfileItems)
+        assert isinstance(usage, BuildProfileItems)
         for field in ("profile_name", "item_id", "slot", "usage_context"):
             assert hasattr(usage, field)

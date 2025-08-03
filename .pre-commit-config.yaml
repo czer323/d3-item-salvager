@@ -86,6 +86,8 @@ repos:
           - types-requests
           - sqlalchemy
           - sqlmodel
+          - pydantic-settings
+          - pytest
         #log_file: precommit_logs/mypy.log
 
   # - repo: https://github.com/RobertCraigie/pyright-python
@@ -108,10 +110,11 @@ repos:
         log_file: precommit_logs/pyright.log
       - id: pylint
         name: pylint
-        entry: uv run pylint
+        entry: uv run pylint src/ tests/
         language: system
         types: [python]
         require_serial: true
+        pass_filenames: false
         log_file: precommit_logs/pylint.log
       - id: pytest
         name: pytest
@@ -126,4 +129,4 @@ ci:
   autofix_commit_msg: "[pre-commit.ci] Fixing issues with pre-commit"
   autoupdate_schedule: weekly
   autoupdate_commit_msg: "[pre-commit.ci] pre-commit automatically updated revs."
-  skip: [pylint, pyright, pytest] # Optionally list ids of hooks to skip on CI
+  skip: [pylint, pyright, pytest, mypy] # Optionally list ids of hooks to skip on CI

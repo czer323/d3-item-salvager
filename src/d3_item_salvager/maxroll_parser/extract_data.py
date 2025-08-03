@@ -12,19 +12,11 @@ DATA_PATH = Path(__file__).parent.parent.parent.parent / "reference" / "data.jso
 class DataParser:
     """
     DataParser loads and parses the master data.json file into lookup structures.
-
-    Attributes:
-        data_path (Path): Path to the data.json file.
-        raw_data (dict): Raw loaded JSON data.
-        items (dict[str, dict[str, str]]): Filtered item dictionary.
     """
 
     def __init__(self, data_path: Path | None = None) -> None:
         """
         Initialize the DataParser and load data from the specified path.
-
-        Args:
-            data_path: Optional path to the data.json file. Defaults to DATA_PATH.
         """
         self.data_path: Path = data_path or DATA_PATH
         self.raw_data: dict[str, Any] = self._load_json()
@@ -35,7 +27,7 @@ class DataParser:
         Load and validate the master data.json file.
 
         Returns:
-            dict: Loaded and validated JSON data.
+            Loaded and validated JSON data as a dictionary.
 
         Raises:
             TypeError: If the data structure is invalid.
@@ -45,7 +37,7 @@ class DataParser:
         return self._validate_json_dict(raw)
 
     @staticmethod
-    def _validate_json_dict(data: object) -> dict:
+    def _validate_json_dict(data: object) -> dict[str, Any]:
         """
         Validate that the loaded JSON data is a dictionary.
 
@@ -53,7 +45,7 @@ class DataParser:
             data: Loaded JSON object.
 
         Returns:
-            dict: Validated dictionary.
+            Validated dictionary.
 
         Raises:
             TypeError: If not a dictionary.
@@ -68,13 +60,13 @@ class DataParser:
         Extract and filter items from the loaded data.
 
         Returns:
-            dict[str, dict[str, str]]: Filtered item dictionary.
+            Filtered item dictionary.
         """
         item_dict = self._extract_items(self.raw_data)
         return self._filter_item_fields(item_dict)
 
     @staticmethod
-    def _extract_items(data: dict) -> dict[str, dict]:
+    def _extract_items(data: dict[str, Any]) -> dict[str, dict[str, Any]]:
         """
         Extract items from the loaded data.
 
@@ -82,7 +74,7 @@ class DataParser:
             data: Loaded JSON dictionary.
 
         Returns:
-            dict[str, dict]: Dictionary mapping item IDs to item data.
+            Dictionary mapping item IDs to item data.
 
         Raises:
             TypeError: If 'items' is not a list.
@@ -96,7 +88,9 @@ class DataParser:
         return {item.get("id"): item for item in items if item.get("id")}
 
     @staticmethod
-    def _filter_item_fields(item_dict: dict[str, Any]) -> dict[str, dict[str, str]]:
+    def _filter_item_fields(
+        item_dict: dict[str, dict[str, Any]],
+    ) -> dict[str, dict[str, str]]:
         """
         Filter and clean item data to only keep id, name, type, quality as strings.
 
@@ -104,15 +98,15 @@ class DataParser:
             item_dict: Dictionary of item data.
 
         Returns:
-            dict[str, dict[str, str]]: Filtered item dictionary.
+            Filtered item dictionary.
         """
 
-        def to_str(val: str | int | float | list | dict | None) -> str:
+        def to_str(val: str | int | float | list[Any] | dict[Any, Any] | None) -> str:
+            if val is None:
+                return ""
             if isinstance(val, list):
-                return ", ".join(str(x) for x in val)
-            if isinstance(val, dict):
-                return str(val)
-            return str(val) if val is not None else ""
+                return ", ".join(str(v) if v is not None else "" for v in val)
+            return str(val)
 
         filtered: dict[str, dict[str, str]] = {}
         for item_id, item in item_dict.items():
@@ -132,7 +126,7 @@ class DataParser:
             item_id: The item ID to look up.
 
         Returns:
-            dict[str, str] or None: Item data if found, else None.
+            Item data if found, else None.
         """
         return self.items.get(item_id)
 
@@ -141,6 +135,6 @@ class DataParser:
         Get all filtered item data.
 
         Returns:
-            dict[str, dict[str, str]]: All item data.
+            All item data.
         """
         return self.items

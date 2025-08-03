@@ -19,6 +19,12 @@ class AppConfig(BaseSettings):
     maxroll_parser: MaxrollParserConfig
     logging: LoggingConfig
 
+    # pylint: disable=too-few-public-methods
+    class ConfigDict:
+        """Pydantic settings configuration."""
+
+        env_file = ".env"
+
 
 class _ConfigSingleton:
     """Singleton holder for AppConfig."""
@@ -32,7 +38,7 @@ class _ConfigSingleton:
             try:
                 cls._instance = AppConfig(
                     database=DatabaseConfig(),
-                    maxroll_parser=MaxrollParserConfig(),  # type: ignore[reportCallIssue]
+                    maxroll_parser=MaxrollParserConfig(),  # pyright: ignore[reportCallIssue]
                     logging=LoggingConfig(),
                 )
             except ValidationError as e:
@@ -48,7 +54,15 @@ class _ConfigSingleton:
 
 def get_config() -> AppConfig:
     """Singleton accessor for application config."""
-    return _ConfigSingleton.get()
+    config = _ConfigSingleton.get()
+    # Runtime validation for required secrets
+    if not config.maxroll_parser.bearer_token:
+        msg = (
+            "Configuration validation failed: MAXROLL_BEARER_TOKEN is required "
+            "but not set in environment or .env file"
+        )
+        raise RuntimeError(msg)
+    return config
 
 
 def reset_config() -> None:
