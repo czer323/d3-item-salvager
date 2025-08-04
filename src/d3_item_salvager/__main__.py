@@ -5,7 +5,15 @@ from d3_item_salvager.logging.setup import setup_logger
 
 
 def main(app_config: AppConfig | None = None) -> None:
-    """Main application entry point. Accepts optional AppConfig for DI."""
+    """
+    Main application entry point. Accepts optional AppConfig for DI.
+
+    Args:
+        app_config: Optional AppConfig instance for dependency injection.
+
+    Returns:
+        None
+    """
     if app_config is None:
         app_config = get_config()
     setup_logger(app_config)

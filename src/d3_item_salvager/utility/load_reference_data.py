@@ -29,7 +29,17 @@ PROFILE_FILE = REFERENCE_DIR / "profile_object_861723133.json"
 
 
 def load_items() -> None:
-    """Load items from reference/data.json and insert into the database using DataParser."""
+    """
+    Load items from reference/data.json and insert into the database using DataParser.
+
+    Returns:
+        None
+
+    Raises:
+        FileNotFoundError: If the items file is not found.
+        ValueError: If item data is invalid.
+        RuntimeError: If a runtime error occurs during loading.
+    """
     logger.info("Loading items from {}...", ITEMS_FILE)
     try:
         loader = DataParser(ITEMS_FILE)
@@ -53,10 +63,13 @@ def build_item_usages_from_parser(
 ) -> list[ItemUsage]:
     """
     Build a list of ItemUsage objects from parser data and profile lookup.
-    For each usage extracted from the parser, attempts to match to a profile
-    using (profile_name, class_name).
-    Logs an error and skips usages that cannot be matched to a profile.
-    Returns only valid ItemUsage objects with a valid integer profile_id.
+
+    Args:
+        parser: BuildProfileParser instance to extract usages from.
+        profile_lookup: Dictionary mapping profile names to profile IDs.
+
+    Returns:
+        list[ItemUsage]: List of valid ItemUsage objects with profile_id set.
     """
     usages = []
     for u in parser.extract_usages():
@@ -83,12 +96,19 @@ def insert_build_and_profiles(
 ) -> None:
     """
     Parse build/profile JSON, insert Build/Profile records, and item usages into the database.
-    Steps:
-    1. Parse profiles and usages from JSON using BuildProfileParser.
-    2. Insert build and profiles into the database.
-    3. Query inserted profiles to build a lookup of (name, class_name) -> profile_id.
-    4. Use build_item_usages_from_parser to construct ItemUsage objects with valid profile_id.
-    5. Insert item usages into the database, logging any unmatched usages.
+
+    Args:
+        json_path: Path to the build/profile JSON file.
+        build_id: Build ID to use for inserted records.
+        build_title: Optional build title.
+
+    Returns:
+        None
+
+    Raises:
+        FileNotFoundError: If the JSON file is not found.
+        ValueError: If data is invalid.
+        RuntimeError: If a runtime error occurs during insertion.
     """
     logger.info("Parsing build/profile from {}...", json_path)
     try:
@@ -126,7 +146,12 @@ def insert_build_and_profiles(
 
 
 def main() -> None:
-    """Main entry point for loading reference data."""
+    """
+    Main entry point for loading reference data.
+
+    Returns:
+        None
+    """
     setup_logger()
 
     logger.info("Starting reference data loading...")

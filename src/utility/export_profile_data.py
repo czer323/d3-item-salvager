@@ -22,7 +22,19 @@ class ProfileDataDict(TypedDict):
 
 
 def extract_data_value(profile_path: str | Path) -> ProfileDataDict:
-    """Extracts the 'data' value from a build profile JSON file."""
+    """Extracts the 'data' value from a build profile JSON file.
+
+    Args:
+        profile_path: Path to the build profile JSON file.
+
+    Returns:
+        ProfileDataDict: The extracted 'data' value as a typed dictionary.
+
+    Raises:
+        FileNotFoundError: If the file does not exist.
+        json.JSONDecodeError: If the file or data cannot be parsed as JSON.
+        KeyError: If the 'data' key is missing in the JSON file.
+    """
     path = Path(profile_path)
     with path.open(encoding="utf-8") as f:
         content = f.read()
@@ -37,7 +49,13 @@ def extract_data_value(profile_path: str | Path) -> ProfileDataDict:
 
 
 def main() -> None:
-    """Main function to run the utility."""
+    """Main function to run the utility.
+
+    Parses command-line arguments and prints the extracted profile data in a human-readable format.
+
+    Raises:
+        SystemExit: If the required argument is missing or an error occurs during extraction.
+    """
     if len(sys.argv) < 2:
         logger.error("Usage: python export_profile_data.py <profile_json_path>")
         sys.exit(1)
