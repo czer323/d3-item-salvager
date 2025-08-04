@@ -7,7 +7,12 @@ from pydantic_settings import BaseSettings
 
 
 class DatabaseConfig(BaseSettings):
-    """Database configuration."""
+    """
+    Database configuration.
+
+    Attributes:
+        url: Database connection URL.
+    """
 
     model_config = {"env_prefix": "DATABASE_"}
     # Production defaults
@@ -15,7 +20,15 @@ class DatabaseConfig(BaseSettings):
 
 
 class LoggingConfig(BaseSettings):
-    """Logging configuration for Loguru and observability hooks."""
+    """
+    Logging configuration for Loguru and observability hooks.
+
+    Attributes:
+        enabled: Whether logging is enabled.
+        level: Logging level.
+        metrics_enabled: Whether metrics are enabled.
+        log_file: Path to the log file.
+    """
 
     enabled: bool = True
     level: str = "INFO"
@@ -27,10 +40,15 @@ class MaxrollParserConfig(BaseSettings):
     """
     Data source configuration for switching between environments.
 
-    Args:
-        mode: Environment mode ('dev', 'prod', etc.).
-        data_paths: Mapping of mode to data.json path or URL.
-        build_paths: Mapping of mode to build object path or URL.
+    Attributes:
+        bearer_token: Bearer token for Maxroll API.
+        data_paths: Path or URL to data.json.
+        build_paths: Path or URL to build object JSON.
+        guide_paths: Path or URL to guide search endpoint.
+        api_url: API URL for Meilisearch.
+        cache_ttl: Cache time-to-live in seconds.
+        cache_file: Path to cache file.
+        limit: API result limit per request.
     """
 
     model_config = {"env_prefix": "MAXROLL_"}

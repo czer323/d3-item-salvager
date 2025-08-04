@@ -33,6 +33,12 @@ class MaxrollGuideFetcher:
     def _fetch_hits_from_api(self) -> list[dict[str, Any]]:
         """
         Fetch raw hits from Maxroll API.
+
+        Returns:
+            list[dict[str, Any]]: List of raw hit dictionaries from the API.
+
+        Raises:
+            requests.RequestException: If the API request fails.
         """
         api_url = self.app_config.maxroll_parser.api_url
         bearer_token = self.app_config.maxroll_parser.bearer_token
@@ -75,6 +81,12 @@ class MaxrollGuideFetcher:
     ) -> list[GuideInfo]:
         """
         Extract guide links from hits.
+
+        Args:
+            hits: List of hit dictionaries from the API.
+
+        Returns:
+            list[GuideInfo]: List of GuideInfo objects extracted from hits.
         """
         all_guides: list[GuideInfo] = []
         seen_urls: set[str] = set()
@@ -93,6 +105,9 @@ class MaxrollGuideFetcher:
     def _fetch_guides_from_api(self) -> list[GuideInfo]:
         """
         Fetch guides from Maxroll API.
+
+        Returns:
+            list[GuideInfo]: List of GuideInfo objects fetched from the API.
         """
         hits = self._fetch_hits_from_api()
         all_guides = self._extract_guide_links_from_hits(hits)
@@ -104,6 +119,9 @@ class MaxrollGuideFetcher:
     def fetch_guides(self) -> list[GuideInfo]:
         """
         Fetch all Diablo 3 build guides from Maxroll's Meilisearch API or local file, with caching.
+
+        Returns:
+            list[GuideInfo]: List of GuideInfo objects representing build guides.
         """
         if self._cached_guides is not None:
             return self._cached_guides
@@ -125,6 +143,9 @@ class MaxrollGuideFetcher:
     def print_guides(self) -> None:
         """
         Fetch and log deduplicated build guide names and URLs.
+
+        Returns:
+            None
         """
         guides = self.fetch_guides()
         for guide in guides:

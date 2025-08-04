@@ -16,8 +16,15 @@ def insert_item_usages_with_validation(
     Insert item usages into the database, validating that profile_name and item_id exist.
 
     Args:
-        usages: List of dicts with keys: profile_name, item_id, slot, usage_context.
+        usages: List of ItemUsage objects to insert.
         session: Active database session.
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: If profile_id or item_id does not exist or is None.
+        SQLAlchemyError: If a database error occurs during commit.
     """
     errors: list[tuple[dict[str, str], str]] = []
     success_count = 0
@@ -56,6 +63,13 @@ def insert_items_from_dict(
     Args:
         item_dict: Dict mapping item IDs to cleaned item data (id, name, type, quality).
         session: Optional active database session. If not provided, uses get_session().
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: If item data is invalid or duplicate.
+        SQLAlchemyError: If a database error occurs during commit.
     """
     errors: list[tuple[dict[str, str], str]] = []
     success_count = 0
@@ -109,7 +123,16 @@ def insert_items_from_dict(
 def validate_item_data(item_data: dict[str, str], session: Session) -> None:
     """
     Validate item data for required fields, allowed values, and duplicates.
-    Raises ValueError if validation fails.
+
+    Args:
+        item_data: Dict containing item fields to validate.
+        session: Active database session.
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: If validation fails for required fields, type, quality, or duplicates.
     """
     for field in ("id", "name", "type", "quality"):
         if not item_data.get(field):
@@ -215,6 +238,12 @@ def insert_build(
         build_title: Title of the build.
         build_url: URL or source path for the build.
         session: Active database session.
+
+    Returns:
+        None
+
+    Raises:
+        SQLAlchemyError: If a database error occurs during commit.
     """
     build = Build(id=build_id, title=build_title, url=build_url)
     session.add(build)
@@ -229,9 +258,15 @@ def insert_profiles(
     Insert Profile records for a given build into the database.
 
     Args:
-        profiles: List of dicts with profile data (name, class_name, etc.).
+        profiles: List of Profile objects to insert.
         build_id: The build ID to associate with each profile.
         session: Active database session.
+
+    Returns:
+        None
+
+    Raises:
+        SQLAlchemyError: If a database error occurs during commit.
     """
     errors = []
     success_count = 0

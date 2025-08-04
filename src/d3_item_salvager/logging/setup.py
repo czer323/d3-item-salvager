@@ -13,7 +13,15 @@ from d3_item_salvager.config.settings import AppConfig, get_config
 
 
 def log_timing[T](func: Callable[..., T]) -> Callable[..., T]:
-    """Decorator to log function start, end, and duration using Loguru."""
+    """
+    Decorator to log function start, end, and duration using Loguru.
+
+    Args:
+        func: The function to decorate.
+
+    Returns:
+        Callable[..., T]: The wrapped function with timing logs.
+    """
 
     def wrapper(*args: object, **kwargs: object) -> T:
         start = time.time()
@@ -29,7 +37,16 @@ def log_timing[T](func: Callable[..., T]) -> Callable[..., T]:
 def log_contextual[T](
     context: dict[str, Any],
 ) -> Callable[[Callable[..., T]], Callable[..., T]]:
-    """Decorator to bind contextual information to log records."""
+    """
+    Decorator to bind contextual information to log records.
+
+    Args:
+        context: Dictionary of contextual information to bind to log records.
+
+    Returns:
+        Callable[[Callable[..., T]], Callable[..., T]]:
+            A decorator that wraps the function with contextual logging.
+    """
 
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @wraps(func)
@@ -47,7 +64,18 @@ def log_contextual[T](
 
 
 def setup_logger(app_config: AppConfig | None = None) -> None:
-    """Configure Loguru logger for the project using config settings."""
+    """
+    Configure Loguru logger for the project using config settings.
+
+    Args:
+        app_config: Optional AppConfig instance. If None, uses get_config().
+
+    Returns:
+        None
+
+    Raises:
+        ImportError: If Prometheus metrics are enabled but prometheus_client is not installed.
+    """
     if app_config is None:
         app_config = get_config()
     logging_config = app_config.logging

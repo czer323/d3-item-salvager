@@ -13,6 +13,16 @@ from .types import GuideInfo
 def load_guides_from_cache(config: AppConfig) -> list[GuideInfo] | None:
     """
     Load guides from cache file if fresh, using cache TTL and cache path from AppConfig.
+
+    Args:
+        config: AppConfig instance containing cache settings.
+
+    Returns:
+        list[GuideInfo] | None: List of GuideInfo objects if cache is fresh, else None.
+
+    Raises:
+        OSError: If there is an error accessing the cache file.
+        json.JSONDecodeError: If the cache file is not valid JSON.
     """
     cache_path = config.maxroll_parser.cache_file
     cache_ttl = config.maxroll_parser.cache_ttl
@@ -46,6 +56,18 @@ def save_guides_to_cache(
 ) -> None:
     """
     Save guides to cache file using config.maxroll_parser.cache_file (Path).
+
+    Args:
+        guides: List of GuideInfo objects to save.
+        config: AppConfig instance containing cache settings.
+
+    Returns:
+        None
+
+    Raises:
+        OSError: If there is an error writing to the cache file.
+        TypeError: If guides cannot be serialized.
+        ValueError: If there is a value error during serialization.
     """
     cache_path = config.maxroll_parser.cache_file
     if cache_path is not None:

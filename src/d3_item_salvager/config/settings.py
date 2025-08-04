@@ -7,12 +7,13 @@ from .base import DatabaseConfig, LoggingConfig, MaxrollParserConfig
 
 
 class AppConfig(BaseSettings):
-    """Main application configuration.
+    """
+    Main application configuration.
 
-    Args:
-        database: Database configuration
-        maxroll_parser: MaxrollParserConfig
-        logging: LoggingConfig
+    Attributes:
+        database: Database configuration.
+        maxroll_parser: MaxrollParserConfig instance.
+        logging: LoggingConfig instance.
     """
 
     database: DatabaseConfig
@@ -33,7 +34,15 @@ class _ConfigSingleton:
 
     @classmethod
     def get(cls) -> AppConfig:
-        """Get the singleton instance of AppConfig."""
+        """
+        Get the singleton instance of AppConfig.
+
+        Returns:
+            AppConfig: The singleton AppConfig instance.
+
+        Raises:
+            RuntimeError: If configuration validation fails.
+        """
         if cls._instance is None:
             try:
                 cls._instance = AppConfig(
@@ -48,12 +57,25 @@ class _ConfigSingleton:
 
     @classmethod
     def reset(cls) -> None:
-        """Reset the singleton instance (for testing purposes)."""
+        """
+        Reset the singleton instance (for testing purposes).
+
+        Returns:
+            None
+        """
         cls._instance = None
 
 
 def get_config() -> AppConfig:
-    """Singleton accessor for application config."""
+    """
+    Singleton accessor for application config.
+
+    Returns:
+        AppConfig: The singleton AppConfig instance.
+
+    Raises:
+        RuntimeError: If MAXROLL_BEARER_TOKEN is not set.
+    """
     config = _ConfigSingleton.get()
     # Runtime validation for required secrets
     if not config.maxroll_parser.bearer_token:
@@ -66,5 +88,10 @@ def get_config() -> AppConfig:
 
 
 def reset_config() -> None:
-    """Reset the config singleton (for testing)."""
+    """
+    Reset the config singleton (for testing).
+
+    Returns:
+        None
+    """
     _ConfigSingleton.reset()
