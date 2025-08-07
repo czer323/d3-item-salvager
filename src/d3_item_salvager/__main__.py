@@ -25,5 +25,5 @@ def main(app_config: AppConfig = Provide[Container.config]) -> None:
 
 if __name__ == "__main__":
     container = Container()
-    container.wire(modules=[__name__])
+    container.wire(modules=[__name__])  # pylint: disable=no-member
     main()

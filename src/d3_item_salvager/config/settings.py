@@ -16,11 +16,15 @@ class AppConfig(BaseSettings):
         logging: LoggingConfig instance.
     """
 
-    database: DatabaseConfig = Field(default_factory=lambda: DatabaseConfig())
+    database: DatabaseConfig = Field(
+        default_factory=lambda: DatabaseConfig()
+    )  # pylint: disable=unnecessary-lambda
     maxroll_parser: MaxrollParserConfig = Field(
-        default_factory=lambda: MaxrollParserConfig()
-    )
-    logging: LoggingConfig = Field(default_factory=lambda: LoggingConfig())
+        default_factory=lambda: MaxrollParserConfig()  # pyright: ignore[reportCallIssue]
+    )  # pylint: disable=unnecessary-lambda
+    logging: LoggingConfig = Field(
+        default_factory=lambda: LoggingConfig()
+    )  # pylint: disable=unnecessary-lambda
 
     # pylint: disable=too-few-public-methods
     class ConfigDict:

@@ -88,6 +88,7 @@ repos:
           - sqlmodel
           - pydantic-settings
           - pytest
+          - dependency-injector
         #log_file: precommit_logs/mypy.log
 
   # - repo: https://github.com/RobertCraigie/pyright-python

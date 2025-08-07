@@ -19,7 +19,7 @@ class Container(containers.DeclarativeContainer):  # pylint: disable=too-few-pub
 
     engine: providers.Provider[Engine] = providers.Singleton(
         create_engine,
-        url=config.provided.database.url,
+        url=config.provided.database.url,  # pylint: disable=no-member
         echo=True,
     )
 
