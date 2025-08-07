@@ -1,10 +1,14 @@
 """CLI entry point for d3_item_salvager. Initializes logging and runs main logic."""
 
-from d3_item_salvager.config.settings import AppConfig, get_config
+from dependency_injector.wiring import Provide, inject
+
+from d3_item_salvager.config.settings import AppConfig
+from d3_item_salvager.container import Container
 from d3_item_salvager.logging.setup import setup_logger
 
 
-def main(app_config: AppConfig | None = None) -> None:
+@inject
+def main(app_config: AppConfig = Provide[Container.config]) -> None:
     """
     Main application entry point. Accepts optional AppConfig for DI.
 
@@ -14,12 +18,12 @@ def main(app_config: AppConfig | None = None) -> None:
     Returns:
         None
     """
-    if app_config is None:
-        app_config = get_config()
     setup_logger(app_config)
     print("Logger initialized. Ready to run application.")
     # Application logic goes here
 
 
 if __name__ == "__main__":
+    container = Container()
+    container.wire(modules=[__name__])
     main()

@@ -16,6 +16,7 @@ dependencies = [
     "typer>=0.16.0",
     "loguru>=0.7.3",
     "fastapi>=0.116.1",
+    "dependency-injector>=4.48.1",
 ]
 
 [dependency-groups]
@@ -46,6 +47,9 @@ pythonpath = ["src", "."]
 addopts = ["-v", "--color=yes"]
 testpaths = ["tests"]
 python_files = "test_*.py"
+markers = [
+    "no_bearer_token: test that does not need a bearer token",
+]
 
 [tool.mypy]
 python_version = "3.12"

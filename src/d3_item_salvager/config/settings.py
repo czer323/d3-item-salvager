@@ -1,6 +1,6 @@
 """Main AppConfig definition and config loader."""
 
-from pydantic import ValidationError
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
 
 from .base import DatabaseConfig, LoggingConfig, MaxrollParserConfig
@@ -16,9 +16,9 @@ class AppConfig(BaseSettings):
         logging: LoggingConfig instance.
     """
 
-    database: DatabaseConfig
-    maxroll_parser: MaxrollParserConfig
-    logging: LoggingConfig
+    database: DatabaseConfig = Field(default_factory=DatabaseConfig)
+    maxroll_parser: MaxrollParserConfig = Field(default_factory=MaxrollParserConfig)
+    logging: LoggingConfig = Field(default_factory=LoggingConfig)
 
     # pylint: disable=too-few-public-methods
     class ConfigDict:
@@ -26,72 +26,13 @@ class AppConfig(BaseSettings):
 
         env_file = ".env"
 
-
-class _ConfigSingleton:
-    """Singleton holder for AppConfig."""
-
-    _instance: AppConfig | None = None
-
-    @classmethod
-    def get(cls) -> AppConfig:
-        """
-        Get the singleton instance of AppConfig.
-
-        Returns:
-            AppConfig: The singleton AppConfig instance.
-
-        Raises:
-            RuntimeError: If configuration validation fails.
-        """
-        if cls._instance is None:
-            try:
-                cls._instance = AppConfig(
-                    database=DatabaseConfig(),
-                    maxroll_parser=MaxrollParserConfig(),  # pyright: ignore[reportCallIssue]
-                    logging=LoggingConfig(),
-                )
-            except ValidationError as e:
-                msg = f"Configuration validation failed: {e}"
-                raise RuntimeError(msg) from e
-        return cls._instance
-
-    @classmethod
-    def reset(cls) -> None:
-        """
-        Reset the singleton instance (for testing purposes).
-
-        Returns:
-            None
-        """
-        cls._instance = None
-
-
-def get_config() -> AppConfig:
-    """
-    Singleton accessor for application config.
-
-    Returns:
-        AppConfig: The singleton AppConfig instance.
-
-    Raises:
-        RuntimeError: If MAXROLL_BEARER_TOKEN is not set.
-    """
-    config = _ConfigSingleton.get()
-    # Runtime validation for required secrets
-    if not config.maxroll_parser.bearer_token:
-        msg = (
-            "Configuration validation failed: MAXROLL_BEARER_TOKEN is required "
-            "but not set in environment or .env file"
-        )
-        raise RuntimeError(msg)
-    return config
-
-
-def reset_config() -> None:
-    """
-    Reset the config singleton (for testing).
-
-    Returns:
-        None
-    """
-    _ConfigSingleton.reset()
+    @model_validator(mode="after")
+    def validate_bearer_token(self) -> "AppConfig":
+        """Validate that the bearer token is set."""
+        if not self.maxroll_parser.bearer_token:
+            msg = (
+                "Configuration validation failed: MAXROLL_BEARER_TOKEN is required "
+                "but not set in environment or .env file"
+            )
+            raise ValueError(msg)
+        return self

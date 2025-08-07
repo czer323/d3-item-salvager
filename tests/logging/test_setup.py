@@ -17,85 +17,59 @@ import pytest
 from loguru import logger
 from pytest_mock import MockerFixture
 
+from d3_item_salvager.config.base import LoggingConfig
+from d3_item_salvager.config.settings import AppConfig
 from d3_item_salvager.logging.setup import log_contextual, log_timing, setup_logger
 
 
-class DummyLoggingConfig:
-    """Dummy logging config for logger setup tests."""
-
-    enabled: bool = False
-    metrics_enabled: bool = False
-    log_file: str = "dummy.log"
-    level: str = "INFO"
-
-
-class DummyConfig:
-    """Dummy config container for logger setup tests."""
-
-    logging: DummyLoggingConfig
-
-    def __init__(
-        self,
-        enabled: bool = False,
-        metrics_enabled: bool = False,
-        level: str = "INFO",
-    ) -> None:
-        self.logging = DummyLoggingConfig()
-        self.logging.enabled = enabled
-        self.logging.metrics_enabled = metrics_enabled
-        self.logging.level = level
-
-
 @pytest.fixture
-def dummy_config_basic() -> DummyConfig:
+def dummy_config_basic(monkeypatch: pytest.MonkeyPatch) -> AppConfig:
     """Returns a dummy config object for basic logger setup (no file, no metrics)."""
-    return DummyConfig()
+    monkeypatch.setenv("MAXROLL_BEARER_TOKEN", "dummy-token")
+    app_config = AppConfig()
+    app_config.logging = LoggingConfig(enabled=False, metrics_enabled=False)
+    return app_config
 
 
 @pytest.fixture
-def dummy_config_file() -> DummyConfig:
+def dummy_config_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> AppConfig:
     """Returns a dummy config object with file handler enabled."""
-    return DummyConfig(enabled=True, metrics_enabled=False, level="DEBUG")
+    monkeypatch.setenv("MAXROLL_BEARER_TOKEN", "dummy-token")
+    log_file = tmp_path / "dummy.log"
+    app_config = AppConfig()
+    app_config.logging = LoggingConfig(
+        enabled=True, metrics_enabled=False, level="DEBUG", log_file=str(log_file)
+    )
+    return app_config
 
 
 @pytest.fixture
-def dummy_config_metrics_enabled() -> DummyConfig:
+def dummy_config_metrics_enabled(monkeypatch: pytest.MonkeyPatch) -> AppConfig:
     """Returns a dummy config object with metrics enabled."""
-    return DummyConfig(enabled=False, metrics_enabled=True, level="INFO")
+    monkeypatch.setenv("MAXROLL_BEARER_TOKEN", "dummy-token")
+    app_config = AppConfig()
+    app_config.logging = LoggingConfig(
+        enabled=False, metrics_enabled=True, level="INFO"
+    )
+    return app_config
 
 
 @pytest.fixture
-def dummy_config_metrics_importerror() -> DummyConfig:
+def dummy_config_metrics_importerror(monkeypatch: pytest.MonkeyPatch) -> AppConfig:
     """Returns a dummy config object with metrics enabled and simulates ImportError."""
-    return DummyConfig(enabled=False, metrics_enabled=True, level="INFO")
+    monkeypatch.setenv("MAXROLL_BEARER_TOKEN", "dummy-token")
+    app_config = AppConfig()
+    app_config.logging = LoggingConfig(
+        enabled=False, metrics_enabled=True, level="INFO"
+    )
+    return app_config
 
 
-def test_setup_logger_runs(mocker: MockerFixture) -> None:
+def test_setup_logger_runs(dummy_config_basic: AppConfig) -> None:
     """
     Test that setup_logger runs without error and logger can log a message.
     """
-
-    class DummyLoggingConfig:
-        """Dummy logging config for logger setup test."""
-
-        enabled: bool = False
-        metrics_enabled: bool = False
-        log_file: str = "dummy.log"
-        level: str = "INFO"
-
-    class DummyConfig:
-        """Dummy config container for logger setup test."""
-
-        logging: DummyLoggingConfig
-
-        def __init__(self) -> None:
-            self.logging = DummyLoggingConfig()
-
-    mocker.patch(
-        "d3_item_salvager.logging.setup.get_config",
-        return_value=DummyConfig(),
-    )
-    setup_logger()
+    setup_logger(dummy_config_basic)
     logger.info("Logger setup test message.")
 
 
@@ -131,60 +105,45 @@ def test_log_contextual_decorator() -> None:
     assert result == "contextual"
 
 
-def test_setup_logger_basic(
-    mocker: MockerFixture, dummy_config_basic: DummyConfig, tmp_path: Path
-) -> None:
+def test_setup_logger_basic(dummy_config_basic: AppConfig) -> None:
     """Test setup_logger initializes logger with basic config (no file, no metrics)."""
-    dummy_config_basic.logging.log_file = str(tmp_path / "dummy.log")
-    mocker.patch(
-        "d3_item_salvager.logging.setup.get_config", return_value=dummy_config_basic
-    )
-    setup_logger()
+    setup_logger(dummy_config_basic)
     logger.info("Logger setup basic test.")
 
 
-def test_setup_logger_with_file(
-    mocker: MockerFixture, dummy_config_file: DummyConfig, tmp_path: Path
-) -> None:
+def test_setup_logger_with_file(dummy_config_file: AppConfig) -> None:
     """
     Test setup_logger adds file handler when enabled in config, using a temp log file.
     """
-    dummy_config_file.logging.log_file = str(tmp_path / "dummy.log")
-    mocker.patch(
-        "d3_item_salvager.logging.setup.get_config", return_value=dummy_config_file
-    )
-    setup_logger()
+    setup_logger(dummy_config_file)
     logger.debug("Logger setup file test.")
+    log_file = Path(dummy_config_file.logging.log_file)
+    assert log_file.exists()
+    assert log_file.read_text() != ""
 
 
 def test_setup_logger_metrics_enabled(
-    mocker: MockerFixture, dummy_config_metrics_enabled: DummyConfig
+    mocker: MockerFixture, dummy_config_metrics_enabled: AppConfig
 ) -> None:
     """
     Test setup_logger starts metrics server if prometheus_client is available.
     """
-    mocker.patch(
-        "d3_item_salvager.logging.setup.get_config",
-        return_value=dummy_config_metrics_enabled,
-    )
     prometheus_mod = types.ModuleType("prometheus_client")
-    prometheus_mod.start_http_server = lambda *_args, **_kwargs: None  # type: ignore[attr-defined]
+    start_http_server_mock = mocker.Mock()
+    prometheus_mod.start_http_server = start_http_server_mock  # type: ignore[attr-defined]
     mocker.patch.dict(sys.modules, {"prometheus_client": prometheus_mod})
     logger.remove()  # Reset logger state for isolation
-    setup_logger()
+    setup_logger(dummy_config_metrics_enabled)
     logger.info("Logger setup metrics enabled test.")
+    start_http_server_mock.assert_called_once_with(8000)
 
 
 def test_setup_logger_metrics_importerror(
-    mocker: MockerFixture, dummy_config_metrics_importerror: DummyConfig
+    mocker: MockerFixture, dummy_config_metrics_importerror: AppConfig
 ) -> None:
     """
     Test setup_logger handles missing prometheus_client gracefully (ImportError).
     """
-    mocker.patch(
-        "d3_item_salvager.logging.setup.get_config",
-        return_value=dummy_config_metrics_importerror,
-    )
     # Patch builtins.__import__ to raise ImportError for prometheus_client
     original_import = builtins.__import__
 
@@ -204,5 +163,20 @@ def test_setup_logger_metrics_importerror(
 
     mocker.patch("builtins.__import__", side_effect=fake_import)
     logger.remove()  # Reset logger state for isolation
-    setup_logger()
+    setup_logger(dummy_config_metrics_importerror)
     logger.info("Logger setup metrics ImportError test.")
+
+
+def test_setup_logger_level(dummy_config_basic: AppConfig, capsys: Any) -> None:
+    """Test that the logger level from the config is respected."""
+    dummy_config_basic.logging.level = "INFO"
+    setup_logger(dummy_config_basic)
+
+    logger.debug("This should not be logged.")
+    logger.info("This should be logged.")
+    logger.warning("This should also be logged.")
+
+    captured = capsys.readouterr()
+    assert "This should not be logged." not in captured.err
+    assert "This should be logged." in captured.err
+    assert "This should also be logged." in captured.err
