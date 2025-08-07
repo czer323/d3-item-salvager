@@ -54,8 +54,11 @@ markers = [
 [tool.mypy]
 python_version = "3.12"
 mypy_path = "src"
-plugins = ['pydantic.mypy', 'sqlalchemy.ext.mypy.plugin']
+plugins = ['pydantic.mypy', 'sqlalchemy.ext.mypy.plugin', 'dependency_injector.ext.mypy_plugin']
 strict = true
+
+[tool.pylint.main]
+extension-pkg-allow-list = ["dependency_injector"]
 
 [tool.pre-commit-update]
 # dry_run = true

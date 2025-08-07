@@ -16,9 +16,11 @@ class AppConfig(BaseSettings):
         logging: LoggingConfig instance.
     """
 
-    database: DatabaseConfig = Field(default_factory=DatabaseConfig)
-    maxroll_parser: MaxrollParserConfig = Field(default_factory=MaxrollParserConfig)
-    logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    database: DatabaseConfig = Field(default_factory=lambda: DatabaseConfig())
+    maxroll_parser: MaxrollParserConfig = Field(
+        default_factory=lambda: MaxrollParserConfig()
+    )
+    logging: LoggingConfig = Field(default_factory=lambda: LoggingConfig())
 
     # pylint: disable=too-few-public-methods
     class ConfigDict:

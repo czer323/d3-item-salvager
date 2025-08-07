@@ -15,6 +15,7 @@ from typing import Any
 
 import pytest
 from loguru import logger
+from pytest import CaptureFixture
 from pytest_mock import MockerFixture
 
 from d3_item_salvager.config.base import LoggingConfig
@@ -167,7 +168,7 @@ def test_setup_logger_metrics_importerror(
     logger.info("Logger setup metrics ImportError test.")
 
 
-def test_setup_logger_level(dummy_config_basic: AppConfig, capsys: Any) -> None:
+def test_setup_logger_level(dummy_config_basic: AppConfig, capsys: CaptureFixture) -> None:
     """Test that the logger level from the config is respected."""
     dummy_config_basic.logging.level = "INFO"
     setup_logger(dummy_config_basic)

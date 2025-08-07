@@ -7,7 +7,7 @@ from sqlmodel import Session, create_engine
 from d3_item_salvager.config.settings import AppConfig
 
 
-class Container(containers.DeclarativeContainer):
+class Container(containers.DeclarativeContainer):  # pylint: disable=too-few-public-methods
     """
     Main dependency injection container for the application.
 
