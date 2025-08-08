@@ -27,26 +27,92 @@ The database and data layer must store, query, and serve scraped Diablo 3 build 
 
 ---
 
+## Dependency Injection and Configuration
+
+The database layer uses a dependency injection pattern for managing database connections and configuration:
+
+### Container Setup
+```python
+from d3_item_salvager.container import Container
+
+# Application container with database engine and session factories
+container = Container()
+engine = container.engine()
+session_factory = container.session
+```
+
+### Database Configuration
+Configuration is managed through Pydantic settings with environment variable support:
+
+```python
+# Environment variables or .env file
+DATABASE_URL=sqlite:///d3_items.db
+
+# Configuration classes in config/base.py
+class DatabaseConfig(BaseSettings):
+    model_config = {"env_prefix": "DATABASE_"}
+    url: str = "sqlite:///d3_items.db"
+```
+
+### Usage Pattern
+```python
+from d3_item_salvager.container import Container
+from d3_item_salvager.data.loader import insert_items_from_dict
+from d3_item_salvager.data.queries import get_all_items
+
+# Initialize container
+container = Container()
+
+# Use session factory for database operations  
+with container.session() as session:
+    items = get_all_items(session)
+    # Perform other operations
+```
+
+### Database Initialization
+```bash
+# Set required environment variable
+export MAXROLL_BEARER_TOKEN=your_token_here
+
+# Initialize database tables
+python -m d3_item_salvager.data.init_db
+```
+
+This approach provides:
+- **Centralized configuration management**
+- **Testable dependency injection**
+- **Environment-specific database settings**
+- **Clean separation of concerns**
+
+---
+
 ## Directory Structure
 
 ```directory
 src/
   d3_item_salvager/
     data/
-      models.py        # SQLModel models (Build, Profile, Item, ItemUsage)
-      db.py            # Database engine/session setup
-      loader.py        # Functions to insert scraped data (ingestion/ETL only)
+      models.py        # SQLModel models (Build, Profile, Item, ItemUsage) with relationships
+      db.py            # Database table creation utilities
+      init_db.py       # Database initialization script
+      loader.py        # Functions to insert scraped data (ingestion/ETL with validation)
       queries.py       # Query/filter logic (filter by class, build, slot, usage context, etc.)
-      api.py           # FastAPI endpoints for querying data (specified in apiImplementation.md)
+    container.py       # Dependency injection container for database engine/session management
+    config/
+      settings.py      # Application configuration including database settings
+      base.py          # Configuration base classes
     ...
 tests/
   data/
     test_loader.py     # Unit tests for loader functions
     test_queries.py    # Unit tests for query/filter logic
-    test_api.py        # Unit tests for API endpoints
+  fakes/
+    test_db_utils.py   # Test utilities for temporary database setup
+  conftest.py          # Pytest fixtures for database testing
     ...
 docs/
-  databaseImplementation.md  # This design document
+  01 databaseImplementation.md  # This design document
+  02 migrationsImplementation.md # Migration strategy (separate from core data module)
 ```
 
 ---
@@ -55,38 +121,44 @@ docs/
 
 ### Model Definitions (SQLModel)
 
-All models are defined in `models.py` with type annotations and Field for PKs, FKs, and indexes. This structure supports flexible queries and extensibility.
+All models are defined in `models.py` with modern type annotations, Field for PKs, FKs, and indexes, and bidirectional Relationship mappings. This structure supports flexible queries, extensibility, and ORM-style navigation.
 
 ```python
-from typing import Optional
-from sqlmodel import SQLModel, Field
+from sqlmodel import Field, Relationship, SQLModel
 
 class Build(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    """Represents a Diablo 3 build guide."""
+    id: int | None = Field(default=None, primary_key=True)
     title: str
     url: str
+    profiles: list["Profile"] = Relationship(back_populates="build")
 
 class Profile(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    """Represents a variant/profile of a build."""
+    id: int | None = Field(default=None, primary_key=True)
     build_id: int = Field(foreign_key="build.id")
     name: str
     class_name: str = Field(index=True)
+    build: Build | None = Relationship(back_populates="profiles")
+    usages: list["ItemUsage"] = Relationship(back_populates="profile")
 
 class Item(SQLModel, table=True):
+    """Represents an item from the master item list."""
     id: str = Field(primary_key=True)
     name: str
-    type: str  # Note: 'type' directly correlates to the 'slot' concept in builds and item usage.
+    type: str  # 'type' directly correlates to the 'slot' concept in builds and item usage.
     quality: str
-
-
-# Item objects must use consistent attribute naming (e.g., 'type' vs 'slot').
+    usages: list["ItemUsage"] = Relationship(back_populates="item")
 
 class ItemUsage(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    """Represents the usage of an item in a build/profile."""
+    id: int | None = Field(default=None, primary_key=True)
     profile_id: int = Field(foreign_key="profile.id", index=True)
-    item_id: int = Field(foreign_key="item.id", index=True)
+    item_id: str = Field(foreign_key="item.id", index=True)  # Note: str type matches Item.id
     slot: str = Field(index=True)
     usage_context: str = Field(index=True)
+    profile: Profile | None = Relationship(back_populates="usages")
+    item: Item | None = Relationship(back_populates="usages")
 ```
 
 **Schema summary:**
@@ -120,37 +192,95 @@ class ItemUsage(SQLModel, table=True):
 
 ## Workflow
 
-1. Scrape build guides and profiles
-2. Parse and normalize data
-3. Insert into database using loader functions (use Session(engine) and SQLModel models)
-4. Query and analyze data for downstream use (API and web UI are specified in `apiImplementation.md`)
+1. **Application Configuration**: Load database settings through the dependency injection container
+2. **Database Setup**: Use the container to provide database engine and session management
+3. **Table Creation**: Initialize database tables using `create_db_and_tables()` function
+4. **Data Ingestion**: 
+   - Scrape build guides and profiles
+   - Parse and normalize data
+   - Insert into database using loader functions with validation (use Session from container)
+5. **Data Querying**: Query and analyze data for downstream use using the comprehensive query functions
+
+**Dependency Injection Pattern:**
+```python
+from d3_item_salvager.container import Container
+from sqlmodel import Session
+
+# Initialize container
+container = Container()
+
+# Get database engine and session
+engine = container.engine()
+session_factory = container.session
+
+# Use in application
+with session_factory() as session:
+    # Perform database operations
+    pass
+```
 
 ## Migration and Versioning
 
-- Alembic is used for schema migrations.
-- Schema changes and migration scripts are documented as the project evolves.
+- Database migrations are handled separately - see `02 migrationsImplementation.md` for migration strategy
+- Current implementation uses SQLModel metadata for table creation
+- Schema changes should be coordinated with migration planning
+- For development, database can be recreated using `init_db.py` script
 
 ---
 
 ## Testing
 
-- Use a separate SQLite database for tests (e.g., sqlite:///testing.db)
-- Create tables at test startup, clean up after tests
-- Unit tests for loader functions and query logic
-- API endpoint tests are specified in `apiImplementation.md`
-- Use pytest and coverage tools
-- **Windows-specific note:** When using SQLite for tests, always call `engine.dispose()` before deleting the database file in test teardown to avoid file locking errors. This ensures all connections are closed and the file can be removed cleanly.
+### Test Database Setup
+- Uses temporary SQLite databases for testing via `temp_db_engine()` fixture
+- Automatic table creation and cleanup for each test
+- Test utilities in `tests/fakes/test_db_utils.py` provide sample data insertion helpers
+
+### Test Structure
+- **Unit tests for loader functions**: Validation, error handling, data insertion
+- **Unit tests for query logic**: All query functions with various filter scenarios
+- **Fixtures**: `conftest.py` provides reusable database engine fixtures
+- **Sample data**: `insert_sample_data()` creates consistent test data
+
+### Test Execution
+```bash
+# Run all data tests
+python -m pytest tests/data/ -v
+
+# Run with coverage
+python -m pytest tests/data/ --cov=src/d3_item_salvager/data
+```
+
+### Key Test Features
+- Temporary database creation with automatic cleanup
+- Comprehensive validation testing (missing fields, invalid values, duplicates)
+- Relationship and foreign key constraint testing
+- Query result verification with sample data
 
 ---
 
 ## Key Functions
 
-- `create_db_and_tables()` – Initializes database and tables
-- `insert_build(title, url)`
-- `insert_profile(build_id, name, class_name)`
-- `insert_item(id, name, type)`  # set_status and notes are not required
-- `insert_item_usage(profile_id, item_id, usage_context)` # item_id must match Item.id type
-- `query_items(...)` – Flexible query logic for downstream use
+### Database Setup
+- `create_db_and_tables(engine)` – Initializes database tables using SQLModel metadata
+
+### Loader Functions (with validation)
+- `insert_items_from_dict(item_dict, session)` – Insert multiple items with comprehensive validation
+- `insert_build(build_id, build_title, build_url, session)` – Insert a single build record
+- `insert_profiles(profiles, build_id, session)` – Insert multiple profiles for a build
+- `insert_item_usages_with_validation(usages, session)` – Insert item usages with FK validation
+- `validate_item_data(item_data, session)` – Validate item data before insertion
+
+### Query Functions
+- `get_all_items(session)` – Fetch all items
+- `get_all_item_usages(session)` – Fetch all item usages
+- `get_item_usages_with_names(session)` – Fetch usages with joined item names
+- `get_items_by_class(session, class_name)` – Items used by a specific character class
+- `get_items_by_build(session, build_id)` – Items used in a specific build
+- `get_item_usages_by_slot(session, slot)` – Usages for a specific equipment slot
+- `get_item_usages_by_context(session, usage_context)` – Usages by context (main, follower, kanai)
+- `get_profiles_for_build(session, build_id)` – All profiles for a build
+- `get_item_usages_for_profile(session, profile_id)` – All usages for a profile
+- `get_items_for_profile(session, profile_id)` – All items used in a profile
 
 ---
 
@@ -165,49 +295,63 @@ class ItemUsage(SQLModel, table=True):
 
 ## Step-by-Step Implementation Plan
 
-1. **Set up the project environment and database schema**
-   - Create models.py with Build, Profile, Item, and ItemUsage classes.
-   - Write a script to initialize the SQLite database.
+### ✅ Completed Implementation
 
-2. **Implement loader and query functions**
-   - Insert sample data (hardcoded items, builds, profiles, usages).
-   - Add queries to fetch items and usage contexts, validating relationships.
+1. **✅ Database Schema and Models**
+   - Implemented models.py with Build, Profile, Item, and ItemUsage classes with full relationships
+   - Set up dependency injection container for database management
+   - Created database initialization script
 
-3. **Expand loader to handle real data**
-   - Parse and insert data from reference data.json and sample build/profile JSONs.
-   - Validate relationships and lookups with real data.
-   - Add error handling and data validation.
+2. **✅ Loader and Query Functions**
+   - Implemented comprehensive loader functions with validation and error handling
+   - Added robust query functions for all common use cases
+   - Integrated foreign key validation and data integrity checks
 
-4. **Implement query/filter logic**
-   - Support filtering by class, build, slot, usage context, etc.
-   - Add unit tests for loader and query logic.
+3. **✅ Real Data Handling**
+   - Loader functions handle complex validation for item types, qualities, and relationships
+   - Error handling and detailed logging for data insertion operations
+   - Support for bulk operations and transactional integrity
 
-5. **API layer with FastAPI**
-   - Specified in `apiImplementation.md`.
+4. **✅ Query and Filter Logic**
+   - Complete query implementation supporting filtering by class, build, slot, usage context
+   - Type-safe SQLModel select operations with proper joins
+   - Comprehensive unit test coverage for all query functions
 
-6. **Web UI or CLI**
-   - Specified in frontend documentation.
+5. **✅ Testing Infrastructure**
+   - Pytest-based testing with temporary database fixtures
+   - Comprehensive test coverage for loader and query logic
+   - Automated test utilities for sample data generation
 
-7. **Migration/versioning, documentation, and testing**
-   - Alembic support and documentation required.
-   - End-to-end testing and review for performance and maintainability required.
+### 🔄 Future Enhancements
+
+6. **API Layer Integration**
+   - API endpoints are handled in separate modules as per `apiImplementation.md`
+   - Database layer provides foundation for API development
+
+7. **Advanced Migration Support**
+   - Migration strategy documented in `02 migrationsImplementation.md`
+   - Current approach uses metadata-based table creation for development
 
 ---
 
 ## Function Responsibilities and Best Practices
 
-- **models.py**: SQLModel class definitions (tables, relationships)
-- **db.py**: Engine/session setup, model imports (ensures tables are registered)
-- **loader.py**: Data ingestion, ETL, insert/bulk load functions only
-- **queries.py**: Query/filter logic, reusable select/filter functions, business rules
-- **api.py**: API endpoints specified in `apiImplementation.md`
+- **models.py**: SQLModel class definitions with full relationships and type annotations
+- **db.py**: Table creation utilities using SQLModel metadata
+- **init_db.py**: Database initialization script using dependency injection container
+- **loader.py**: Data ingestion with comprehensive validation, error handling, and bulk operations
+- **queries.py**: Query/filter logic with type-safe SQLModel select operations
+- **container.py**: Dependency injection for database engine and session management
+- **config/**: Configuration management using Pydantic settings
 
-**Best practice:**
+**Best practices:**
 
-- Keep ingestion (loader) and query/filter logic (queries) separate.
-- Centralize engine and model imports in db.py for table registration.
-- Use relative imports within the package for maintainability.
-- Structure code so that query/filter logic is reusable for API, CLI, and tests.
+- Use dependency injection container for database access throughout the application
+- Leverage SQLModel relationships for efficient queries and data navigation
+- Implement comprehensive validation in loader functions before database insertion
+- Use Session context managers for all database operations
+- Employ type hints consistently (modern Python syntax: `int | None` instead of `Optional[int]`)
+- Separate concerns: configuration, dependency injection, data models, business logic
 
 ---
 
