@@ -15,11 +15,11 @@ from typing import Any
 
 import pytest
 from loguru import logger
-from pytest import CaptureFixture
 from pytest_mock import MockerFixture
 
-from d3_item_salvager.config.base import LoggingConfig
+from d3_item_salvager.config.base import LoggingConfig, MaxrollParserConfig
 from d3_item_salvager.config.settings import AppConfig
+from d3_item_salvager.container import Container
 from d3_item_salvager.logging.setup import log_contextual, log_timing, setup_logger
 
 
@@ -27,9 +27,13 @@ from d3_item_salvager.logging.setup import log_contextual, log_timing, setup_log
 def dummy_config_basic(monkeypatch: pytest.MonkeyPatch) -> AppConfig:
     """Returns a dummy config object for basic logger setup (no file, no metrics)."""
     monkeypatch.setenv("MAXROLL_BEARER_TOKEN", "dummy-token")
-    app_config = AppConfig()
-    app_config.logging = LoggingConfig(enabled=False, metrics_enabled=False)
-    return app_config
+    config = AppConfig(
+        maxroll_parser=MaxrollParserConfig(bearer_token="dummy-token"),
+        logging=LoggingConfig(enabled=False, metrics_enabled=False),
+    )
+    container = Container()
+    container.config.override(config)
+    return container.config()
 
 
 @pytest.fixture
@@ -37,33 +41,41 @@ def dummy_config_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> AppCon
     """Returns a dummy config object with file handler enabled."""
     monkeypatch.setenv("MAXROLL_BEARER_TOKEN", "dummy-token")
     log_file = tmp_path / "dummy.log"
-    app_config = AppConfig()
-    app_config.logging = LoggingConfig(
-        enabled=True, metrics_enabled=False, level="DEBUG", log_file=str(log_file)
+    config = AppConfig(
+        maxroll_parser=MaxrollParserConfig(bearer_token="dummy-token"),
+        logging=LoggingConfig(
+            enabled=True, metrics_enabled=False, level="DEBUG", log_file=str(log_file)
+        ),
     )
-    return app_config
+    container = Container()
+    container.config.override(config)
+    return container.config()
 
 
 @pytest.fixture
 def dummy_config_metrics_enabled(monkeypatch: pytest.MonkeyPatch) -> AppConfig:
     """Returns a dummy config object with metrics enabled."""
     monkeypatch.setenv("MAXROLL_BEARER_TOKEN", "dummy-token")
-    app_config = AppConfig()
-    app_config.logging = LoggingConfig(
-        enabled=False, metrics_enabled=True, level="INFO"
+    config = AppConfig(
+        maxroll_parser=MaxrollParserConfig(bearer_token="dummy-token"),
+        logging=LoggingConfig(enabled=False, metrics_enabled=True, level="INFO"),
     )
-    return app_config
+    container = Container()
+    container.config.override(config)
+    return container.config()
 
 
 @pytest.fixture
 def dummy_config_metrics_importerror(monkeypatch: pytest.MonkeyPatch) -> AppConfig:
     """Returns a dummy config object with metrics enabled and simulates ImportError."""
     monkeypatch.setenv("MAXROLL_BEARER_TOKEN", "dummy-token")
-    app_config = AppConfig()
-    app_config.logging = LoggingConfig(
-        enabled=False, metrics_enabled=True, level="INFO"
+    config = AppConfig(
+        maxroll_parser=MaxrollParserConfig(bearer_token="dummy-token"),
+        logging=LoggingConfig(enabled=False, metrics_enabled=True, level="INFO"),
     )
-    return app_config
+    container = Container()
+    container.config.override(config)
+    return container.config()
 
 
 def test_setup_logger_runs(dummy_config_basic: AppConfig) -> None:
@@ -120,7 +132,7 @@ def test_setup_logger_with_file(dummy_config_file: AppConfig) -> None:
     logger.debug("Logger setup file test.")
     log_file = Path(dummy_config_file.logging.log_file)
     assert log_file.exists()
-    assert log_file.read_text() != ""
+    assert log_file.read_text(encoding="utf-8") != ""
 
 
 def test_setup_logger_metrics_enabled(
@@ -168,7 +180,9 @@ def test_setup_logger_metrics_importerror(
     logger.info("Logger setup metrics ImportError test.")
 
 
-def test_setup_logger_level(dummy_config_basic: AppConfig, capsys: CaptureFixture) -> None:
+def test_setup_logger_level(
+    dummy_config_basic: AppConfig, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test that the logger level from the config is respected."""
     dummy_config_basic.logging.level = "INFO"
     setup_logger(dummy_config_basic)

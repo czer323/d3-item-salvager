@@ -1,7 +1,7 @@
 """Main AppConfig definition and config loader."""
 
-from pydantic import Field, model_validator
-from pydantic_settings import BaseSettings
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .base import DatabaseConfig, LoggingConfig, MaxrollParserConfig
 
@@ -16,29 +16,7 @@ class AppConfig(BaseSettings):
         logging: LoggingConfig instance.
     """
 
-    database: DatabaseConfig = Field(
-        default_factory=lambda: DatabaseConfig()
-    )  # pylint: disable=unnecessary-lambda
-    maxroll_parser: MaxrollParserConfig = Field(
-        default_factory=lambda: MaxrollParserConfig()  # pyright: ignore[reportCallIssue]
-    )  # pylint: disable=unnecessary-lambda
-    logging: LoggingConfig = Field(
-        default_factory=lambda: LoggingConfig()
-    )  # pylint: disable=unnecessary-lambda
-
-    # pylint: disable=too-few-public-methods
-    class ConfigDict:
-        """Pydantic settings configuration."""
-
-        env_file = ".env"
-
-    @model_validator(mode="after")
-    def validate_bearer_token(self) -> "AppConfig":
-        """Validate that the bearer token is set."""
-        if not self.maxroll_parser.bearer_token:
-            msg = (
-                "Configuration validation failed: MAXROLL_BEARER_TOKEN is required "
-                "but not set in environment or .env file"
-            )
-            raise ValueError(msg)
-        return self
+    database: DatabaseConfig = Field(default_factory=DatabaseConfig)
+    maxroll_parser: MaxrollParserConfig
+    logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    model_config = SettingsConfigDict(env_file=".env")

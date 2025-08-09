@@ -47,14 +47,12 @@ pythonpath = ["src", "."]
 addopts = ["-v", "--color=yes"]
 testpaths = ["tests"]
 python_files = "test_*.py"
-markers = [
-    "no_bearer_token: test that does not need a bearer token",
-]
+
 
 [tool.mypy]
 python_version = "3.12"
 mypy_path = "src"
-plugins = ['pydantic.mypy', 'sqlalchemy.ext.mypy.plugin', 'dependency_injector.ext.mypy_plugin']
+plugins = ['pydantic.mypy', 'sqlalchemy.ext.mypy.plugin']
 strict = true
 
 [tool.pylint.main]
