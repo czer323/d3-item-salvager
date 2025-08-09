@@ -5,7 +5,6 @@ from collections.abc import Sequence
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session
 
-from d3_item_salvager.data.db import get_session
 from d3_item_salvager.data.models import Build, Item, ItemUsage, Profile
 
 
@@ -55,14 +54,14 @@ def insert_item_usages_with_validation(
 
 
 def insert_items_from_dict(
-    item_dict: dict[str, dict[str, str]], session: Session | None = None
+    item_dict: dict[str, dict[str, str]], session: Session
 ) -> None:
     """
     Insert cleaned item data from item_dict into the database.
 
     Args:
         item_dict: Dict mapping item IDs to cleaned item data (id, name, type, quality).
-        session: Optional active database session. If not provided, uses get_session().
+        session: Active database session.
 
     Returns:
         None
@@ -73,46 +72,26 @@ def insert_items_from_dict(
     """
     errors: list[tuple[dict[str, str], str]] = []
     success_count = 0
-    if session is None:
-        with get_session() as session_ctx:
-            for item_data in item_dict.values():
-                try:
-                    validate_item_data(item_data, session_ctx)
-                    item = Item(
-                        id=item_data["id"],
-                        name=item_data["name"],
-                        type=item_data["type"],
-                        quality=item_data["quality"],
-                    )
-                    session_ctx.add(item)
-                    success_count += 1
-                except (ValueError, SQLAlchemyError) as e:
-                    errors.append((item_data, str(e)))
-            try:
-                session_ctx.commit()
-            except SQLAlchemyError as e:
-                errors.append(({"commit": "commit"}, str(e)))
-    else:
-        for item_data in item_dict.values():
-            try:
-                validate_item_data(item_data, session)
-                item = Item(
-                    id=item_data["id"],
-                    name=item_data["name"],
-                    type=item_data["type"],
-                    quality=item_data["quality"],
-                )
-                session.add(item)
-                success_count += 1
-            except ValueError as e:
-                errors.append((item_data, str(e)))
-                raise
-            except SQLAlchemyError as e:
-                errors.append((item_data, str(e)))
+    for item_data in item_dict.values():
         try:
-            session.commit()
+            validate_item_data(item_data, session)
+            item = Item(
+                id=item_data["id"],
+                name=item_data["name"],
+                type=item_data["type"],
+                quality=item_data["quality"],
+            )
+            session.add(item)
+            success_count += 1
+        except ValueError as e:
+            errors.append((item_data, str(e)))
+            raise
         except SQLAlchemyError as e:
-            errors.append(({"commit": "commit"}, str(e)))
+            errors.append((item_data, str(e)))
+    try:
+        session.commit()
+    except SQLAlchemyError as e:
+        errors.append(({"commit": "commit"}, str(e)))
     print(f"Inserted {success_count} items. {len(errors)} errors.")
     if errors:
         print("Errors:")

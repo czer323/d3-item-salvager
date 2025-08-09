@@ -16,6 +16,7 @@ dependencies = [
     "typer>=0.16.0",
     "loguru>=0.7.3",
     "fastapi>=0.116.1",
+    "dependency-injector>=4.48.1",
 ]
 
 [dependency-groups]
@@ -47,11 +48,15 @@ addopts = ["-v", "--color=yes"]
 testpaths = ["tests"]
 python_files = "test_*.py"
 
+
 [tool.mypy]
 python_version = "3.12"
 mypy_path = "src"
 plugins = ['pydantic.mypy', 'sqlalchemy.ext.mypy.plugin']
 strict = true
+
+[tool.pylint.main]
+extension-pkg-allow-list = ["dependency_injector"]
 
 [tool.pre-commit-update]
 # dry_run = true

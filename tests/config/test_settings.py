@@ -1,53 +1,72 @@
 """Unit tests for config loading and validation."""
 
 import pytest
+from pydantic import ValidationError
 
-from d3_item_salvager.config import get_config, reset_config
+from d3_item_salvager.config.base import (
+    DatabaseConfig,
+    LoggingConfig,
+    MaxrollParserConfig,
+)
+from d3_item_salvager.config.settings import AppConfig
+from d3_item_salvager.container import Container
 
 
-# Reset config before each test to ensure fresh singleton
-@pytest.fixture(autouse=True)
-def reset_config_fixture() -> None:
-    """Reset the config singleton before each test."""
-    reset_config()
+@pytest.fixture
+def test_config_fixture() -> AppConfig:
+    """Provide a valid AppConfig for tests with a test bearer token."""
+    return AppConfig(
+        database=DatabaseConfig(),
+        maxroll_parser=MaxrollParserConfig(bearer_token="test-token"),
+        logging=LoggingConfig(),
+    )
 
 
-# Fixture to set required env var for all tests except validation failure
-@pytest.fixture(autouse=True)
-def set_required_env(
-    monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
-) -> None:
-    """Set required environment variable for tests."""
-    if request.node.name != "test_config_validation_failure":
-        monkeypatch.setenv("MAXROLL_BEARER_TOKEN", "prodtoken")
+@pytest.fixture
+def test_container_fixture(request: pytest.FixtureRequest) -> Container:
+    """Create DI container and override config provider for tests."""
+    config = request.getfixturevalue("test_config_fixture")
+    container = Container()
+    container.config.override(config)
+    return container
+
+
+def test_config_env_override(request: pytest.FixtureRequest) -> None:
+    """Config values are overridden by explicit test values via DI."""
+    container = request.getfixturevalue("test_container_fixture")
+
+    config = AppConfig(
+        database=DatabaseConfig(url="sqlite:///test.db"),
+        maxroll_parser=MaxrollParserConfig(bearer_token="dummy-token"),
+        logging=LoggingConfig(),
+    )
+    container.config.override(config)
+    actual_config = container.config()
+    assert actual_config.database.url == "sqlite:///test.db"
+    assert actual_config.maxroll_parser.bearer_token == "dummy-token"
 
 
 def test_config_loads_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Config loads defaults when environment variables are unset."""
+    """Config loads defaults when environment variables and .env are absent."""
     monkeypatch.delenv("DATABASE_URL", raising=False)
-    monkeypatch.setenv("MAXROLL_BEARER_TOKEN", "prodtoken")
-
-    reset_config()
-    config = get_config()
-    assert config.database.url == "sqlite:///d3_items.db"
-    assert config.maxroll_parser.bearer_token == "prodtoken"
-
-
-def test_config_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Config values are overridden by environment variables."""
-    monkeypatch.setenv("DATABASE_URL", "sqlite:///test.db")
-    monkeypatch.setenv("MAXROLL_BEARER_TOKEN", "dummy-token")
-
-    reset_config()
-    config = get_config()
-    assert config.database.url == "sqlite:///test.db"
-    assert config.maxroll_parser.bearer_token == "dummy-token"
-
-
-def test_config_validation_failure(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Config validation fails if a required field is missing."""
-    reset_config()
     monkeypatch.delenv("MAXROLL_BEARER_TOKEN", raising=False)
-    # Should not raise ValidationError, but should raise RuntimeError from get_config
-    with pytest.raises(RuntimeError, match="Configuration validation failed"):
-        get_config()
+    config = AppConfig(
+        database=DatabaseConfig(),
+        maxroll_parser=MaxrollParserConfig(bearer_token="prodtoken"),
+        logging=LoggingConfig(),
+    )
+    container = Container()
+    container.config.override(config)
+    actual_config = container.config()
+    assert actual_config.database.url == "sqlite:///d3_items.db"
+    assert actual_config.maxroll_parser.bearer_token == "prodtoken"
+
+
+def test_config_validation_failure() -> None:
+    """Config validation fails if a required field is missing."""
+    with pytest.raises(ValidationError, match="Field required"):
+        AppConfig(  # pyright: ignore[reportCallIssue]
+            database=DatabaseConfig(),
+            logging=LoggingConfig(),
+            # maxroll_parser omitted, should fail
+        )

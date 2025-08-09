@@ -9,9 +9,10 @@ Script to load reference data into the Diablo 3 Item Salvager database.
 from pathlib import Path
 
 from loguru import logger
-from sqlmodel import select
+from sqlmodel import Session, select
 
-from d3_item_salvager.data.db import create_db_and_tables, get_session
+from d3_item_salvager.container import Container
+from d3_item_salvager.data.db import create_db_and_tables
 from d3_item_salvager.data.loader import (
     insert_build,
     insert_item_usages_with_validation,
@@ -28,9 +29,12 @@ ITEMS_FILE = REFERENCE_DIR / "data.json"
 PROFILE_FILE = REFERENCE_DIR / "profile_object_861723133.json"
 
 
-def load_items() -> None:
+def load_items(session: Session) -> None:
     """
     Load items from reference/data.json and insert into the database using DataParser.
+
+    Args:
+        session: The database session.
 
     Returns:
         None
@@ -53,8 +57,7 @@ def load_items() -> None:
     except RuntimeError as e:
         logger.error("Runtime error while loading items: {}", e)
         return
-    with get_session() as session:
-        insert_items_from_dict(item_dict, session)
+    insert_items_from_dict(item_dict, session)
     logger.info("Item loading complete.")
 
 
@@ -92,12 +95,13 @@ def build_item_usages_from_parser(
 
 
 def insert_build_and_profiles(
-    json_path: Path, build_id: int, build_title: str | None = None
+    session: Session, json_path: Path, build_id: int, build_title: str | None = None
 ) -> None:
     """
     Parse build/profile JSON, insert Build/Profile records, and item usages into the database.
 
     Args:
+        session: The database session.
         json_path: Path to the build/profile JSON file.
         build_id: Build ID to use for inserted records.
         build_title: Optional build title.
@@ -120,18 +124,17 @@ def insert_build_and_profiles(
         ]
         if build_title is None:
             build_title = f"Build {build_id}" if build_id else json_path.stem
-        with get_session() as session:
-            insert_build(build_id, build_title, str(json_path), session)
-            insert_profiles(profiles, build_id, session)
-            # Query profiles to get their IDs (assuming name/class_name is unique per build)
+        insert_build(build_id, build_title, str(json_path), session)
+        insert_profiles(profiles, build_id, session)
+        # Query profiles to get their IDs (assuming name/class_name is unique per build)
 
-            db_profiles = list(
-                session.exec(select(Profile).where(Profile.build_id == build_id))
-            )
-            profile_lookup = {p.name: p.id for p in db_profiles if p.id is not None}
-            # Build usages with centralized error handling for unmatched profiles
-            usages = build_item_usages_from_parser(parser, profile_lookup)
-            insert_item_usages_with_validation(usages, session)
+        db_profiles = list(
+            session.exec(select(Profile).where(Profile.build_id == build_id))
+        )
+        profile_lookup = {p.name: p.id for p in db_profiles if p.id is not None}
+        # Build usages with centralized error handling for unmatched profiles
+        usages = build_item_usages_from_parser(parser, profile_lookup)
+        insert_item_usages_with_validation(usages, session)
         logger.info(
             "Inserted build, %d profiles, and %d item usages.",
             len(profiles),
@@ -152,14 +155,20 @@ def main() -> None:
     Returns:
         None
     """
-    setup_logger()
+    container = Container()
+    app_config = container.config()
+    setup_logger(app_config)
 
     logger.info("Starting reference data loading...")
-    create_db_and_tables()  # Ensure tables exist before loading
-    # load_items()
-    insert_build_and_profiles(
-        PROFILE_FILE, build_id=861723133, build_title="Example Build 2"
-    )
+
+    engine = container.engine()
+    create_db_and_tables(engine)
+
+    with container.session() as session:
+        # load_items(session)
+        insert_build_and_profiles(
+            session, PROFILE_FILE, build_id=861723133, build_title="Example Build 2"
+        )
 
 
 if __name__ == "__main__":

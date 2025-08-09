@@ -10,7 +10,7 @@ from typing import Any
 import requests
 from loguru import logger
 
-from d3_item_salvager.config.settings import AppConfig, get_config
+from d3_item_salvager.config.settings import AppConfig
 
 from .get_guide_cache_utils import (
     load_guides_from_cache,
@@ -25,8 +25,8 @@ class MaxrollGuideFetcher:
     Provides a public method for guide retrieval.
     """
 
-    def __init__(self, app_config: AppConfig | None = None) -> None:
-        self.app_config = app_config or get_config()
+    def __init__(self, app_config: AppConfig) -> None:
+        self.app_config = app_config
         # Load cache on instantiation
         self._cached_guides = load_guides_from_cache(self.app_config)
 
