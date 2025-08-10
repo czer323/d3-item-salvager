@@ -75,3 +75,19 @@ class MaxrollParserConfig(BaseSettings):
             )
             raise ValueError(msg)
         return self
+
+
+class ApiConfig(BaseSettings):
+    """
+    FastAPI/Uvicorn server configuration.
+
+    Attributes:
+        host: Host address to bind the server.
+        port: Port to bind the server.
+        reload: Enable auto-reload for development.
+    """
+
+    model_config = SettingsConfigDict(env_prefix="API_")
+    host: str = "127.0.0.1"
+    port: int = 8000
+    reload: bool = False
