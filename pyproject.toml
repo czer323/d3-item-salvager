@@ -17,6 +17,7 @@ dependencies = [
     "loguru>=0.7.3",
     "fastapi>=0.116.1",
     "dependency-injector>=4.48.1",
+    "uvicorn>=0.35.0",
 ]
 
 [dependency-groups]
