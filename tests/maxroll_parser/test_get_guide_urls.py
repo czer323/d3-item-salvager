@@ -18,23 +18,13 @@ from d3_item_salvager.config.base import (
 )
 from d3_item_salvager.config.settings import AppConfig
 from d3_item_salvager.maxroll_parser.get_guide_urls import MaxrollGuideFetcher
+from tests.fakes.test_config import make_test_app_config
 
 
 @pytest.fixture(name="guide_fetcher_config")
 def guide_fetcher_config_fixture(tmp_path: Path) -> AppConfig:
-    """Fixture to provide an AppConfig with a temp cache path for MaxrollGuideFetcher."""
-    cache_dir = tmp_path / "cache"
-    cache_dir.mkdir(exist_ok=True)
-    cache_path = cache_dir / "maxroll_guides.json"
-    return AppConfig(
-        database=DatabaseConfig(),
-        logging=LoggingConfig(),
-        maxroll_parser=MaxrollParserConfig(
-            api_url="https://dummy-url",
-            bearer_token="dummy-token",
-            cache_file=cache_path,
-        ),
-    )
+    """Fixture to provide a test AppConfig for MaxrollGuideFetcher."""
+    return make_test_app_config(tmp_path)
 
 
 def sample_meilisearch_response() -> dict[str, list[dict[str, str]]]:

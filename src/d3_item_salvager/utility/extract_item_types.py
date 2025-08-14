@@ -6,7 +6,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from d3_item_salvager.maxroll_parser.extract_data import DataParser
+from d3_item_salvager.maxroll_parser.item_data_parser import DataParser
 
 REFERENCE_DIR = Path.cwd() / "reference"
 ITEMS_FILE = REFERENCE_DIR / "data.json"
@@ -15,11 +15,11 @@ ITEMS_FILE = REFERENCE_DIR / "data.json"
 def main() -> None:
     """Main function to extract and print unique item types from the data file."""
     loader = DataParser(ITEMS_FILE)
-    item_dict = loader.items
+    item_dict = loader.get_all_items()
     types = set()
     for item in item_dict.values():
-        item_type = item.get("type", "")
-        if item_type:
+        item_type = item.type
+        if item_type is not None and item_type != "":
             types.add(item_type)
     logger.info("Unique item types:")
     for t in sorted(types):
