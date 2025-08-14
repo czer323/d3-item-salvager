@@ -12,7 +12,17 @@ from .guide_cache import FileGuideCache
 from .item_data_parser import DataParser, ItemMeta
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+if TYPE_CHECKING:
     from d3_item_salvager.config.settings import AppConfig
+
+    from .protocols import (
+        BuildProfileParserProtocol,
+        GuideCacheProtocol,
+        GuideFetcherProtocol,
+        ItemDataParserProtocol,
+    )
 
 
 class MaxrollClient:
@@ -42,7 +52,7 @@ class MaxrollClient:
         Returns:
             List of BuildProfileData objects.
         """
-        parser = self.profile_parser(file_path)
+        parser: BuildProfileParserProtocol = self.profile_parser(file_path)
         return parser.profiles
 
     def get_item_data(self, item_id: str) -> ItemMeta | None:
@@ -55,24 +65,24 @@ class MaxrollClient:
         Returns:
             ItemMeta if found, else None.
         """
-        parser = self.item_parser()
+        parser: ItemDataParserProtocol = self.item_parser()
         return parser.get_item(item_id)
 
-    def get_all_items(self) -> dict[str, ItemMeta]:
+    def get_all_items(self) -> Mapping[str, ItemMeta]:
         """
         Returns all item data available.
 
         Returns:
-            Dictionary mapping item ids to ItemMeta objects.
+            Mapping of item ids to ItemMeta objects.
         """
-        parser = self.item_parser()
-        return parser.get_all_items()
+        parser: ItemDataParserProtocol = self.item_parser()
+        return dict(parser.get_all_items())
 
     def __init__(
         self,
         config: AppConfig,
         *,
-        cache: FileGuideCache | None = None,
+        cache: GuideCacheProtocol | None = None,
     ) -> None:
         """
         Initializes MaxrollClient with configuration and optional cache.
@@ -82,13 +92,13 @@ class MaxrollClient:
             cache: Optional FileGuideCache instance.
         """
         self.config = config
-        self.cache = cache or FileGuideCache(config)
-        self._guide_fetcher: MaxrollGuideFetcher | None = None
-        self._profile_parser: BuildProfileParser | None = None
-        self._item_parser: DataParser | None = None
+        self.cache: GuideCacheProtocol = cache or FileGuideCache(config)
+        self._guide_fetcher: GuideFetcherProtocol | None = None
+        self._profile_parser: BuildProfileParserProtocol | None = None
+        self._item_parser: ItemDataParserProtocol | None = None
 
     @property
-    def guide_fetcher(self) -> MaxrollGuideFetcher:
+    def guide_fetcher(self) -> GuideFetcherProtocol:
         """
         Returns the MaxrollGuideFetcher instance.
 
@@ -99,7 +109,7 @@ class MaxrollClient:
             self._guide_fetcher = MaxrollGuideFetcher(self.config, cache=self.cache)
         return self._guide_fetcher
 
-    def profile_parser(self, file_path: str) -> BuildProfileParser:
+    def profile_parser(self, file_path: str) -> BuildProfileParserProtocol:
         """
         Returns a BuildProfileParser for the given file path.
 
@@ -111,7 +121,7 @@ class MaxrollClient:
         """
         return BuildProfileParser(file_path)
 
-    def item_parser(self) -> DataParser:
+    def item_parser(self) -> ItemDataParserProtocol:
         """
         Returns a DataParser instance for item data.
 

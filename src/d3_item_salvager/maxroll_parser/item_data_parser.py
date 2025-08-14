@@ -12,6 +12,7 @@ from typing import Any
 import requests
 
 from .maxroll_exceptions import ItemDataError
+from .protocols import ItemDataParserProtocol
 from .types import ItemMeta
 
 __all__ = ["DataParser", "ItemMeta"]
@@ -19,7 +20,7 @@ __all__ = ["DataParser", "ItemMeta"]
 DATA_PATH = Path(__file__).parent.parent.parent.parent / "reference" / "data.json"
 
 
-class DataParser(Mapping[str, ItemMeta]):
+class DataParser(ItemDataParserProtocol, Mapping[str, ItemMeta]):
     """
     Loads and validates data.json master item data.
 

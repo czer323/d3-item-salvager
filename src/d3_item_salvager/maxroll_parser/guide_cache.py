@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
+from .protocols import GuideCacheProtocol
 from .types import GuideInfo
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
@@ -21,7 +22,7 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
     from d3_item_salvager.config.settings import AppConfig
 
 
-class FileGuideCache:
+class FileGuideCache(GuideCacheProtocol):
     """
     File-based guide cache with TTL semantics.
 

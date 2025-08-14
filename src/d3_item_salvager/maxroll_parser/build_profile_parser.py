@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from .maxroll_exceptions import BuildProfileError
+from .protocols import BuildProfileParserProtocol
 from .types import (
     BuildProfileData,
     BuildProfileItems,
@@ -20,10 +21,12 @@ from .types import (
 )
 
 
-class BuildProfileParser:  # pylint: disable=too-few-public-methods
+class BuildProfileParser(BuildProfileParserProtocol):
     """
     Parses Diablo 3 build profile JSON files and provides methods
     to extract normalized profiles and item usages.
+
+    Implements BuildProfileParserProtocol for protocol compliance.
 
     Args:
         file_path: Path to the build profile JSON file.
@@ -32,7 +35,7 @@ class BuildProfileParser:  # pylint: disable=too-few-public-methods
         file_path: Path to the build profile JSON file.
         raw_json: Raw loaded JSON data.
         build_data: Parsed build data from the 'data' key.
-        profiles: List of ProfileData objects extracted from the build.
+        profiles: list[BuildProfileData] - List of ProfileData objects extracted from the build.
     """
 
     def __init__(self, file_path: str | Path) -> None:
@@ -40,6 +43,14 @@ class BuildProfileParser:  # pylint: disable=too-few-public-methods
         self.raw_json: dict[str, Any] = self._load_json()
         self.build_data: dict[str, Any] = self._extract_data()
         self.profiles: list[BuildProfileData] = self._extract_profiles()
+
+    def parse_profile(self, file_path: str) -> object:
+        """
+        Parse a build profile from the given file path and return the parsed object.
+        Protocol method for BuildProfileParserProtocol.
+        """
+        parser = BuildProfileParser(file_path)
+        return parser
 
     def _load_json(self) -> dict[str, Any]:
         """
