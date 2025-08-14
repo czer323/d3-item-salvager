@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 import requests
 from loguru import logger
 
-from .guide_cache import FileGuideCache
+from .guide_cache import _FileGuideCache
 from .maxroll_exceptions import GuideFetchError
 from .protocols import GuideCacheProtocol, GuideFetcherProtocol
 from .types import GuideInfo
@@ -23,10 +23,10 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
     from d3_item_salvager.config.settings import AppConfig
 
 
-__all__ = ["GuideInfo", "MaxrollGuideFetcher"]
+__all__ = ["GuideInfo", "_MaxrollGuideFetcher"]
 
 
-class MaxrollGuideFetcher(
+class _MaxrollGuideFetcher(
     GuideFetcherProtocol
 ):  # pragma: no cover - behaviour tested via unit tests
     """
@@ -46,7 +46,7 @@ class MaxrollGuideFetcher(
         cache: GuideCacheProtocol | None = None,
     ) -> None:
         self.config = config
-        self._cache: GuideCacheProtocol = cache or FileGuideCache(config)
+        self._cache: GuideCacheProtocol = cache or _FileGuideCache(config)
         mp_cfg = config.maxroll_parser
         self._api_url: str = mp_cfg.api_url
         self._bearer_token: str = mp_cfg.bearer_token

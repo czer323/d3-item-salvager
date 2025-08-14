@@ -22,7 +22,7 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
     from d3_item_salvager.config.settings import AppConfig
 
 
-class FileGuideCache(GuideCacheProtocol):
+class _FileGuideCache(GuideCacheProtocol):
     """
     File-based guide cache with TTL semantics.
 
@@ -97,4 +97,4 @@ class FileGuideCache(GuideCacheProtocol):
             logger.warning("Failed to save cache file: %s", e)
 
 
-__all__ = ["FileGuideCache", "GuideInfo"]
+__all__ = ["_FileGuideCache", "GuideInfo"]

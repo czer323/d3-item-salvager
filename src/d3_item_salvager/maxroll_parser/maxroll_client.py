@@ -6,45 +6,59 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .build_profile_parser import BuildProfileData, BuildProfileParser
-from .get_guide_urls import GuideInfo, MaxrollGuideFetcher
-from .guide_cache import FileGuideCache
-from .item_data_parser import DataParser, ItemMeta
+from .build_profile_parser import BuildProfileData, _BuildProfileParser
+from .get_guide_urls import GuideInfo, _MaxrollGuideFetcher
+from .guide_cache import _FileGuideCache
+from .item_data_parser import _DataParser, ItemMeta
+from .types import BuildProfileItems
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
-
-if TYPE_CHECKING:
     from d3_item_salvager.config.settings import AppConfig
-
-    from .protocols import (
-        BuildProfileParserProtocol,
-        GuideCacheProtocol,
-        GuideFetcherProtocol,
-        ItemDataParserProtocol,
-    )
 
 
 class MaxrollClient:
     """
     Central entry point for Maxroll parsing, guide fetching, and item data access.
 
-    Provides methods to fetch guides, build profiles, and item data using the configured
-    Maxroll parser components and cache.
+    This client simplifies interaction with the module by managing its own internal
+    components, including parsers and caches. It ensures that data sources are
+    initialized efficiently and that results are cached where appropriate.
     """
+
+    def __init__(self, config: AppConfig) -> None:
+        """
+        Initializes MaxrollClient with the application configuration.
+
+        Args:
+            config: Application configuration.
+        """
+        self._config = config
+        self._guide_cache = _FileGuideCache(config)
+        self._guide_fetcher = _MaxrollGuideFetcher(config, cache=self._guide_cache)
+        self._item_parser = _DataParser(config.maxroll_parser.data_paths)
+        self._parser_cache: dict[str, _BuildProfileParser] = {}
+
+    def _get_parser(self, file_path: str) -> _BuildProfileParser:
+        """Gets a build profile parser from cache or creates a new one."""
+        if file_path not in self._parser_cache:
+            self._parser_cache[file_path] = _BuildProfileParser(file_path)
+        return self._parser_cache[file_path]
 
     def get_guides(self) -> list[GuideInfo]:
         """
-        Returns all available guides (cached or fetched).
+        Returns all available guides, using a cache to avoid redundant fetching.
 
         Returns:
             List of GuideInfo objects.
         """
-        return self.guide_fetcher.fetch_guides()
+        return self._guide_fetcher.fetch_guides()
 
     def get_build_profiles(self, file_path: str) -> list[BuildProfileData]:
         """
         Returns build profiles for a given build profile file path.
+
+        Results are cached in memory to avoid re-parsing the same file.
 
         Args:
             file_path: Path to the build profile file.
@@ -52,83 +66,44 @@ class MaxrollClient:
         Returns:
             List of BuildProfileData objects.
         """
-        parser: BuildProfileParserProtocol = self.profile_parser(file_path)
+        parser = self._get_parser(file_path)
         return parser.profiles
 
-    def get_item_data(self, item_id: str) -> ItemMeta | None:
+    def get_item_usages(self, file_path: str) -> list[BuildProfileItems]:
         """
-        Returns item data for a given item id.
+        Returns all item usages for a given build profile file path.
 
-        Args:
-            item_id: The item id to look up.
-
-        Returns:
-            ItemMeta if found, else None.
-        """
-        parser: ItemDataParserProtocol = self.item_parser()
-        return parser.get_item(item_id)
-
-    def get_all_items(self) -> Mapping[str, ItemMeta]:
-        """
-        Returns all item data available.
-
-        Returns:
-            Mapping of item ids to ItemMeta objects.
-        """
-        parser: ItemDataParserProtocol = self.item_parser()
-        return dict(parser.get_all_items())
-
-    def __init__(
-        self,
-        config: AppConfig,
-        *,
-        cache: GuideCacheProtocol | None = None,
-    ) -> None:
-        """
-        Initializes MaxrollClient with configuration and optional cache.
-
-        Args:
-            config: Application configuration.
-            cache: Optional FileGuideCache instance.
-        """
-        self.config = config
-        self.cache: GuideCacheProtocol = cache or FileGuideCache(config)
-        self._guide_fetcher: GuideFetcherProtocol | None = None
-        self._profile_parser: BuildProfileParserProtocol | None = None
-        self._item_parser: ItemDataParserProtocol | None = None
-
-    @property
-    def guide_fetcher(self) -> GuideFetcherProtocol:
-        """
-        Returns the MaxrollGuideFetcher instance.
-
-        Returns:
-            MaxrollGuideFetcher object.
-        """
-        if self._guide_fetcher is None:
-            self._guide_fetcher = MaxrollGuideFetcher(self.config, cache=self.cache)
-        return self._guide_fetcher
-
-    def profile_parser(self, file_path: str) -> BuildProfileParserProtocol:
-        """
-        Returns a BuildProfileParser for the given file path.
+        Results are cached in memory to avoid re-parsing the same file.
 
         Args:
             file_path: Path to the build profile file.
 
         Returns:
-            BuildProfileParser object.
+            List of BuildProfileItems objects.
         """
-        return BuildProfileParser(file_path)
+        parser = self._get_parser(file_path)
+        return parser.extract_usages()
 
-    def item_parser(self) -> ItemDataParserProtocol:
+    def get_item_data(self, item_id: str) -> ItemMeta | None:
         """
-        Returns a DataParser instance for item data.
+        Returns metadata for a given item ID.
+
+        Args:
+            item_id: The item ID to look up.
 
         Returns:
-            DataParser object.
+            ItemMeta if found, else None.
         """
-        return DataParser(self.config.maxroll_parser.data_paths)
+        return self._item_parser.get_item(item_id)
+
+    def get_all_items(self) -> Mapping[str, ItemMeta]:
+        """
+        Returns all item data available from the master item list.
+
+        Returns:
+            A mapping of item IDs to ItemMeta objects.
+        """
+        return self._item_parser.get_all_items()
 
 
 __all__ = ["MaxrollClient"]

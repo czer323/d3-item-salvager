@@ -4,21 +4,7 @@
 
 This module is responsible for fetching, parsing, and caching data from Maxroll.gg. It is designed to be a self-contained unit that can be used to retrieve information about Diablo 3 build guides, items, and profiles. The primary entry point for this module is the `MaxrollClient` class, which provides a simplified interface for all the module's capabilities.
 
-### Core Components
-
-- **`MaxrollClient`**: The main entry point for the module. It provides a high-level API for accessing the other components.
-- **`MaxrollGuideFetcher`**: Fetches guide metadata from the Maxroll API or a local file.
-- **`FileGuideCache`**: A file-based cache for guide metadata with TTL support.
-- **`BuildProfileParser`**: Parses Diablo 3 build profile JSON files.
-- **`DataParser`**: Parses the `data.json` file, which contains master item data.
-
-### Protocols
-
-The module uses a protocol-driven design to allow for dependency injection and easy testing. The protocols are defined in `src/d3_item_salvager/maxroll_parser/protocols.py`.
-
-### Data Types
-
-The data structures used throughout the module are defined in `src/d3_item_salvager/maxroll_parser/types.py`. These are implemented as dataclasses for type safety and immutability.
+The internal components of this module (parsers, cache, etc.) are encapsulated and managed by the `MaxrollClient`, providing a clean and simple public API.
 
 ## MaxrollClient Usage
 
@@ -49,7 +35,7 @@ for guide in guides:
 
 ### Parsing Build Profiles
 
-To parse a build profile from a local JSON file:
+To parse a build profile from a local JSON file. The client will cache the parsed profiles in memory to avoid re-parsing the same file.
 
 ```python
 # Provide the path to a build profile JSON file
@@ -64,9 +50,24 @@ for profile in profiles:
     print(f"- Profile: {profile.name} (Class: {profile.class_name})")
 ```
 
+### Retrieving Item Usages from a Profile
+
+To get a structured list of all items used in a build profile, you can use the `get_item_usages` method. This is the most direct way to get the data needed to determine which items are required for a build.
+
+```python
+# Returns a list of BuildProfileItems objects
+item_usages = client.get_item_usages(profile_file_path)
+
+print(f"Found {len(item_usages)} item usages in the profile.")
+for usage in item_usages:
+    print(
+        f"- Item: {usage.item_id} (Slot: {usage.slot}, Context: {usage.usage_context})"
+    )
+```
+
 ### Retrieving Item Data
 
-You can retrieve metadata for a single item by its ID, or get all items at once.
+You can retrieve metadata for a single item by its ID, or get all items at once. The item data is loaded once and reused across all calls.
 
 **Get a single item:**
 
@@ -97,10 +98,5 @@ if the_furnace:
 
 ## Discrepancies
 
-- The `MaxrollClient` instantiates its own dependencies (`MaxrollGuideFetcher`, `BuildProfileParser`, `DataParser`). This is not ideal for dependency injection and testing. It would be better to inject these dependencies into the `MaxrollClient`'s constructor.
-- The `BuildProfileParser` is instantiated with a file path every time `get_build_profiles` is called. This is inefficient if the same file is parsed multiple times. A caching mechanism could be implemented to avoid re-parsing the same file.
-- The `DataParser` is instantiated every time `get_item_data` or `get_all_items` is called. This is also inefficient. The `DataParser` should be instantiated once and reused.
 - The `MaxrollGuideFetcher` has a `_fetch_from_file` method that is only used if the `api_url` is a local file path. This is a bit of a code smell. It would be better to have a separate class for fetching from a file, or to use a more generic approach that can handle both local and remote files.
 - The `maxroll_exceptions.py` file defines a custom exception hierarchy, which is good. However, the exceptions in the rest of the `d3_item_salvager` application inherit from a different `BaseError`. It would be better to have a single exception hierarchy for the entire application.
-- The `PluginProtocol` is defined but not used anywhere in the module. It should either be used or removed.
-- The `parse_slot` function in `build_profile_parser.py` has a `try...except` block that catches a `ValueError` and returns `ItemSlot.OTHER`. This is a good fallback, but it would be better to log the error so that it can be investigated.

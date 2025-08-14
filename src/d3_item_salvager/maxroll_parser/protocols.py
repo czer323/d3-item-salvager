@@ -90,31 +90,9 @@ class GuideCacheProtocol(Protocol):  # pragma: no cover - structural
         ...
 
 
-@runtime_checkable
-class PluginProtocol(Protocol):  # pragma: no cover - structural
-    """
-    Generic plugin contract (deliberately minimal).
-
-    A plugin can expose any number of callable capabilities; the client stores
-    them opaque but typed interaction can be achieved by also implementing one
-    of the more specific protocols above.
-    """
-
-    name: str  # human readable identifier
-
-    def close(self) -> None:  # pragma: no cover - optional behaviour
-        """Close / release any resources (optional)."""
-        ...
-
-    def run(self, *args: object, **kwargs: object) -> object:
-        """Run the plugin with the given arguments and return the result."""
-        ...
-
-
 __all__ = [
     "BuildProfileParserProtocol",
     "GuideCacheProtocol",
     "GuideFetcherProtocol",
     "ItemDataParserProtocol",
-    "PluginProtocol",
 ]

@@ -5,11 +5,13 @@ Produces structured BuildProfileData instances plus extracted item usages
 (normalised as BuildProfileItems with enumerated slot & usage context).
 """
 
-__all__ = ["BuildProfileData", "BuildProfileParser"]
+__all__ = ["BuildProfileData", "_BuildProfileParser"]
 
 import json
 from pathlib import Path
 from typing import Any
+
+from loguru import logger
 
 from .maxroll_exceptions import BuildProfileError
 from .protocols import BuildProfileParserProtocol
@@ -21,7 +23,7 @@ from .types import (
 )
 
 
-class BuildProfileParser(BuildProfileParserProtocol):
+class _BuildProfileParser(BuildProfileParserProtocol):
     """
     Parses Diablo 3 build profile JSON files and provides methods
     to extract normalized profiles and item usages.
@@ -49,7 +51,7 @@ class BuildProfileParser(BuildProfileParserProtocol):
         Parse a build profile from the given file path and return the parsed object.
         Protocol method for BuildProfileParserProtocol.
         """
-        parser = BuildProfileParser(file_path)
+        parser = _BuildProfileParser(file_path)
         return parser
 
     def _load_json(self) -> dict[str, Any]:
@@ -161,6 +163,7 @@ class BuildProfileParser(BuildProfileParserProtocol):
             try:
                 return ItemSlot(slot)
             except ValueError:
+                logger.warning("Unknown item slot '{}', falling back to OTHER", slot)
                 return ItemSlot.OTHER
 
         def extract_main_items(

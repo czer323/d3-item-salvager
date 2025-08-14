@@ -15,12 +15,12 @@ from .maxroll_exceptions import ItemDataError
 from .protocols import ItemDataParserProtocol
 from .types import ItemMeta
 
-__all__ = ["DataParser", "ItemMeta"]
+__all__ = ["_DataParser", "ItemMeta"]
 
 DATA_PATH = Path(__file__).parent.parent.parent.parent / "reference" / "data.json"
 
 
-class DataParser(ItemDataParserProtocol, Mapping[str, ItemMeta]):
+class _DataParser(ItemDataParserProtocol, Mapping[str, ItemMeta]):
     """
     Loads and validates data.json master item data.
 
