@@ -6,11 +6,16 @@ Script to load reference data into the Diablo 3 Item Salvager database.
 - Only runs when manually executed
 """
 
+# Standard library
+
+from dataclasses import asdict
 from pathlib import Path
 
+# Third-party
 from loguru import logger
 from sqlmodel import Session, select
 
+# Local/project
 from d3_item_salvager.container import Container
 from d3_item_salvager.data.db import create_db_and_tables
 from d3_item_salvager.data.loader import (
@@ -21,8 +26,9 @@ from d3_item_salvager.data.loader import (
 )
 from d3_item_salvager.data.models import ItemUsage, Profile
 from d3_item_salvager.logging.setup import setup_logger
-from d3_item_salvager.maxroll_parser.extract_build import BuildProfileParser
-from d3_item_salvager.maxroll_parser.extract_data import DataParser
+from d3_item_salvager.maxroll_parser.build_profile_parser import BuildProfileParser
+from d3_item_salvager.maxroll_parser.item_data_parser import DataParser
+from d3_item_salvager.maxroll_parser.types import ItemMeta
 
 REFERENCE_DIR = Path.cwd() / "reference"
 ITEMS_FILE = REFERENCE_DIR / "data.json"
@@ -47,7 +53,7 @@ def load_items(session: Session) -> None:
     logger.info("Loading items from {}...", ITEMS_FILE)
     try:
         loader = DataParser(ITEMS_FILE)
-        item_dict = loader.items
+        item_dict = loader.get_all_items()  # Ensure correct dictionary is passed
     except FileNotFoundError as e:
         logger.error("File not found: {}", e)
         return
@@ -57,7 +63,12 @@ def load_items(session: Session) -> None:
     except RuntimeError as e:
         logger.error("Runtime error while loading items: {}", e)
         return
-    insert_items_from_dict(item_dict, session)
+    # Convert ItemMeta objects to dicts for insert_items_from_dict
+    item_dict_as_dict = {
+        k: asdict(v) if isinstance(v, ItemMeta) else dict(v)
+        for k, v in item_dict.items()
+    }
+    insert_items_from_dict(item_dict_as_dict, session)
     logger.info("Item loading complete.")
 
 

@@ -1,15 +1,35 @@
-"""Defines the Maxroll parser module for Diablo 3 builds and guides."""
+"""Central entry point for Maxroll parsing, guides, and item data."""
 
-from .extract_build import BuildProfileParser
-from .extract_data import DataParser
-from .get_guide_urls import MaxrollGuideFetcher
-from .types import BuildProfileData, BuildProfileItems, GuideInfo
+from .maxroll_client import MaxrollClient
+from .protocols import (
+    BuildProfileParserProtocol,
+    GuideCacheProtocol,
+    GuideFetcherProtocol,
+    ItemDataParserProtocol,
+    PluginProtocol,
+)
+
+# Import all public types and enums from types.py
+from .types import (
+    BuildProfileData,
+    BuildProfileItems,
+    GuideInfo,
+    ItemMeta,
+    ItemSlot,
+    ItemUsageContext,
+)
 
 __all__ = [
     "BuildProfileData",
     "BuildProfileItems",
-    "BuildProfileParser",
-    "DataParser",
+    "BuildProfileParserProtocol",
+    "GuideCacheProtocol",
+    "GuideFetcherProtocol",
     "GuideInfo",
-    "MaxrollGuideFetcher",
+    "ItemDataParserProtocol",
+    "ItemMeta",
+    "ItemSlot",
+    "ItemUsageContext",
+    "MaxrollClient",
+    "PluginProtocol",
 ]

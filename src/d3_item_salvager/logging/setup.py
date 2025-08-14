@@ -11,6 +11,8 @@ from loguru import logger
 
 from d3_item_salvager.config.settings import AppConfig
 
+__all__ = ["logger"]
+
 
 def log_timing[T](func: Callable[..., T]) -> Callable[..., T]:
     """
@@ -76,6 +78,9 @@ def setup_logger(app_config: AppConfig) -> None:
     Raises:
         ImportError: If Prometheus metrics are enabled but prometheus_client is not installed.
     """
+    # Local import to avoid circular import
+    # Only needed for type checking, not runtime
+    # from d3_item_salvager.config.settings import AppConfig
     logging_config = app_config.logging
     logger.remove()
     logger.add(

@@ -7,8 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class DatabaseConfig(BaseSettings):
-    """
-    Database configuration.
+    """Database configuration settings.
 
     Attributes:
         url: Database connection URL.
@@ -20,12 +19,11 @@ class DatabaseConfig(BaseSettings):
 
 
 class LoggingConfig(BaseSettings):
-    """
-    Logging configuration for Loguru and observability hooks.
+    """Logging configuration for Loguru and observability hooks.
 
     Attributes:
         enabled: Whether logging is enabled.
-        level: Logging level.
+        level: Logging level (e.g., 'INFO', 'DEBUG').
         metrics_enabled: Whether metrics are enabled.
         log_file: Path to the log file.
     """
@@ -38,8 +36,7 @@ class LoggingConfig(BaseSettings):
 
 
 class MaxrollParserConfig(BaseSettings):
-    """
-    Data source configuration for switching between environments.
+    """Configuration for Maxroll parser data sources and API access.
 
     Attributes:
         bearer_token: Bearer token for Maxroll API.
@@ -54,9 +51,12 @@ class MaxrollParserConfig(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="MAXROLL_", env_file=None)
 
-    bearer_token: str | None = Field(
-        None, description="Bearer token for Maxroll API"
-    )  # Required at runtime, validated by model_validator. Optional for linters/static analysis.
+    bearer_token: str = Field(
+        "fake-dummy-token",
+        description=(
+            "Bearer token for Maxroll API (default is dummy; must be set via env for production)"
+        ),
+    )
     data_paths: str = "https://assets-ng.maxroll.gg/d3planner/data.json"
     build_paths: str = "https://assets-ng.maxroll.gg/d3planner/profile_object.json"
     guide_paths: str = "https://meilisearch-proxy.maxroll.gg/indexes/wp_posts_1/search"
@@ -67,19 +67,26 @@ class MaxrollParserConfig(BaseSettings):
 
     @model_validator(mode="after")
     def validate_bearer_token(self) -> "MaxrollParserConfig":
-        """Enforce bearer_token presence at runtime, but allow None for static analysis/linters"""
-        if not self.bearer_token:
+        """Validates that a non-default bearer_token is set for production use.
+
+        Raises:
+            ValueError: If bearer_token is missing or set to the default 'fake-dummy-token'.
+
+        Returns:
+            MaxrollParserConfig: The validated configuration instance.
+        """
+        if not self.bearer_token or self.bearer_token == "fake-dummy-token":
             msg = (
-                "Configuration validation failed: "
-                "MAXROLL_BEARER_TOKEN is required but not set in environment or .env file"
+                "Configuration validation failed:"
+                "MAXROLL_BEARER_TOKEN is required for production use. "
+                "\nDefault 'fake-dummy-token' will not work."
             )
             raise ValueError(msg)
         return self
 
 
 class ApiConfig(BaseSettings):
-    """
-    FastAPI/Uvicorn server configuration.
+    """Configuration for FastAPI/Uvicorn server.
 
     Attributes:
         host: Host address to bind the server.
