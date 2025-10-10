@@ -11,6 +11,10 @@ anyio==4.11.0 \
     # via
     #   httpx
     #   starlette
+apscheduler==3.11.0 \
+    --hash=sha256:4c622d250b0955a65d5d0eb91c33e6d43fd879834bf541e0a18661ae60460133 \
+    --hash=sha256:fc134ca32e50f5eadcc4938e3a4545ab19131435e851abb40b34d63d5141c6da
+    # via d3-item-salvager
 astroid==3.3.11 \
     --hash=sha256:1e5a5011af2920c7c67a53f65d536d65bfa7116feeaf2354d8b94f29573bb0ce \
     --hash=sha256:54c760ae8322ece1abd213057c4b5bba7c49818853fc901ef09719a60dbf9dec
@@ -893,7 +897,13 @@ typing-inspection==0.4.2 \
 tzdata==2025.2 \
     --hash=sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8 \
     --hash=sha256:b60a638fcc0daffadf82fe0f57e53d06bdec2f36c4df66280ae79bce6bd6f2b9
-    # via pandas
+    # via
+    #   pandas
+    #   tzlocal
+tzlocal==5.3.1 \
+    --hash=sha256:cceffc7edecefea1f595541dbd6e990cb1ea3d19bf01b2809f362a03dd7921fd \
+    --hash=sha256:eb1a66c3ef5847adf7a834f1be0800581b683b5608e74f86ecbcef8ab91bb85d
+    # via apscheduler
 urllib3==2.5.0 \
     --hash=sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760 \
     --hash=sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc

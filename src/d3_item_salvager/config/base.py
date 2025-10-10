@@ -1,6 +1,7 @@
 """Base config dataclasses and shared types."""
 
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -98,3 +99,38 @@ class ApiConfig(BaseSettings):
     host: str = "127.0.0.1"
     port: int = 8000
     reload: bool = False
+
+
+class SchedulerConfig(BaseSettings):
+    """Configuration for the APScheduler-based workers module."""
+
+    model_config = SettingsConfigDict(env_prefix="SCHEDULER_")
+
+    enabled: bool = True
+    job_store_path: Path = Path("cache/scheduler.sqlite")
+    timezone: str = "UTC"
+    max_workers: int = 5
+    misfire_grace_seconds: int = 300
+    shutdown_timeout_seconds: int = 30
+
+    scrape_guides_enabled: bool = True
+    scrape_guides_interval_minutes: int = 360
+
+    refresh_cache_enabled: bool = True
+    refresh_cache_interval_minutes: int = 1440
+
+    cleanup_logs_enabled: bool = True
+    cleanup_logs_interval_minutes: int = 1440
+    cleanup_logs_max_age_days: int = 7
+
+    @model_validator(mode="after")
+    def validate_timezone(self) -> "SchedulerConfig":
+        """Validate that configured timezone is recognised by the system."""
+        try:
+            ZoneInfo(self.timezone)
+        except (
+            ZoneInfoNotFoundError
+        ) as exc:  # pragma: no cover - depends on host TZ data
+            msg = f"Unknown timezone configured for scheduler: {self.timezone}"
+            raise ValueError(msg) from exc
+        return self

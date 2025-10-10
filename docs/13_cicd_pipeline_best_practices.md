@@ -108,7 +108,7 @@ jobs:
 
 ## 5. Testing Strategy
 
-- **Unit Tests:** Run on every push/PR. Use `pytest` and `scripts/check unit`.
+- **Unit Tests:** Run on every push/PR. Use `pytest` and `uv run pre-commit run --all-files`.
 - **Integration/E2E:** Use dedicated jobs and environments.
 - **Reporting:** Upload test and coverage reports as artifacts.
 
@@ -119,7 +119,7 @@ jobs:
   test:
     steps:
       - name: Run tests
-        run: scripts/check unit
+        run: uv run pre-commit run --all-files
       - name: Upload coverage
         uses: actions/upload-artifact@v3
         with:
