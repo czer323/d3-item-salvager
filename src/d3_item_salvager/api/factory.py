@@ -1,8 +1,10 @@
 """Application factory for FastAPI app with DI."""
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from d3_item_salvager.api.dependencies import ConfigDep, ServiceDep, SessionDep
+from d3_item_salvager.api.endpoints import router as api_router
 
 
 # 'AppConfig' and 'ItemSalvageService' are no longer needed here
@@ -41,6 +43,7 @@ def _register_routes(app: FastAPI) -> None:
         tags=["demo"],
         response_model=None,
     )
+    app.include_router(api_router)
 
 
 def create_app() -> FastAPI:
@@ -51,5 +54,12 @@ def create_app() -> FastAPI:
         FastAPI: Configured FastAPI application instance.
     """
     app = FastAPI(title="Diablo 3 Item Salvager API")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     _register_routes(app)
     return app

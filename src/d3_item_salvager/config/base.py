@@ -76,13 +76,24 @@ class MaxrollParserConfig(BaseSettings):
         Returns:
             MaxrollParserConfig: The validated configuration instance.
         """
+        # Enforce a real bearer token in production environments only. During
+        # development or in test runs we allow the default token but emit a
+        # warning so developers are informed.
+        import os
+        import warnings
+
+        # TODO: Need to fix this
+        app_env = os.getenv("APP_ENV", "development").lower()
         if not self.bearer_token or self.bearer_token == "fake-dummy-token":
             msg = (
                 "Configuration validation failed:"
                 "MAXROLL_BEARER_TOKEN is required for production use. "
                 "\nDefault 'fake-dummy-token' will not work."
             )
-            raise ValueError(msg)
+            if app_env == "production":
+                raise ValueError("Configuration validation failed: " + msg)
+            # Non-production: warn but do not raise to allow local CLI/dev runs
+            warnings.warn(msg)
         return self
 
 

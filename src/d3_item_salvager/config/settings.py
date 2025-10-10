@@ -25,7 +25,9 @@ class AppConfig(BaseSettings):
 
     app_name: str = "D3 Item Salvager"
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
-    maxroll_parser: MaxrollParserConfig
+    maxroll_parser: MaxrollParserConfig = Field(
+        default_factory=lambda: MaxrollParserConfig()  # type: ignore[call-arg]
+    )
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     api: ApiConfig = Field(default_factory=ApiConfig)
     scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig)
