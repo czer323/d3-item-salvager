@@ -8,7 +8,10 @@ from sqlmodel import Session
 
 from d3_item_salvager.config.settings import AppConfig
 from d3_item_salvager.container import Container
-from d3_item_salvager.services.item_salvage import ItemSalvageService
+from d3_item_salvager.services.item_salvage import (
+    ItemSalvageDependencies,
+    ItemSalvageService,
+)
 
 # --- No changes needed below this line ---
 
@@ -37,7 +40,12 @@ def get_service(
     config: AppConfig = Depends(get_config),
 ) -> ItemSalvageService:
     """Provide ItemSalvageService instance for DI."""
-    return ItemSalvageService(db=db, config=config)
+    dependencies = ItemSalvageDependencies(
+        session=db,
+        config=config,
+        logger=Container.logger(),
+    )
+    return ItemSalvageService(dependencies=dependencies)
 
 
 # --- Add an Annotated dependency for the service ---
