@@ -1,14 +1,46 @@
 """Application factory for FastAPI app with DI."""
 
-from fastapi import FastAPI  # 'Depends' is no longer needed here
+from fastapi import FastAPI
 
-from d3_item_salvager.api.dependencies import (
-    ConfigDep,
-    ServiceDep,
-    SessionDep,
-)
+from d3_item_salvager.api.dependencies import ConfigDep, ServiceDep, SessionDep
+
 
 # 'AppConfig' and 'ItemSalvageService' are no longer needed here
+def _health_endpoint(config: ConfigDep) -> dict[str, str]:
+    """Return a simple health payload for monitoring probes."""
+    return {"status": "ok", "app_name": config.app_name}
+
+
+def _sample_endpoint(
+    db: SessionDep,
+    config: ConfigDep,
+    service: ServiceDep,
+) -> dict[str, str]:
+    """Expose sample dependency-injected information for diagnostics."""
+    return {
+        "app_name": config.app_name,
+        "db_type": type(db).__name__,
+        "service_type": type(service).__name__,
+    }
+
+
+def _register_routes(app: FastAPI) -> None:
+    """Attach API routes to the provided FastAPI application."""
+    app.add_api_route(
+        "/health",
+        _health_endpoint,
+        methods=["GET"],
+        summary="Health check",
+        tags=["system"],
+    )
+    app.add_api_route(
+        "/sample",
+        _sample_endpoint,
+        methods=["GET"],
+        summary="Sample endpoint",
+        tags=["demo"],
+        response_model=None,
+    )
 
 
 def create_app() -> FastAPI:
@@ -19,28 +51,5 @@ def create_app() -> FastAPI:
         FastAPI: Configured FastAPI application instance.
     """
     app = FastAPI(title="Diablo 3 Item Salvager API")
-
-    @app.get("/health", summary="Health check", tags=["system"])
-    def health(config: ConfigDep) -> dict[str, str]:
-        """Health check endpoint with config DI."""
-        # The 'config' object here is an AppConfig instance
-        return {"status": "ok", "app_name": config.app_name}
-
-    @app.get("/sample", summary="Sample endpoint", tags=["demo"], response_model=None)
-    def sample(
-        db: SessionDep,
-        config: ConfigDep,
-        service: ServiceDep,
-    ) -> dict[str, str]:
-        """Sample endpoint demonstrating DI for config, DB, and service."""
-        # FastAPI and mypy know the types:
-        # db: Session
-        # config: AppConfig
-        # service: ItemSalvageService
-        return {
-            "app_name": config.app_name,
-            "db_type": type(db).__name__,
-            "service_type": type(service).__name__,
-        }
-
+    _register_routes(app)
     return app

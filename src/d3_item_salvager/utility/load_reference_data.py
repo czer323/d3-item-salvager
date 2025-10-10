@@ -28,7 +28,6 @@ from d3_item_salvager.data.models import ItemUsage, Profile
 from d3_item_salvager.logging.setup import setup_logger
 from d3_item_salvager.maxroll_parser.build_profile_parser import BuildProfileParser
 from d3_item_salvager.maxroll_parser.item_data_parser import DataParser
-from d3_item_salvager.maxroll_parser.types import ItemMeta
 
 REFERENCE_DIR = Path.cwd() / "reference"
 ITEMS_FILE = REFERENCE_DIR / "data.json"
@@ -63,11 +62,14 @@ def load_items(session: Session) -> None:
     except RuntimeError as e:
         logger.error("Runtime error while loading items: {}", e)
         return
-    # Convert ItemMeta objects to dicts for insert_items_from_dict
-    item_dict_as_dict = {
-        k: asdict(v) if isinstance(v, ItemMeta) else dict(v)
-        for k, v in item_dict.items()
-    }
+    item_dict_as_dict: dict[str, dict[str, str]] = {}
+    for item_id, meta in item_dict.items():
+        meta_dict = {
+            field: str(value)
+            for field, value in asdict(meta).items()
+            if value is not None
+        }
+        item_dict_as_dict[item_id] = meta_dict
     insert_items_from_dict(item_dict_as_dict, session)
     logger.info("Item loading complete.")
 
@@ -85,7 +87,7 @@ def build_item_usages_from_parser(
     Returns:
         list[ItemUsage]: List of valid ItemUsage objects with profile_id set.
     """
-    usages = []
+    usages: list[ItemUsage] = []
     for u in parser.extract_usages():
         pid = profile_lookup.get(u.profile_name)
         if pid is None:

@@ -19,7 +19,6 @@ from pytest_mock import MockerFixture
 
 from d3_item_salvager.config.base import LoggingConfig, MaxrollParserConfig
 from d3_item_salvager.config.settings import AppConfig
-from d3_item_salvager.container import Container
 from d3_item_salvager.logging.setup import log_contextual, log_timing, setup_logger
 
 
@@ -31,9 +30,7 @@ def dummy_config_basic(monkeypatch: pytest.MonkeyPatch) -> AppConfig:
         maxroll_parser=MaxrollParserConfig(bearer_token="dummy-token"),
         logging=LoggingConfig(enabled=False, metrics_enabled=False),
     )
-    container = Container()
-    container.config.override(config)
-    return container.config()
+    return config
 
 
 @pytest.fixture
@@ -47,9 +44,7 @@ def dummy_config_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> AppCon
             enabled=True, metrics_enabled=False, level="DEBUG", log_file=str(log_file)
         ),
     )
-    container = Container()
-    container.config.override(config)
-    return container.config()
+    return config
 
 
 @pytest.fixture
@@ -60,9 +55,7 @@ def dummy_config_metrics_enabled(monkeypatch: pytest.MonkeyPatch) -> AppConfig:
         maxroll_parser=MaxrollParserConfig(bearer_token="dummy-token"),
         logging=LoggingConfig(enabled=False, metrics_enabled=True, level="INFO"),
     )
-    container = Container()
-    container.config.override(config)
-    return container.config()
+    return config
 
 
 @pytest.fixture
@@ -73,9 +66,7 @@ def dummy_config_metrics_importerror(monkeypatch: pytest.MonkeyPatch) -> AppConf
         maxroll_parser=MaxrollParserConfig(bearer_token="dummy-token"),
         logging=LoggingConfig(enabled=False, metrics_enabled=True, level="INFO"),
     )
-    container = Container()
-    container.config.override(config)
-    return container.config()
+    return config
 
 
 def test_setup_logger_runs(dummy_config_basic: AppConfig) -> None:

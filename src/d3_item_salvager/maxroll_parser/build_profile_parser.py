@@ -9,7 +9,7 @@ __all__ = ["BuildProfileData", "BuildProfileParser"]
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from .maxroll_exceptions import BuildProfileError
 from .protocols import BuildProfileParserProtocol
@@ -65,7 +65,7 @@ class BuildProfileParser(BuildProfileParserProtocol):
         try:
             with self.file_path.open(encoding="utf-8") as f:
                 content = f.read()
-            obj: dict[str, Any] = json.loads(content)
+            obj: Any = json.loads(content)
         except Exception as e:  # pragma: no cover - unexpected IO/JSON issues
             msg = f"Could not parse build profile JSON: {e}"
             raise BuildProfileError(msg, file_path=str(self.file_path)) from e
@@ -75,7 +75,7 @@ class BuildProfileParser(BuildProfileParserProtocol):
                 msg,
                 file_path=str(self.file_path),
             )
-        return obj
+        return cast("dict[str, Any]", obj)
 
     def _extract_data(self) -> dict[str, Any]:
         """
@@ -108,7 +108,7 @@ class BuildProfileParser(BuildProfileParserProtocol):
         if not isinstance(data, dict):
             msg = "Parsed 'data' is not a dict."
             raise BuildProfileError(msg, file_path=str(self.file_path))
-        return data
+        return cast("dict[str, Any]", data)
 
     def _extract_profiles(self) -> list[BuildProfileData]:
         """
@@ -117,14 +117,16 @@ class BuildProfileParser(BuildProfileParserProtocol):
         Returns:
             list[ProfileData]: List of extracted profiles.
         """
-        profiles_raw = self.build_data.get("profiles", [])
+        profiles_raw_any = self.build_data.get("profiles", [])
         result: list[BuildProfileData] = []
-        if not isinstance(profiles_raw, list):  # defensive
+        if not isinstance(profiles_raw_any, list):  # defensive
             msg = "'profiles' must be a list if present."
             raise BuildProfileError(msg, file_path=str(self.file_path))
-        for idx, profile_dict in enumerate(profiles_raw):
-            if not isinstance(profile_dict, dict):  # skip invalid entries
+        profiles_raw = cast("list[object]", profiles_raw_any)
+        for idx, profile_obj in enumerate(profiles_raw):
+            if not isinstance(profile_obj, dict):  # skip invalid entries
                 continue
+            profile_dict = cast("dict[str, Any]", profile_obj)
             name = str(profile_dict.get("name", ""))
             class_name = str(profile_dict.get("class", ""))
             seasonal = profile_dict.get("seasonal")
@@ -153,9 +155,10 @@ class BuildProfileParser(BuildProfileParserProtocol):
         Returns:
             list[ItemUsageData]: List of item usages for all profiles.
         """
-        profiles_raw = self.build_data.get("profiles", [])
-        if not isinstance(profiles_raw, list):
+        profiles_raw_any = self.build_data.get("profiles", [])
+        if not isinstance(profiles_raw_any, list):
             return []
+        profiles_raw = cast("list[object]", profiles_raw_any)
 
         def parse_slot(slot: str) -> ItemSlot:
             try:
@@ -166,12 +169,17 @@ class BuildProfileParser(BuildProfileParserProtocol):
         def extract_main_items(
             profile_dict: dict[str, Any], profile_name: str
         ) -> list[BuildProfileItems]:
-            items = profile_dict.get("items", {})
-            usages = []
-            if isinstance(items, dict):
-                for slot, item in items.items():
-                    slot_enum = parse_slot(slot)
-                    item_id = item.get("id") if isinstance(item, dict) else None
+            items_value = profile_dict.get("items", {})
+            usages: list[BuildProfileItems] = []
+            if isinstance(items_value, dict):
+                items = cast("dict[str, Any]", items_value)
+                for slot_obj, item_obj in items.items():
+                    slot_str = str(slot_obj)
+                    slot_enum = parse_slot(slot_str)
+                    item_id: Any | None = None
+                    if isinstance(item_obj, dict):
+                        item_dict = cast("dict[str, Any]", item_obj)
+                        item_id = item_dict.get("id")
                     if item_id:
                         usages.append(
                             BuildProfileItems(
@@ -186,9 +194,10 @@ class BuildProfileParser(BuildProfileParserProtocol):
         def extract_kanai_items(
             profile_dict: dict[str, Any], profile_name: str
         ) -> list[BuildProfileItems]:
-            kanai = profile_dict.get("kanai", {})
-            usages = []
-            if isinstance(kanai, dict):
+            kanai_value = profile_dict.get("kanai", {})
+            usages: list[BuildProfileItems] = []
+            if isinstance(kanai_value, dict):
+                kanai = cast("dict[str, Any]", kanai_value)
                 for slot in ("weapon", "armor", "jewelry"):
                     kanai_id = kanai.get(slot)
                     if kanai_id:
@@ -206,16 +215,20 @@ class BuildProfileParser(BuildProfileParserProtocol):
         def extract_follower_items(
             profile_dict: dict[str, Any], profile_name: str
         ) -> list[BuildProfileItems]:
-            follower_items = profile_dict.get("followerItems", {})
-            usages = []
-            if isinstance(follower_items, dict):
-                for slot, raw_item in follower_items.items():
-                    slot_enum = parse_slot(slot)
-                    item_id = (
-                        raw_item.get("id")
-                        if isinstance(raw_item, dict)
-                        else (raw_item if isinstance(raw_item, str) else None)
-                    )
+            follower_items_value = profile_dict.get("followerItems", {})
+            usages: list[BuildProfileItems] = []
+            if isinstance(follower_items_value, dict):
+                follower_items = cast("dict[str, Any]", follower_items_value)
+                for slot_obj, raw_item in follower_items.items():
+                    slot_enum = parse_slot(str(slot_obj))
+                    item_id: Any | None
+                    if isinstance(raw_item, dict):
+                        raw_item_dict = cast("dict[str, Any]", raw_item)
+                        item_id = raw_item_dict.get("id")
+                    elif isinstance(raw_item, str):
+                        item_id = raw_item
+                    else:
+                        item_id = None
                     if item_id:
                         usages.append(
                             BuildProfileItems(
@@ -228,9 +241,10 @@ class BuildProfileParser(BuildProfileParserProtocol):
             return usages
 
         item_usages: list[BuildProfileItems] = []
-        for profile_dict in profiles_raw:
-            if not isinstance(profile_dict, dict):
+        for profile_obj in profiles_raw:
+            if not isinstance(profile_obj, dict):
                 continue
+            profile_dict = cast("dict[str, Any]", profile_obj)
             profile_name = str(profile_dict.get("name", ""))
             item_usages.extend(extract_main_items(profile_dict, profile_name))
             item_usages.extend(extract_kanai_items(profile_dict, profile_name))

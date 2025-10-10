@@ -1,12 +1,10 @@
-# ruff: noqa: SLF001
 # pylint: disable=protected-access
 
-"""
-Unit tests for get_guide_urls module (fetch_all_guides_meilisearch).
-"""
+"""Unit tests for get_guide_urls module (fetch_all_guides_meilisearch)."""
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 from pytest_mock import MockerFixture
@@ -17,7 +15,10 @@ from d3_item_salvager.config.base import (
     MaxrollParserConfig,
 )
 from d3_item_salvager.config.settings import AppConfig
-from d3_item_salvager.maxroll_parser.get_guide_urls import MaxrollGuideFetcher
+from d3_item_salvager.maxroll_parser.get_guide_urls import (
+    MaxrollGuideFetcher,
+    extract_guide_links_from_hits,
+)
 from tests.fakes.test_config import make_test_app_config
 
 
@@ -38,6 +39,20 @@ def sample_meilisearch_response() -> dict[str, list[dict[str, str]]]:
     }
 
 
+class _ResponseStub:
+    """Simple stand-in for HTTP responses used in tests."""
+
+    def __init__(self, payload: dict[str, Any]) -> None:
+        self._payload = payload
+
+    def json(self) -> dict[str, Any]:
+        """Return the stubbed JSON payload."""
+        return self._payload
+
+    def raise_for_status(self) -> None:
+        """HTTP responses succeed by default in tests."""
+
+
 def test_fetch_all_guides_meilisearch_filters_and_extracts(
     mocker: MockerFixture, guide_fetcher_config: AppConfig
 ) -> None:
@@ -45,22 +60,8 @@ def test_fetch_all_guides_meilisearch_filters_and_extracts(
     mock_post = mocker.patch("requests.post")
     # Simulate two pages: first with 3 hits, second empty
     mock_post.side_effect = [
-        type(
-            "Resp",
-            (),
-            {
-                "json": lambda _: sample_meilisearch_response(),
-                "raise_for_status": lambda _: None,
-            },
-        )(),
-        type(
-            "Resp",
-            (),
-            {
-                "json": lambda _: {"hits": []},
-                "raise_for_status": lambda _: None,
-            },
-        )(),
+        _ResponseStub(sample_meilisearch_response()),
+        _ResponseStub({"hits": []}),
     ]
     fetcher = MaxrollGuideFetcher(guide_fetcher_config)
     guides = fetcher.fetch_guides()
@@ -72,17 +73,14 @@ def test_fetch_all_guides_meilisearch_filters_and_extracts(
     assert guides[1].name == "Sample Build 2"
 
 
-def test__extract_guide_links_from_hits_basic(
-    guide_fetcher_config: AppConfig,
-) -> None:
+def test__extract_guide_links_from_hits_basic() -> None:
     """Test extracting guide links from basic hits list."""
     hits: list[dict[str, str]] = [
         {"permalink": "https://maxroll.gg/d3/guides/test-build-1"},
         {"permalink": "https://maxroll.gg/d3/guides/test-build-2"},
         {"permalink": "https://maxroll.gg/d3/news/ignore-this"},
     ]
-    fetcher = MaxrollGuideFetcher(guide_fetcher_config)
-    guides = fetcher._extract_guide_links_from_hits(hits)
+    guides = extract_guide_links_from_hits(hits)
     assert len(guides) == 2
     assert guides[0].url == "https://maxroll.gg/d3/guides/test-build-1"
     assert guides[1].url == "https://maxroll.gg/d3/guides/test-build-2"
@@ -90,25 +88,19 @@ def test__extract_guide_links_from_hits_basic(
     assert guides[1].name == "Test Build 2"
 
 
-def test__extract_guide_links_from_hits_empty(
-    guide_fetcher_config: AppConfig,
-) -> None:
+def test__extract_guide_links_from_hits_empty() -> None:
     """Test extracting guide links from empty hits list."""
-    fetcher = MaxrollGuideFetcher(guide_fetcher_config)
-    guides = fetcher._extract_guide_links_from_hits([])
+    guides = extract_guide_links_from_hits([])
     assert not guides
 
 
-def test__extract_guide_links_from_hits_missing_permalink(
-    guide_fetcher_config: AppConfig,
-) -> None:
+def test__extract_guide_links_from_hits_missing_permalink() -> None:
     """Test extracting guide links when some hits are missing permalink."""
     hits: list[dict[str, str]] = [
         {},
         {"permalink": "https://maxroll.gg/d3/guides/valid-build"},
     ]
-    fetcher = MaxrollGuideFetcher(guide_fetcher_config)
-    guides = fetcher._extract_guide_links_from_hits(hits)
+    guides = extract_guide_links_from_hits(hits)
     assert len(guides) == 1
     assert guides[0].url == "https://maxroll.gg/d3/guides/valid-build"
 

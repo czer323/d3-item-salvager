@@ -115,8 +115,8 @@ class FakeItemDataProvider:
         return dict(self._catalog)
 
 
-@pytest.fixture(name="engine_factory")
-def _engine_factory() -> Callable[[], Session]:
+@pytest.fixture
+def engine_factory() -> Callable[[], Session]:
     """Provide a callable that yields a new SQLModel session against an in-memory DB."""
     engine = create_engine("sqlite://", echo=False)
     SQLModel.metadata.create_all(engine)

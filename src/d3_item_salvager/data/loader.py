@@ -29,9 +29,6 @@ def insert_item_usages_with_validation(
     success_count = 0
     for usage in usages:
         # Validate that profile_id and item_id exist in the database
-        if usage.profile_id is None:
-            msg = "Profile id cannot be None."
-            raise ValueError(msg)
         profile = session.get(Profile, usage.profile_id)
         if profile is None:
             msg = f"Profile id '{usage.profile_id}' does not exist."
@@ -46,11 +43,12 @@ def insert_item_usages_with_validation(
         session.commit()
     except SQLAlchemyError as e:
         errors.append(({"commit": "commit"}, str(e)))
-    print(f"Inserted {success_count} item usages. {len(errors)} errors.")
+    error_count = len(errors)
+    print(f"Inserted {success_count} item usages. {error_count} errors.")
     if errors:
         print("Errors:")
-        for err in errors:
-            print(err)
+        for error_record in errors:
+            print(error_record)
 
 
 def insert_items_from_dict(
@@ -247,7 +245,7 @@ def insert_profiles(
     Raises:
         SQLAlchemyError: If a database error occurs during commit.
     """
-    errors = []
+    errors: list[tuple[dict[str, str], str]] = []
     success_count = 0
     for profile in profiles:
         # Ensure build_id is set correctly
@@ -263,5 +261,5 @@ def insert_profiles(
     )
     if errors:
         print("Errors:")
-        for err in errors:
-            print(err)
+        for error_record in errors:
+            print(error_record)
