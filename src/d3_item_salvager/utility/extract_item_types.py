@@ -16,14 +16,14 @@ def main() -> None:
     """Main function to extract and print unique item types from the data file."""
     loader = DataParser(ITEMS_FILE)
     item_dict = loader.get_all_items()
-    types = set()
+    types: set[str] = set()
     for item in item_dict.values():
         item_type = item.type
-        if item_type is not None and item_type != "":
+        if isinstance(item_type, str) and item_type:
             types.add(item_type)
     logger.info("Unique item types:")
-    for t in sorted(types):
-        logger.info(t)
+    for item_type in sorted(types):
+        logger.info("- %s", item_type)
 
 
 if __name__ == "__main__":

@@ -15,7 +15,6 @@ from d3_item_salvager.data.loader import (
     insert_profiles,
 )
 from d3_item_salvager.data.models import Build, Item, ItemUsage, Profile
-from d3_item_salvager.exceptions.data import DataError
 from d3_item_salvager.exceptions.scraping import ScrapingError
 from d3_item_salvager.maxroll_parser.build_profile_parser import BuildProfileParser
 from d3_item_salvager.maxroll_parser.get_guide_urls import MaxrollGuideFetcher
@@ -242,10 +241,6 @@ class BuildGuideService:
     @contextmanager
     def _session_scope(self) -> Iterator[Session]:
         session = self._session_factory()
-        if session is None:  # pragma: no cover - defensive
-            msg = "Database session not available for service operation."
-            self._logger.error(msg)
-            raise DataError(msg, code=1004, context={"step": "session_scope"})
         try:
             yield session
         finally:
@@ -387,9 +382,7 @@ class BuildGuideService:
     ) -> int:
         if not usages:
             return 0
-        profile_ids = {
-            usage.profile_id for usage in usages if usage.profile_id is not None
-        }
+        profile_ids = {usage.profile_id for usage in usages}
         existing_keys: set[tuple[int | None, str, str, str]] = set()
         if profile_ids:
             profile_id_column = cast(
@@ -402,7 +395,7 @@ class BuildGuideService:
                 (usage.profile_id, usage.item_id, usage.slot, usage.usage_context)
                 for usage in existing_usages
             }
-        new_usages = []
+        new_usages: list[ItemUsage] = []
         for usage in usages:
             key = (usage.profile_id, usage.item_id, usage.slot, usage.usage_context)
             if usage.item_id not in available_items:

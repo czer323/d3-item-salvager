@@ -1,6 +1,8 @@
 """Models for Diablo 3 Item Salvager"""
 
-from sqlmodel import Field, Relationship, SQLModel
+# TODO: Remove once sqlmodel types are fixed
+from sqlmodel import Relationship, SQLModel  # noqa: I001
+from sqlmodel import Field  # type: ignore[attr-defined]
 
 
 class Build(SQLModel, table=True):
