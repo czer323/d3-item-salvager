@@ -1,10 +1,20 @@
 """Base config dataclasses and shared types."""
 
+from __future__ import annotations
+
+from enum import Enum
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class AppEnvironment(str, Enum):
+    """Enumerates supported runtime environments."""
+
+    DEVELOPMENT = "development"
+    PRODUCTION = "production"
 
 
 class DatabaseConfig(BaseSettings):
@@ -48,6 +58,7 @@ class MaxrollParserConfig(BaseSettings):
         cache_ttl: Cache time-to-live in seconds.
         cache_file: Path to cache file.
         limit: API result limit per request.
+        source: Indicates whether to use local files or remote API.
     """
 
     model_config = SettingsConfigDict(env_prefix="MAXROLL_", env_file=None)
@@ -65,9 +76,12 @@ class MaxrollParserConfig(BaseSettings):
     cache_ttl: int = 604800  # seconds
     cache_file: Path = Path("cache/maxroll_guides.json")
     limit: int = 21
+    source: str = Field(
+        default="remote", description="Data source mode: 'local' or 'remote'."
+    )
 
     @model_validator(mode="after")
-    def validate_bearer_token(self) -> "MaxrollParserConfig":
+    def validate_bearer_token(self) -> MaxrollParserConfig:
         """Validates that a non-default bearer_token is set for production use.
 
         Raises:
@@ -76,24 +90,33 @@ class MaxrollParserConfig(BaseSettings):
         Returns:
             MaxrollParserConfig: The validated configuration instance.
         """
-        # Enforce a real bearer token in production environments only. During
-        # development or in test runs we allow the default token but emit a
-        # warning so developers are informed.
         import os
         import warnings
 
-        # TODO: Need to fix this
-        app_env = os.getenv("APP_ENV", "development").lower()
-        if not self.bearer_token or self.bearer_token == "fake-dummy-token":
-            msg = (
-                "Configuration validation failed:"
-                "MAXROLL_BEARER_TOKEN is required for production use. "
-                "\nDefault 'fake-dummy-token' will not work."
-            )
-            if app_env == "production":
-                raise ValueError("Configuration validation failed: " + msg)
-            # Non-production: warn but do not raise to allow local CLI/dev runs
-            warnings.warn(msg)
+        source_mode = self.source.lower()
+        env_value = os.getenv("APP_ENV", AppEnvironment.DEVELOPMENT.value).lower()
+        try:
+            env = AppEnvironment(env_value)
+        except ValueError:
+            env = AppEnvironment.DEVELOPMENT
+
+        if source_mode == "remote":
+            if not self.bearer_token or self.bearer_token == "fake-dummy-token":
+                msg = (
+                    "Configuration validation failed: MAXROLL_BEARER_TOKEN is required"
+                    " for remote Maxroll access. Provide a valid bearer token."
+                )
+                if env is AppEnvironment.PRODUCTION:
+                    raise ValueError(msg)
+                warnings.warn(msg)
+        else:
+            local_paths = [self.data_paths, self.api_url]
+            for path_value in local_paths:
+                path = Path(path_value)
+                if not path.exists():
+                    warnings.warn(
+                        f"Local Maxroll source path does not exist: {path_value}"
+                    )
         return self
 
 
@@ -135,7 +158,7 @@ class SchedulerConfig(BaseSettings):
     cleanup_logs_max_age_days: int = 7
 
     @model_validator(mode="after")
-    def validate_timezone(self) -> "SchedulerConfig":
+    def validate_timezone(self) -> SchedulerConfig:
         """Validate that configured timezone is recognised by the system."""
         try:
             ZoneInfo(self.timezone)

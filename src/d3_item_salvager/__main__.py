@@ -25,15 +25,17 @@ def run_api(app_config: AppConfig = Provide[Container.config]) -> None:
     Start FastAPI application using uvicorn.
     """
     setup_logger(app_config)
-    print("Logger initialized. Starting FastAPI app...")
+    print(
+        f"Logger initialized for {app_config.environment.value} environment."
+        " Starting FastAPI app..."
+    )
 
     fastapi_app = create_app()
-    # WARNING: app_config.api may not exist. Update to use correct config fields if needed.
     uvicorn.run(
         fastapi_app,
-        host=getattr(app_config, "api_host", "127.0.0.1"),
-        port=getattr(app_config, "api_port", 8000),
-        reload=getattr(app_config, "api_reload", False),
+        host=app_config.api.host,
+        port=app_config.api.port,
+        reload=app_config.api.reload,
     )
 
 
@@ -43,7 +45,10 @@ def run_cli(app_config: AppConfig = Provide[Container.config]) -> None:
     Run CLI tasks (stub).
     """
     setup_logger(app_config)
-    print("Logger initialized. Ready to run CLI tasks.")
+    print(
+        f"Logger initialized for {app_config.environment.value} environment."
+        " Ready to run CLI tasks."
+    )
     # dTODO: Implement CLI logic here
 
 

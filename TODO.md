@@ -33,4 +33,18 @@ Build typed response schemas and router functions that rely on the SQLModel sess
 
 ## Deviations
 
-- `scripts/check` is not present in the repository; ran `uv run ruff check .`, `uv run pyright`, and `uv run pytest` instead. Pytest currently fails due to existing CLI configuration tests expecting a `maxroll_parser` validation error message that no longer matches actual output.
+- `scripts/check` is not present in the repository; ran `uv run ruff check .`, `uv run pyright`, and `uv run pytest` instead. All checks pass with the updated configuration suite.
+
+# Environment Strategy Alignment
+
+## Goal (Environment Strategy)
+
+Support distinct development and production modes so local runs use bundled reference data without touching remote Maxroll endpoints, while production continues to consume remote APIs with real credentials.
+
+## Implementation Steps (Environment Strategy)
+
+- [x] Introduce an explicit environment flag in `AppConfig` (e.g., `environment` enum) sourced from `APP_ENV` with sensible defaults.
+- [x] Extend `MaxrollParserConfig` with a source mode that selects local vs. remote endpoints, applying environment-specific defaults and validation (no bearer token needed locally, required remotely).
+- [x] Update dependency wiring (container) and CLI entry points to respect the environment-aware configuration, including using `api.host/port/reload` instead of getattr fallbacks.
+- [x] Adjust tests (config, CLI) to cover both local and production configuration expectations, ensuring error messages align with new validation logic.
+- [x] Document the new environment strategy in the API implementation doc or a dedicated configuration doc section.

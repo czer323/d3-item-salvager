@@ -1,56 +1,54 @@
-"""Unit tests for config loading and validation."""
+"""Unit tests for environment-aware config loading and validation."""
+
+from __future__ import annotations
 
 import pytest
 from pydantic import ValidationError
 
-from d3_item_salvager.config.base import (
-    DatabaseConfig,
-    LoggingConfig,
-    MaxrollParserConfig,
-)
+from d3_item_salvager.config.base import AppEnvironment, DatabaseConfig, LoggingConfig
 from d3_item_salvager.config.settings import AppConfig
 
 
-@pytest.fixture
-def test_config_fixture() -> AppConfig:
-    """Provide a valid AppConfig for tests with a test bearer token."""
-    return AppConfig(
-        database=DatabaseConfig(),
-        maxroll_parser=MaxrollParserConfig(bearer_token="test-token"),
-        logging=LoggingConfig(),
-    )
+def _reset_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("APP_ENV", raising=False)
+    monkeypatch.delenv("MAXROLL_PARSER__BEARER_TOKEN", raising=False)
 
 
-def test_config_env_override(request: pytest.FixtureRequest) -> None:
+def test_config_defaults_to_local_development(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Default configuration uses local Maxroll sources in development."""
+    _reset_env(monkeypatch)
+    config = AppConfig(database=DatabaseConfig(), logging=LoggingConfig())
+    assert config.environment is AppEnvironment.DEVELOPMENT
+    assert config.maxroll_parser.source == "local"
+
+
+def test_config_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
     """Explicit values override defaults when constructing AppConfig."""
-    _ = request  # Fixtures available for future extensions
+    _reset_env(monkeypatch)
     config = AppConfig(
         database=DatabaseConfig(url="sqlite:///test.db"),
-        maxroll_parser=MaxrollParserConfig(bearer_token="dummy-token"),
-        logging=LoggingConfig(),
+        logging=LoggingConfig(level="DEBUG"),
     )
     assert config.database.url == "sqlite:///test.db"
-    assert config.maxroll_parser.bearer_token == "dummy-token"
+    assert config.logging.level == "DEBUG"
 
 
-def test_config_loads_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Config loads defaults when environment variables and .env are absent."""
-    monkeypatch.delenv("DATABASE_URL", raising=False)
-    monkeypatch.delenv("MAXROLL_BEARER_TOKEN", raising=False)
-    config = AppConfig(
-        database=DatabaseConfig(),
-        maxroll_parser=MaxrollParserConfig(bearer_token="prodtoken"),
-        logging=LoggingConfig(),
-    )
-    assert config.database.url == "sqlite:///d3_items.db"
-    assert config.maxroll_parser.bearer_token == "prodtoken"
+def test_production_requires_bearer_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Production environment raises when bearer token is missing."""
+    _reset_env(monkeypatch)
+    monkeypatch.setenv("APP_ENV", "production")
+    with pytest.raises(ValidationError, match="MAXROLL_BEARER_TOKEN"):
+        AppConfig(database=DatabaseConfig(), logging=LoggingConfig())
 
 
-def test_config_validation_failure() -> None:
-    """Config validation fails if a required field is missing."""
-    with pytest.raises(ValidationError, match="Field required"):
-        AppConfig(  # pyright: ignore[reportCallIssue]
-            database=DatabaseConfig(),
-            logging=LoggingConfig(),
-            # maxroll_parser omitted, should fail
-        )
+def test_production_accepts_explicit_bearer_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Providing a bearer token in production succeeds."""
+    _reset_env(monkeypatch)
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("MAXROLL_PARSER__BEARER_TOKEN", "test-token")
+    config = AppConfig(database=DatabaseConfig(), logging=LoggingConfig())
+    assert config.environment is AppEnvironment.PRODUCTION
+    assert config.maxroll_parser.source == "remote"
+    assert config.maxroll_parser.bearer_token == "test-token"
