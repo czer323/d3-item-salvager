@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import requests
 from loguru import logger
@@ -23,7 +23,28 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
     from d3_item_salvager.config.settings import AppConfig
 
 
-__all__ = ["GuideInfo", "MaxrollGuideFetcher"]
+__all__ = ["GuideInfo", "MaxrollGuideFetcher", "extract_guide_links_from_hits"]
+
+
+def extract_guide_links_from_hits(hits: list[dict[str, Any]]) -> list[GuideInfo]:
+    """Normalize raw Maxroll hits into typed guide records."""
+    guides: list[GuideInfo] = []
+    seen_urls: set[str] = set()
+    for hit in hits:
+        permalink_obj = hit.get("permalink")
+        url = str(permalink_obj) if permalink_obj is not None else ""
+        if not url.startswith("https://maxroll.gg/d3/guides/"):
+            continue
+        if url in seen_urls:
+            continue
+        build_slug = url.rsplit("/d3/guides/", maxsplit=1)[-1].strip("/")
+        name_parts = build_slug.replace("-", " ").replace("guide", "Guide").split()
+        name = " ".join(
+            part.capitalize() if part != "Guide" else part for part in name_parts
+        )
+        guides.append(GuideInfo(name=name, url=url))
+        seen_urls.add(url)
+    return guides
 
 
 class MaxrollGuideFetcher(
@@ -98,7 +119,7 @@ class MaxrollGuideFetcher(
                     self._api_url, self._bearer_token, self._limit
                 )
             )
-            guides = self._extract_guide_links_from_hits(hits)
+            guides = extract_guide_links_from_hits(hits)
             # best-effort save
             try:
                 self._cache.save(guides)
@@ -134,14 +155,23 @@ class MaxrollGuideFetcher(
         """
         try:
             with open(file_path, encoding="utf-8") as f:
-                data = json.load(f)
-            raw_hits = data.get("hits", [])
-            if not isinstance(raw_hits, list):
-                return []
-            return [h for h in raw_hits if isinstance(h, dict)]
+                loaded: Any = json.load(f)
         except Exception as e:
             msg = f"Failed to load local guide file: {e}"
             raise GuideFetchError(msg) from e
+
+        if not isinstance(loaded, dict):
+            return []
+
+        guide_data = cast("dict[str, Any]", loaded)
+        raw_hits_any = guide_data.get("hits", [])
+        if not isinstance(raw_hits_any, list):
+            return []
+        raw_hits = cast("list[object]", raw_hits_any)
+        filtered_hits = [
+            cast("dict[str, Any]", hit) for hit in raw_hits if isinstance(hit, dict)
+        ]
+        return filtered_hits
 
     def _fetch_from_api(
         self, api_url: str, bearer_token: str, limit: int
@@ -168,53 +198,44 @@ class MaxrollGuideFetcher(
         offset = 0
         all_hits: list[dict[str, Any]] = []
         while True:
-            body = {"q": "", "facets": [], "limit": limit, "offset": offset}
+            facets: list[str] = []
+            body: dict[str, object] = {
+                "q": "",
+                "facets": facets,
+                "limit": limit,
+                "offset": offset,
+            }
             try:
                 resp = requests.post(
                     api_url, headers=headers, data=json.dumps(body), timeout=10
                 )
                 resp.raise_for_status()
-                data = resp.json()
+                data: Any = resp.json()
             except Exception as e:
                 msg = f"API fetch failed: {e}"
                 raise GuideFetchError(msg) from e
-            hits = data.get("hits", [])
-            if not hits:
+            if not isinstance(data, dict):
+                msg = "API response must be a JSON object"
+                raise GuideFetchError(msg)
+
+            payload = cast("dict[str, Any]", data)
+            raw_hits_any = payload.get("hits", [])
+            if not raw_hits_any:
                 break
-            if not isinstance(hits, list):
+            if not isinstance(raw_hits_any, list):
                 msg = "API response 'hits' must be a list"
                 raise GuideFetchError(msg)
-            all_hits.extend(h for h in hits if isinstance(h, dict))
+            raw_hits = cast("list[object]", raw_hits_any)
+            hits = [
+                cast("dict[str, Any]", raw_hit)
+                for raw_hit in raw_hits
+                if isinstance(raw_hit, dict)
+            ]
+            all_hits.extend(hits)
             if len(hits) < limit:
                 break
             offset += limit
         return all_hits
-
-    def _extract_guide_links_from_hits(
-        self, hits: list[dict[str, Any]]
-    ) -> list[GuideInfo]:
-        """
-        Extracts guide links from API or file hits.
-
-        Args:
-            hits: List of hit dictionaries from API or file.
-
-        Returns:
-            List of GuideInfo objects with name and URL.
-        """
-        guides: list[GuideInfo] = []
-        seen_urls: set[str] = set()
-        for hit in hits:
-            url = str(hit.get("permalink", ""))
-            if url.startswith("https://maxroll.gg/d3/guides/") and url not in seen_urls:
-                build_slug = url.rsplit("/d3/guides/", maxsplit=1)[-1].strip("/")
-                name = build_slug.replace("-", " ").replace("guide", "Guide").strip()
-                name = " ".join(
-                    w.capitalize() if w != "Guide" else w for w in name.split()
-                )
-                guides.append(GuideInfo(name=name, url=url))
-                seen_urls.add(url)
-        return guides
 
     # Convenience -------------------------------------------------------
     def print_guides(self) -> None:  # pragma: no cover - thin wrapper

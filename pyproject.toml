@@ -11,13 +11,15 @@ dependencies = [
     "pydantic-settings>=2.10.1",
     "pydantic>=2.11.7",
     "python-dotenv>=1.1.1",
-    "requests>=2.32.4",
     "sqlmodel>=0.0.24",
     "typer>=0.16.0",
     "loguru>=0.7.3",
     "fastapi>=0.116.1",
     "dependency-injector>=4.48.1",
     "uvicorn>=0.35.0",
+    "httpx>=0.28.1",
+    "requests>=2.32.5",
+    "apscheduler>=3.11.0",
 ]
 
 [dependency-groups]
@@ -50,14 +52,14 @@ testpaths = ["tests"]
 python_files = "test_*.py"
 
 
-[tool.mypy]
-python_version = "3.12"
-mypy_path = "src"
-plugins = ['pydantic.mypy', 'sqlalchemy.ext.mypy.plugin']
-strict = true
+# [tool.mypy]
+# python_version = "3.12"
+# mypy_path = "src"
+# plugins = ['pydantic.mypy', 'sqlalchemy.ext.mypy.plugin']
+# strict = true
 
-[tool.pylint.main]
-extension-pkg-allow-list = ["dependency_injector"]
+# [tool.pylint.main]
+# extension-pkg-allow-list = ["dependency_injector"]
 
 [tool.pre-commit-update]
 # dry_run = true
@@ -71,3 +73,6 @@ extension-pkg-allow-list = ["dependency_injector"]
 # keep = ["ruff"]
 # bleeding_edge = ["pylint"]
 # tag_prefix = [["black", "custom-tag-schema-v"]]
+
+[tool.pyright]
+typeCheckingMode = "strict"

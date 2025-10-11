@@ -33,7 +33,10 @@ uv sync --dev
 uv run pytest
 
 # Start CLI utility
-uv run python -m src.d3_item_salvager
+uv run python -m d3_item_salvager
+
+# Start background workers
+uv run python -m d3_item_salvager workers
 ```
 
 ## Project Structure
@@ -69,10 +72,18 @@ uv run python src/data/init_db.py
 
 Extend `maxroll_parser/` with your own logic for new guide formats or sources.
 
+### Run Scheduled Jobs
+
+```sh
+uv run python -m d3_item_salvager workers
+```
+
+The workers process uses APScheduler with a persistent SQLite job store (`cache/scheduler.sqlite` by default). Configure intervals and retention policies through the `SCHEDULER_` environment variables or the `scheduler` section of `AppConfig`.
+
 ## Development
 
 > [!TIP]
-> Run `scripts/check` before every commit to ensure code quality, linting, and tests all pass.
+> Run `uv run pre-commit run --all-files` before every commit to ensure code quality, linting, and tests all pass.
 
 - All configuration uses frozen dataclasses for safety and clarity
 - Type annotations and Google-style docstrings required for public APIs

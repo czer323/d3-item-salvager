@@ -85,3 +85,11 @@ docs/
 ## Summary
 
 This API implementation plan provides a clear, maintainable foundation for serving Diablo 3 build guide data to web and other clients. The design supports rapid iteration, robust filtering, and future extensibility.
+
+---
+
+## Implementation Notes (October 2025)
+
+- Initial endpoints (`/items`, `/builds`, `/profiles`, `/item_usages`) are implemented and return payloads in the form `{ "data": [...], "meta": { "limit", "offset", "total" } }` to surface pagination details alongside results.
+- CORS is currently configured to allow all origins to simplify local development; the configuration can be tightened via future `ApiConfig` settings once frontend requirements are finalized.
+- Configuration introduces `AppEnvironment` to distinguish development (local reference data, no bearer token required) from production (remote Maxroll endpoints with mandatory `MAXROLL_BEARER_TOKEN`).

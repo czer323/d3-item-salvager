@@ -7,8 +7,9 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Iterable, Mapping
 from dataclasses import asdict, is_dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from loguru import logger
 
@@ -16,7 +17,6 @@ from .protocols import GuideCacheProtocol
 from .types import GuideInfo
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
-    from collections.abc import Iterable
     from pathlib import Path
 
     from d3_item_salvager.config.settings import AppConfig
@@ -52,12 +52,20 @@ class FileGuideCache(GuideCacheProtocol):
             if cache_age >= self._ttl:
                 return None
             with self._cache_path.open("r", encoding="utf-8") as f:
-                cache_data = json.load(f)
-            guides = [
-                GuideInfo(name=g["name"], url=g["url"])  # minimal validation
-                for g in cache_data.get("guides", [])
-                if isinstance(g, dict) and "name" in g and "url" in g
-            ]
+                raw_cache = json.load(f)
+            cache_data = cast("Mapping[str, object]", raw_cache)
+            guides_raw = cache_data.get("guides", [])
+            guides: list[GuideInfo] = []
+            if isinstance(guides_raw, Iterable):
+                entries = cast("Iterable[object]", guides_raw)
+                for entry in entries:
+                    if not isinstance(entry, Mapping):
+                        continue
+                    mapping_entry = cast("Mapping[str, object]", entry)
+                    name = mapping_entry.get("name")
+                    url = mapping_entry.get("url")
+                    if isinstance(name, str) and isinstance(url, str):
+                        guides.append(GuideInfo(name=name, url=url))
         except (OSError, json.JSONDecodeError) as e:  # pragma: no cover - IO edge
             logger.warning("Failed to load cache file: %s", e)
             return None

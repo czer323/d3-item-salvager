@@ -7,7 +7,7 @@ Produces immutable ItemMeta instances keyed by item id.
 import json
 from collections.abc import Iterable, Iterator, Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import requests
 
@@ -70,46 +70,68 @@ class DataParser(ItemDataParserProtocol, Mapping[str, ItemMeta]):
         if not isinstance(data, dict):
             msg = "data.json must be a JSON object at the top level."
             raise ItemDataError(msg)
-        return data
+        typed_data: dict[str, Any] = {}
+        data_dict = cast("dict[object, Any]", data)
+        for key, value in data_dict.items():
+            typed_data[str(key)] = value
+        return typed_data
 
     def _extract_and_filter_items(self) -> dict[str, ItemMeta]:
         item_dict = self._extract_items(self.raw_data)
-        return {
-            str(iid): self._to_meta(raw)
-            for iid, raw in item_dict.items()
-            if isinstance(iid, str) and iid
-        }
+        filtered_items: dict[str, ItemMeta] = {}
+        for iid, raw in item_dict.items():
+            if not iid:
+                continue
+            filtered_items[iid] = self._to_meta(raw)
+        return filtered_items
 
     @staticmethod
     def _extract_items(data: dict[str, Any]) -> dict[str, dict[str, Any]]:
-        items = data.get("items")
-        if items is None:
+        items_obj = data.get("items")
+        if items_obj is None:
             return {}
-        if not isinstance(items, list):
+        if not isinstance(items_obj, list):
             msg = "If present, 'items' must be a list."
             raise ItemDataError(msg, key="items")
-        return {
-            str(item.get("id")): item
-            for item in items
-            if isinstance(item, dict) and item.get("id")
-        }
+        typed_items = cast("list[object]", items_obj)
+        result: dict[str, dict[str, Any]] = {}
+        for item in typed_items:
+            if not isinstance(item, Mapping):
+                continue
+            item_mapping = cast("Mapping[str, object]", item)
+            item_id = item_mapping.get("id")
+            if not isinstance(item_id, (str, int, float)):
+                continue
+            normalized_item: dict[str, Any] = {
+                key: value for key, value in item_mapping.items()
+            }
+            result[str(item_id)] = normalized_item
+        return result
 
     @staticmethod
     def _coerce_str(val: object) -> str | None:
         if val is None:
             return None
-        if isinstance(val, (str, int, float)):
+        if isinstance(val, str):
+            return val
+        if isinstance(val, (int, float)):
             return str(val)
         if isinstance(val, list):
-            return ", ".join(str(v) for v in val)
+            elements = cast("list[object]", val)
+            return ", ".join(str(element) for element in elements)
         return None
 
     def _to_meta(self, item: dict[str, Any]) -> ItemMeta:
+        mapping_item = cast("Mapping[str, object]", item)
+        item_id = mapping_item.get("id")
+        name = mapping_item.get("name")
+        item_type = mapping_item.get("type")
+        quality = mapping_item.get("quality")
         return ItemMeta(
-            id=str(item.get("id")),
-            name=self._coerce_str(item.get("name")),
-            type=self._coerce_str(item.get("type")),
-            quality=self._coerce_str(item.get("quality")),
+            id=str(item_id) if item_id is not None else "",
+            name=self._coerce_str(name),
+            type=self._coerce_str(item_type),
+            quality=self._coerce_str(quality),
         )
 
     # Convenience accessors ------------------------------------------------

@@ -5,7 +5,7 @@ from collections.abc import Generator
 import pytest
 from fastapi.testclient import TestClient
 
-from d3_item_salvager.api.dependencies import get_config
+from d3_item_salvager.api.dependencies import get_config, get_db_session, get_service
 from d3_item_salvager.api.factory import create_app
 from d3_item_salvager.config.base import (
     DatabaseConfig,
@@ -13,14 +13,6 @@ from d3_item_salvager.config.base import (
     MaxrollParserConfig,
 )
 from d3_item_salvager.config.settings import AppConfig
-from d3_item_salvager.container import Container
-
-
-@pytest.fixture(autouse=True)
-def reset_container_config() -> Generator[None, None, None]:
-    """Reset DI container config override after each test."""
-    yield
-    Container.config.reset_override()
 
 
 @pytest.fixture
@@ -32,6 +24,23 @@ def test_config() -> AppConfig:
         maxroll_parser=MaxrollParserConfig(bearer_token="dummy-token"),
         logging=LoggingConfig(),
     )
+
+
+class _DummySession:  # pragma: no cover - trivial test double
+    """Lightweight stand-in for SQLModel Session."""
+
+
+class _DummyService:  # pragma: no cover - trivial test double
+    """Simple stand-in for ItemSalvageService."""
+
+
+def _override_session() -> Generator[object, None, None]:
+    dummy_session = _DummySession()
+    yield dummy_session
+
+
+def _override_service() -> object:
+    return _DummyService()
 
 
 def test_health_endpoint(request: pytest.FixtureRequest) -> None:
@@ -50,14 +59,14 @@ def test_health_endpoint(request: pytest.FixtureRequest) -> None:
 def test_sample_endpoint(request: pytest.FixtureRequest) -> None:
     """Test /sample endpoint returns correct DI types and config value."""
     config = request.getfixturevalue("test_config")
-    # Patch DI container config provider
-    Container.config.override(config)
     app = create_app()
     app.dependency_overrides[get_config] = lambda: config
+    app.dependency_overrides[get_db_session] = _override_session
+    app.dependency_overrides[get_service] = _override_service
     client = TestClient(app)
     response = client.get("/sample")
     assert response.status_code == 200
     data = response.json()
     assert data["app_name"] == "TestApp"
-    assert data["db_type"] == "Session"
-    assert data["service_type"] == "ItemSalvageService"
+    assert data["db_type"] == _DummySession.__name__
+    assert data["service_type"] == _DummyService.__name__

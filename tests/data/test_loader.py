@@ -62,7 +62,8 @@ def test_insert_item_missing_fields(db_engine: Engine) -> None:
     item_dict: dict[str, dict[str, str]] = {"item_002": bad_item}
     with Session(db_engine) as session:
         with pytest.raises(
-            ValueError, match="Missing required field 'name' in item data:.*"
+            ValueError,
+            match=r"Missing required field 'name' in item data:.*",
         ):
             insert_items_from_dict(item_dict, session=session)
         items = get_all_items(session)
@@ -80,7 +81,8 @@ def test_insert_item_invalid_type_quality(db_engine: Engine) -> None:
     item_dict: dict[str, dict[str, str]] = {"item_003": bad_item}
     with Session(db_engine) as session:
         with pytest.raises(
-            ValueError, match="Invalid item type 'notatype' for item ID 'item_003.'"
+            ValueError,
+            match=r"Invalid item type 'notatype' for item ID 'item_003.'",
         ):
             insert_items_from_dict(item_dict, session=session)
         items = get_all_items(session)
@@ -99,7 +101,7 @@ def test_insert_duplicate_item_id(db_engine: Engine) -> None:
     with Session(db_engine) as session:
         insert_items_from_dict(item_dict, session=session)
         # Second insert should raise ValueError for duplicate
-        with pytest.raises(ValueError, match="Duplicate item ID 'item_004' detected."):
+        with pytest.raises(ValueError, match=r"Duplicate item ID 'item_004' detected."):
             insert_items_from_dict(item_dict, session=session)
         items = [item for item in get_all_items(session) if item.id == "item_004"]
         assert len(items) == 1  # Only one should exist
@@ -118,5 +120,5 @@ def test_insert_usage_missing_item_id(db_engine: Engine) -> None:
             slot="mainhand",
             usage_context="main",
         )
-        with pytest.raises(ValueError, match="Item ID bad_id does not exist."):
+        with pytest.raises(ValueError, match=r"Item ID bad_id does not exist."):
             insert_item_usages_with_validation([bad_usage_item], session)
