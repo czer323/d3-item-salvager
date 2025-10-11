@@ -188,7 +188,7 @@ def validate_item_data(item_data: dict[str, str], session: Session) -> None:
         "wizardhat",
         "wristsword",
     }
-    allowed_qualities = {"set", "legendary", "rare", "magic", "common"}
+    allowed_qualities = {"set", "legendary", "rare", "magic", "common", "ethereal"}
     if item_data["type"].lower() not in allowed_types:
         msg = (
             f"Invalid item type '{item_data['type']}' for item ID '{item_data['id']}.'"

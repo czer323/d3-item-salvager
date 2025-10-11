@@ -2,13 +2,17 @@
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from d3_item_salvager.config.settings import AppConfig
 from d3_item_salvager.maxroll_parser.build_profile_parser import BuildProfileParser
 from d3_item_salvager.maxroll_parser.guide_profile_resolver import GuideProfileResolver
 from d3_item_salvager.maxroll_parser.maxroll_exceptions import BuildProfileError
+
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    from pytest_mock import MockerFixture
 
 
 def make_profile_json(tmp_path: Path, profiles: list[dict[str, object]]) -> Path:
@@ -110,3 +114,26 @@ def test_parser_uses_resolver_for_guide_urls() -> None:
         resolver=_FakeResolver(payload),
     )
     assert parser.profiles[0].name == "Resolved"
+
+
+def test_parser_builds_resolver_when_config_supplied(mocker: "MockerFixture") -> None:
+    """Parser should construct a resolver from config when one is not provided."""
+    config = AppConfig()
+    fake_resolver = mocker.create_autospec(GuideProfileResolver, instance=True)
+    fake_resolver.resolve.return_value = {"data": {"profiles": []}}
+
+    resolver_ctor = mocker.patch(
+        "d3_item_salvager.maxroll_parser.build_profile_parser.GuideProfileResolver",
+        return_value=fake_resolver,
+    )
+
+    parser = BuildProfileParser(
+        "https://maxroll.gg/d3/guides/test-guide",
+        config=config,
+    )
+
+    resolver_ctor.assert_called_once_with(config)
+    fake_resolver.resolve.assert_called_once_with(
+        "https://maxroll.gg/d3/guides/test-guide"
+    )
+    assert parser.profiles == []

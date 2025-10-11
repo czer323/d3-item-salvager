@@ -140,10 +140,20 @@ class BuildGuideService:
             try:
                 parser = self._parser_factory(guide.url)
             except (FileNotFoundError, BuildProfileError, ValueError) as exc:
+                extra: dict[str, object] = {"error": repr(exc), "guide_url": guide.url}
+                if isinstance(exc, BuildProfileError):
+                    if exc.file_path:
+                        extra["planner_resource"] = exc.file_path
+                    if exc.context:
+                        extra.update(exc.context)
+                planner_hint = ""
+                if isinstance(exc, BuildProfileError) and exc.file_path:
+                    planner_hint = f" ({exc.file_path})"
                 self._logger.exception(
-                    "Failed to instantiate parser for guide %s",
+                    "Failed to instantiate parser for guide %s%s",
                     guide.url,
-                    extra={"error": repr(exc)},
+                    planner_hint,
+                    extra=extra,
                 )
                 skipped += 1
                 continue
@@ -151,9 +161,15 @@ class BuildGuideService:
                 profiles = parser.profiles
                 usages = parser.extract_usages()
             except (BuildProfileError, ValueError, TypeError) as exc:
+                extra: dict[str, object] = {"guide_url": guide.url, "error": str(exc)}
+                if isinstance(exc, BuildProfileError):
+                    if exc.file_path:
+                        extra["planner_resource"] = exc.file_path
+                    if exc.context:
+                        extra.update(exc.context)
                 self._logger.exception(
                     "Failed to parse build profile for guide",
-                    extra={"guide_url": guide.url, "error": str(exc)},
+                    extra=extra,
                 )
                 skipped += 1
                 continue
@@ -252,7 +268,11 @@ class BuildGuideService:
         resolver = self._resolver
 
         def factory(path: str) -> BuildProfileParser:
-            return BuildProfileParser(path, resolver=resolver)
+            return BuildProfileParser(
+                path,
+                resolver=resolver,
+                config=self._config,
+            )
 
         return factory
 

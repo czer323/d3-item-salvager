@@ -62,6 +62,13 @@ class MaxrollParserConfig(BaseSettings):
         planner_profile_url: Template URL used to fetch planner profiles.
         planner_request_timeout: Timeout (seconds) for planner HTTP requests.
         planner_user_agent: User agent used when requesting planner resources.
+        planner_retry_attempts: Maximum attempts when planner requests fail.
+        planner_retry_backoff: Base backoff multiplier applied between retries.
+        planner_retry_status_codes: HTTP status codes that trigger retries.
+        planner_request_interval: Minimum seconds between planner requests.
+        planner_cache_dir: Directory used to persist planner payload cache files.
+        planner_cache_ttl: Cache TTL (seconds) before planner payloads are refreshed.
+        planner_cache_enabled: Toggle for using the planner payload cache.
     """
 
     model_config = SettingsConfigDict(
@@ -94,6 +101,38 @@ class MaxrollParserConfig(BaseSettings):
     planner_user_agent: str = Field(
         default="d3-item-salvager/1.0 (+https://github.com/czer323/d3-item-salvager)",
         description="User agent string supplied when calling Maxroll planner endpoints.",
+    )
+    planner_retry_attempts: int = Field(
+        default=4,
+        description="Maximum number of attempts for planner profile requests.",
+        ge=1,
+    )
+    planner_retry_backoff: float = Field(
+        default=1.5,
+        description="Base multiplier used when calculating exponential backoff.",
+        gt=1.0,
+    )
+    planner_retry_status_codes: tuple[int, ...] = Field(
+        default=(429, 502, 503, 504),
+        description="HTTP status codes that should be retried when fetching planners.",
+    )
+    planner_request_interval: float = Field(
+        default=0.4,
+        description="Minimum interval (seconds) enforced between planner requests.",
+        ge=0.0,
+    )
+    planner_cache_dir: Path = Field(
+        default=Path("cache/planner_profiles"),
+        description="Directory path used to persist planner payload cache files.",
+    )
+    planner_cache_ttl: int = Field(
+        default=86400,
+        description="Planner cache time-to-live in seconds.",
+        ge=0,
+    )
+    planner_cache_enabled: bool = Field(
+        default=True,
+        description="Enable cached planner payload reuse between runs.",
     )
     source: str = Field(
         default="remote", description="Data source mode: 'local' or 'remote'."

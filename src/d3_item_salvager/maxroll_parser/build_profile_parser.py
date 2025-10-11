@@ -5,12 +5,12 @@ Produces structured BuildProfileData instances plus extracted item usages
 (normalised as BuildProfileItems with enumerated slot & usage context).
 """
 
-__all__ = ["BuildProfileData", "BuildProfileParser"]
+from __future__ import annotations
 
 import json
 import re
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import requests
 
@@ -23,6 +23,12 @@ from .types import (
     ItemSlot,
     ItemUsageContext,
 )
+
+__all__ = ["BuildProfileData", "BuildProfileParser"]
+
+
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    from d3_item_salvager.config.settings import AppConfig
 
 
 class BuildProfileParser(BuildProfileParserProtocol):
@@ -47,13 +53,15 @@ class BuildProfileParser(BuildProfileParserProtocol):
         file_path: str | Path,
         *,
         resolver: GuideProfileResolver | None = None,
+        config: AppConfig | None = None,
     ) -> None:
         # keep original input string because Path(file_path) will normalize
         # URL strings (e.g. 'https://...') into OS paths which removes the
         # '//' part on Windows. Use `_input` to detect http(s) URLs.
         self._input: str = str(file_path)
         self.file_path: Path = Path(file_path)
-        self._resolver = resolver
+        self._config = config
+        self._resolver = resolver or (GuideProfileResolver(config) if config else None)
         self.raw_json: dict[str, Any] = self._load_json()
         self.build_data: dict[str, Any] = self._extract_data()
         self.profiles: list[BuildProfileData] = self._extract_profiles()
@@ -101,8 +109,11 @@ class BuildProfileParser(BuildProfileParserProtocol):
 
     def _load_from_guide_url(self, guide_url: str) -> dict[str, Any]:
         if self._resolver is None:
-            msg = "Guide URLs require a GuideProfileResolver"
-            raise BuildProfileError(msg, file_path=guide_url)
+            if self._config is not None:
+                self._resolver = GuideProfileResolver(self._config)
+            else:
+                msg = "Guide URLs require a GuideProfileResolver"
+                raise BuildProfileError(msg, file_path=guide_url)
         try:
             return self._resolver.resolve(guide_url)
         except BuildProfileError:

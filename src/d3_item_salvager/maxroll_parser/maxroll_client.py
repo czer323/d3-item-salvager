@@ -121,7 +121,11 @@ class MaxrollClient:
         Returns:
             BuildProfileParser object.
         """
-        return BuildProfileParser(file_path, resolver=self._guide_profile_resolver)
+        return BuildProfileParser(
+            file_path,
+            resolver=self._guide_profile_resolver,
+            config=self.config,
+        )
 
     def item_parser(self) -> ItemDataParserProtocol:
         """

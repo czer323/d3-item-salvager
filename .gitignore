@@ -10,12 +10,9 @@ wheels/
 .venv
 .github
 .mypy_cache
-d3_items.db
 .env
-dev.db
 .coverage
 logs/
 precommit_logs
 cache/
-d3_items.db.test
-d3_items copy.db
+*.db
