@@ -1,50 +1,41 @@
-# API Endpoints Implementation
+# Remote Maxroll Integration
 
-**Related Issue**: N/A
+**Related Issue**: n/a – aligns with original implementation plan
 
 ## Goal
 
-Implement the initial FastAPI endpoints (`/items`, `/builds`, `/profiles`, `/item_usages`) described in `docs/11 apiImplementation.md`, providing filtering and pagination backed by the existing data/query layer while following project DI and testing conventions.
+Enable the production workflow to ingest live Diablo 3 build guides from Maxroll by fetching guide listings, resolving planner profiles, and populating the local database with parsed builds/items.
 
 ## High-Level Plan
 
-Build typed response schemas and router functions that rely on the SQLModel session dependency, add or extend data query helpers to support flexible filtering with optional parameters, wire the routes into the FastAPI factory, and cover the new behavior with targeted API tests using dependency overrides and in-memory data fixtures. Update the API implementation document with any deviations or clarifications encountered during development.
+1. Extend configuration to capture all remote endpoints (guide search, planner profile loader) and runtime options such as HTTP user agent/timeouts.
+2. Introduce a resolver that derives planner profile IDs for a guide (via HTML parsing or API metadata) and fetches the associated profile JSON from the planner service.
+3. Update build profile parsing to combine multiple planner payloads per guide and surface consolidated profile/item data.
+4. Wire the new resolver into `BuildGuideService` and `MaxrollClient` so that the service processes remote guides end-to-end.
+5. Add regression tests using fixture data/mocked HTTP responses and run the project checks.
 
 ## Public API Changes
 
-- New GET endpoints: `/items`, `/builds`, `/profiles`, `/item_usages` with query parameters for filtering and pagination.
-- OpenAPI schema gains corresponding models for list responses.
+- `MaxrollParserConfig`: new fields for planner profile URL template and HTTP configuration.
+- `BuildProfileParser` constructor will accept optional parser configuration (backwards compatible default).
+- `GuideInfo` remains stable; downstream services consume updated parser behavior transparently.
 
 ## Testing Plan
 
-- Add unit-level API tests in `tests/api/` covering each endpoint, including filtering and pagination scenarios.
-- Use dependency overrides to supply an in-memory SQLModel session seeded with representative data for deterministic responses.
-- Run `scripts/check` to ensure lint, type checks, and tests all pass.
+- Unit tests for the planner resolver covering HTML extraction and error cases (using saved HTML fixtures).
+- Unit tests for `BuildProfileParser` combining multiple planner payloads (mocked requests).
+- Service-level test exercising `BuildGuideService.build_profiles_from_guides` with mocked network layer.
+- Run `uv run pre-commit run --all-files` (or component commands) locally to cover linting, typing, and tests.
 
 ## Implementation Steps
 
-- [x] Review existing data query helpers and extend them to cover filtering and pagination requirements.
-- [x] Define Pydantic response schemas in a new `schemas.py` module under `src/d3_item_salvager/api/`.
-- [x] Implement FastAPI route handlers for `/items`, `/builds`, `/profiles`, `/item_usages`, integrating with DI dependencies and query helpers.
-- [x] Register the new routers in `create_app` and ensure CORS/docs configuration conforms to project conventions.
-- [x] Write API endpoint tests with in-memory database fixtures validating success paths and edge cases.
-- [x] Update `docs/11 apiImplementation.md` with any deviations, clarifications, or implementation notes discovered.
-- [ ] Execute `scripts/check` and resolve any issues.
+- [ ] Add new configuration fields/constants for planner profile fetching and default headers/timeouts.
+- [ ] Implement a guide profile resolver (HTML parser + planner fetcher) and expose it for reuse.
+- [ ] Update `BuildProfileParser` to use the resolver, aggregate planner data, and accept optional config.
+- [ ] Adjust `BuildGuideService`/`MaxrollClient` to inject config and work with the enhanced parser.
+- [ ] Create/update tests with fixtures/mocks validating the new behavior.
+- [ ] Execute `uv run pre-commit run --all-files` (or equivalent) and address any failures.
 
 ## Deviations
 
-- `scripts/check` is not present in the repository; ran `uv run ruff check .`, `uv run pyright`, and `uv run pytest` instead. All checks pass with the updated configuration suite.
-
-# Environment Strategy Alignment
-
-## Goal (Environment Strategy)
-
-Support distinct development and production modes so local runs use bundled reference data without touching remote Maxroll endpoints, while production continues to consume remote APIs with real credentials.
-
-## Implementation Steps (Environment Strategy)
-
-- [x] Introduce an explicit environment flag in `AppConfig` (e.g., `environment` enum) sourced from `APP_ENV` with sensible defaults.
-- [x] Extend `MaxrollParserConfig` with a source mode that selects local vs. remote endpoints, applying environment-specific defaults and validation (no bearer token needed locally, required remotely).
-- [x] Update dependency wiring (container) and CLI entry points to respect the environment-aware configuration, including using `api.host/port/reload` instead of getattr fallbacks.
-- [x] Adjust tests (config, CLI) to cover both local and production configuration expectations, ensuring error messages align with new validation logic.
-- [x] Document the new environment strategy in the API implementation doc or a dedicated configuration doc section.
+- None at this time.

@@ -1,5 +1,6 @@
 """CLI entry point for d3_item_salvager. Initializes logging and runs main logic."""
 
+import os
 import time
 
 import typer
@@ -7,7 +8,7 @@ import uvicorn
 from dependency_injector.wiring import Provide, inject
 
 from d3_item_salvager.api.factory import create_app
-from d3_item_salvager.config.settings import AppConfig
+from d3_item_salvager.config.settings import AppConfig, load_runtime_env
 from d3_item_salvager.container import Container
 from d3_item_salvager.logging.setup import setup_logger
 from d3_item_salvager.workers import (
@@ -17,6 +18,21 @@ from d3_item_salvager.workers import (
 )
 
 app_cli = typer.Typer()
+
+
+def _should_load_dotenv() -> bool:
+    """Return True when runtime dotenv loading is enabled."""
+    flag = os.getenv("APP_USE_DOTENV", "1").lower()
+    return flag not in {"0", "false", "no"}
+
+
+def _build_container() -> Container:
+    """Initialise the DI container after loading dotenv configuration."""
+    if _should_load_dotenv():
+        load_runtime_env()
+    container = Container()
+    container.wire(modules=[__name__])  # pylint: disable=no-member
+    return container
 
 
 @inject
@@ -81,25 +97,47 @@ def run_workers(app_config: AppConfig = Provide[Container.config]) -> None:
 @app_cli.command()
 def api() -> None:
     """Run FastAPI server."""
-    container = Container()
-    container.wire(modules=[__name__])  # pylint: disable=no-member
+    _build_container()
     run_api()
 
 
 @app_cli.command()
 def cli() -> None:
     """Run CLI tasks."""
-    container = Container()
-    container.wire(modules=[__name__])  # pylint: disable=no-member
+    _build_container()
     run_cli()
 
 
 @app_cli.command()
 def workers() -> None:
     """Run background scheduler workers."""
-    container = Container()
-    container.wire(modules=[__name__])  # pylint: disable=no-member
+    _build_container()
     run_workers()
+
+
+@app_cli.command("import-guides")
+def import_guides(
+    force_refresh: bool = typer.Option(
+        False,
+        "--force-refresh",
+        "-f",
+        help="Force a fresh fetch of guide metadata, bypassing any cached data.",
+    ),
+) -> None:
+    """Fetch Maxroll guides and synchronise the local database."""
+    container = _build_container()
+    app_config = container.config()
+    setup_logger(app_config)
+
+    service = container.build_guide_service()
+    refresh_flag = force_refresh or app_config.is_production
+    summary = service.prepare_database(force_refresh=refresh_flag)
+    typer.echo(
+        "Guide import complete "
+        f"(processed={summary.guides_processed}, skipped={summary.guides_skipped}, "
+        f"builds={summary.builds_created}, profiles={summary.profiles_created}, "
+        f"items={summary.items_created}, usages={summary.usages_created})."
+    )
 
 
 if __name__ == "__main__":

@@ -59,9 +59,16 @@ class MaxrollParserConfig(BaseSettings):
         cache_file: Path to cache file.
         limit: API result limit per request.
         source: Indicates whether to use local files or remote API.
+        planner_profile_url: Template URL used to fetch planner profiles.
+        planner_request_timeout: Timeout (seconds) for planner HTTP requests.
+        planner_user_agent: User agent used when requesting planner resources.
     """
 
-    model_config = SettingsConfigDict(env_prefix="MAXROLL_", env_file=None)
+    model_config = SettingsConfigDict(
+        env_prefix="MAXROLL_",
+        env_file=None,
+        env_nested_delimiter="__",
+    )
 
     bearer_token: str = Field(
         "fake-dummy-token",
@@ -76,6 +83,18 @@ class MaxrollParserConfig(BaseSettings):
     cache_ttl: int = 604800  # seconds
     cache_file: Path = Path("cache/maxroll_guides.json")
     limit: int = 21
+    planner_profile_url: str = Field(
+        default="https://planners.maxroll.gg/profiles/load/d3/{planner_id}",
+        description="Template URL for loading planner profiles (must contain {planner_id}).",
+    )
+    planner_request_timeout: float = Field(
+        default=10.0,
+        description="Timeout in seconds applied to planner HTTP requests.",
+    )
+    planner_user_agent: str = Field(
+        default="d3-item-salvager/1.0 (+https://github.com/czer323/d3-item-salvager)",
+        description="User agent string supplied when calling Maxroll planner endpoints.",
+    )
     source: str = Field(
         default="remote", description="Data source mode: 'local' or 'remote'."
     )

@@ -8,9 +8,13 @@ Produces structured BuildProfileData instances plus extracted item usages
 __all__ = ["BuildProfileData", "BuildProfileParser"]
 
 import json
+import re
 from pathlib import Path
 from typing import Any, cast
 
+import requests
+
+from .guide_profile_resolver import GuideProfileResolver
 from .maxroll_exceptions import BuildProfileError
 from .protocols import BuildProfileParserProtocol
 from .types import (
@@ -38,8 +42,18 @@ class BuildProfileParser(BuildProfileParserProtocol):
         profiles: list[BuildProfileData] - List of ProfileData objects extracted from the build.
     """
 
-    def __init__(self, file_path: str | Path) -> None:
+    def __init__(
+        self,
+        file_path: str | Path,
+        *,
+        resolver: GuideProfileResolver | None = None,
+    ) -> None:
+        # keep original input string because Path(file_path) will normalize
+        # URL strings (e.g. 'https://...') into OS paths which removes the
+        # '//' part on Windows. Use `_input` to detect http(s) URLs.
+        self._input: str = str(file_path)
         self.file_path: Path = Path(file_path)
+        self._resolver = resolver
         self.raw_json: dict[str, Any] = self._load_json()
         self.build_data: dict[str, Any] = self._extract_data()
         self.profiles: list[BuildProfileData] = self._extract_profiles()
@@ -49,7 +63,7 @@ class BuildProfileParser(BuildProfileParserProtocol):
         Parse a build profile from the given file path and return the parsed object.
         Protocol method for BuildProfileParserProtocol.
         """
-        parser = BuildProfileParser(file_path)
+        parser = BuildProfileParser(file_path, resolver=self._resolver)
         return parser
 
     def _load_json(self) -> dict[str, Any]:
@@ -62,10 +76,18 @@ class BuildProfileParser(BuildProfileParserProtocol):
         Raises:
             ValueError: If the file cannot be parsed as JSON.
         """
+        input_str = self._input
         try:
-            with self.file_path.open(encoding="utf-8") as f:
-                content = f.read()
-            obj: Any = json.loads(content)
+            if input_str.startswith("https://maxroll.gg/d3/guides/"):
+                obj = self._load_from_guide_url(input_str)
+            elif input_str.startswith("http://") or input_str.startswith("https://"):
+                obj = self._load_from_remote_json(input_str)
+            else:
+                with self.file_path.open(encoding="utf-8") as f:
+                    content = f.read()
+                obj = json.loads(content)
+        except BuildProfileError:
+            raise
         except Exception as e:  # pragma: no cover - unexpected IO/JSON issues
             msg = f"Could not parse build profile JSON: {e}"
             raise BuildProfileError(msg, file_path=str(self.file_path)) from e
@@ -75,6 +97,51 @@ class BuildProfileParser(BuildProfileParserProtocol):
                 msg,
                 file_path=str(self.file_path),
             )
+        return cast("dict[str, Any]", obj)
+
+    def _load_from_guide_url(self, guide_url: str) -> dict[str, Any]:
+        if self._resolver is None:
+            msg = "Guide URLs require a GuideProfileResolver"
+            raise BuildProfileError(msg, file_path=guide_url)
+        try:
+            return self._resolver.resolve(guide_url)
+        except BuildProfileError:
+            raise
+        except Exception as exc:  # pragma: no cover - network/IO
+            msg = f"Could not fetch guide {guide_url}: {exc}"
+            raise BuildProfileError(msg, file_path=guide_url) from exc
+
+    def _load_from_remote_json(self, url: str) -> dict[str, Any]:
+        obj: Any | None = None
+        try:
+            resp = requests.get(url, timeout=10)
+            resp.raise_for_status()
+            try:
+                obj = resp.json()
+            except Exception:
+                html = resp.text
+                m = re.search(r"d3planner/(\d+)", html)
+                if not m:
+                    m = re.search(r"data-d3planner-id=\"(\d+)\"", html)
+                if not m:
+                    raise
+                planner_id = m.group(1)
+                asset_url = f"https://assets-ng.maxroll.gg/d3planner/{planner_id}.json"
+                try:
+                    resp2 = requests.get(asset_url, timeout=10)
+                    resp2.raise_for_status()
+                    obj = resp2.json()
+                except Exception as e:  # pragma: no cover - network/IO issues
+                    msg = f"Could not fetch/parse remote profile JSON (fallback): {e}"
+                    raise BuildProfileError(msg, file_path=asset_url) from e
+        except BuildProfileError:
+            raise
+        except Exception as e:  # pragma: no cover - network/IO issues
+            msg = f"Could not fetch/parse remote profile JSON: {e}"
+            raise BuildProfileError(msg, file_path=url) from e
+        if not isinstance(obj, dict):
+            msg = "Remote profile JSON must be an object."
+            raise BuildProfileError(msg, file_path=url)
         return cast("dict[str, Any]", obj)
 
     def _extract_data(self) -> dict[str, Any]:

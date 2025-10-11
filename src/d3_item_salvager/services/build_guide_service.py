@@ -18,6 +18,7 @@ from d3_item_salvager.data.models import Build, Item, ItemUsage, Profile
 from d3_item_salvager.exceptions.scraping import ScrapingError
 from d3_item_salvager.maxroll_parser.build_profile_parser import BuildProfileParser
 from d3_item_salvager.maxroll_parser.get_guide_urls import MaxrollGuideFetcher
+from d3_item_salvager.maxroll_parser.guide_profile_resolver import GuideProfileResolver
 from d3_item_salvager.maxroll_parser.item_data_parser import DataParser
 from d3_item_salvager.maxroll_parser.maxroll_exceptions import (
     BuildProfileError,
@@ -85,6 +86,7 @@ class BuildGuideDependencies:
     guide_fetcher: GuideFetcher | None = None
     parser_factory: ParserFactory | None = None
     item_data_provider: ItemDataProvider | None = None
+    guide_profile_resolver: GuideProfileResolver | None = None
 
 
 class BuildGuideService:
@@ -99,13 +101,19 @@ class BuildGuideService:
     ) -> None:
         """Configure the service with its injected dependencies."""
         self._logger = logger
+        self._config = config
         self._session_factory = dependencies.session_factory
         self._guide_fetcher: GuideFetcher = (
             dependencies.guide_fetcher or MaxrollGuideFetcher(config)
         )
-        self._parser_factory: ParserFactory = (
-            dependencies.parser_factory or self._default_parser_factory
+        self._resolver: GuideProfileResolver | None = (
+            dependencies.guide_profile_resolver
         )
+        if dependencies.parser_factory is not None:
+            self._parser_factory = dependencies.parser_factory
+        else:
+            self._resolver = self._resolver or GuideProfileResolver(config)
+            self._parser_factory = self._build_parser_factory()
         self._item_data: ItemDataProvider = (
             dependencies.item_data_provider or DataParser()
         )
@@ -192,7 +200,13 @@ class BuildGuideService:
 
     def prepare_database(self, *, force_refresh: bool = False) -> BuildSyncSummary:
         """Orchestrate fetching, parsing, and database synchronization."""
-        guides = self.fetch_guides(force_refresh=force_refresh)
+        is_production = bool(getattr(self._config, "is_production", False))
+        refresh_cache = force_refresh or is_production
+        if refresh_cache and not force_refresh and is_production:
+            self._logger.info(
+                "Production mode detected; forcing a fresh guide fetch to bypass cached data."
+            )
+        guides = self.fetch_guides(force_refresh=refresh_cache)
         if not guides:
             return BuildSyncSummary(0, 0, 0, 0, 0, 0)
 
@@ -234,9 +248,13 @@ class BuildGuideService:
             usages_created=new_usages,
         )
 
-    @staticmethod
-    def _default_parser_factory(path: str) -> BuildProfileParser:
-        return BuildProfileParser(path)
+    def _build_parser_factory(self) -> ParserFactory:
+        resolver = self._resolver
+
+        def factory(path: str) -> BuildProfileParser:
+            return BuildProfileParser(path, resolver=resolver)
+
+        return factory
 
     @contextmanager
     def _session_scope(self) -> Iterator[Session]:

@@ -17,3 +17,5 @@ dev.db
 logs/
 precommit_logs
 cache/
+d3_items.db.test
+d3_items copy.db

@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from .build_profile_parser import BuildProfileData, BuildProfileParser
 from .get_guide_urls import GuideInfo, MaxrollGuideFetcher
 from .guide_cache import FileGuideCache
+from .guide_profile_resolver import GuideProfileResolver
 from .item_data_parser import DataParser, ItemMeta
 
 if TYPE_CHECKING:
@@ -96,6 +97,7 @@ class MaxrollClient:
         self._guide_fetcher: GuideFetcherProtocol | None = None
         self._profile_parser: BuildProfileParserProtocol | None = None
         self._item_parser: ItemDataParserProtocol | None = None
+        self._guide_profile_resolver = GuideProfileResolver(config)
 
     @property
     def guide_fetcher(self) -> GuideFetcherProtocol:
@@ -119,7 +121,7 @@ class MaxrollClient:
         Returns:
             BuildProfileParser object.
         """
-        return BuildProfileParser(file_path)
+        return BuildProfileParser(file_path, resolver=self._guide_profile_resolver)
 
     def item_parser(self) -> ItemDataParserProtocol:
         """

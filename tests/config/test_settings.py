@@ -12,6 +12,9 @@ from d3_item_salvager.config.settings import AppConfig
 def _reset_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("APP_ENV", raising=False)
     monkeypatch.delenv("MAXROLL_PARSER__BEARER_TOKEN", raising=False)
+    monkeypatch.delenv("APP_USE_DOTENV", raising=False)
+    monkeypatch.setenv("APP_ENV", "development")
+    monkeypatch.setenv("APP_USE_DOTENV", "0")
 
 
 def test_config_defaults_to_local_development(monkeypatch: pytest.MonkeyPatch) -> None:

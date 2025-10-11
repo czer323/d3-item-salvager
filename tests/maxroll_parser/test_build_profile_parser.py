@@ -2,10 +2,12 @@
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from d3_item_salvager.maxroll_parser.build_profile_parser import BuildProfileParser
+from d3_item_salvager.maxroll_parser.guide_profile_resolver import GuideProfileResolver
 from d3_item_salvager.maxroll_parser.maxroll_exceptions import BuildProfileError
 
 
@@ -88,3 +90,23 @@ def test_extract_usages_empty_profiles(tmp_path: Path) -> None:
     parser = BuildProfileParser(path)
     usages = parser.extract_usages()
     assert not usages
+
+
+class _FakeResolver(GuideProfileResolver):
+    def __init__(self, payload: dict[str, Any]) -> None:
+        # Override parent initialisation to avoid external configuration.
+        self._payload = payload
+
+    def resolve(self, guide_url: str) -> dict[str, Any]:  # pragma: no cover - trivial
+        _ = guide_url
+        return self._payload
+
+
+def test_parser_uses_resolver_for_guide_urls() -> None:
+    """Guide URLs should be resolved via the injected resolver."""
+    payload = {"data": {"profiles": [{"name": "Resolved", "class": "Wizard"}]}}
+    parser = BuildProfileParser(
+        "https://maxroll.gg/d3/guides/test-guide",
+        resolver=_FakeResolver(payload),
+    )
+    assert parser.profiles[0].name == "Resolved"

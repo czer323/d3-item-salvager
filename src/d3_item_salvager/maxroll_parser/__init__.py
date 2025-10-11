@@ -1,5 +1,6 @@
 """Central entry point for Maxroll parsing, guides, and item data."""
 
+from .guide_profile_resolver import GuideProfileResolver
 from .maxroll_client import MaxrollClient
 from .protocols import (
     BuildProfileParserProtocol,
@@ -26,6 +27,7 @@ __all__ = [
     "GuideCacheProtocol",
     "GuideFetcherProtocol",
     "GuideInfo",
+    "GuideProfileResolver",
     "ItemDataParserProtocol",
     "ItemMeta",
     "ItemSlot",

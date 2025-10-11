@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Final
 
+from dotenv import load_dotenv
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -16,6 +18,29 @@ from .base import (
     MaxrollParserConfig,
     SchedulerConfig,
 )
+
+DEFAULT_DOTENV_PATH: Final[Path] = Path(".env")
+
+
+def load_runtime_env(
+    dotenv_path: str | Path | None = None,
+    *,
+    override: bool = False,
+) -> bool:
+    """Load environment variables from a ``.env`` file if present.
+
+    Args:
+        dotenv_path: Optional path to the dotenv file (defaults to ``.env``).
+        override: When True, existing environment variables are overridden.
+
+    Returns:
+        True if the dotenv file was loaded, otherwise False.
+    """
+    path = Path(dotenv_path) if dotenv_path is not None else DEFAULT_DOTENV_PATH
+    if not path.exists():
+        return False
+    load_dotenv(path, override=override)
+    return True
 
 
 def _default_maxroll_parser_config() -> MaxrollParserConfig:
@@ -65,7 +90,11 @@ class AppConfig(BaseSettings):
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     api: ApiConfig = Field(default_factory=ApiConfig)
     scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig)
-    model_config = SettingsConfigDict(env_file=".env")
+    model_config = SettingsConfigDict(
+        env_file=None,
+        env_nested_delimiter="__",
+        extra="ignore",
+    )
 
     @property
     def is_development(self) -> bool:
