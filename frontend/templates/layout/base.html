@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}{{ page_title or "D3 Item Salvager" }}{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="min-h-screen bg-base-200 text-base-content">
+    <header class="shadow-lg bg-base-300/70 backdrop-blur">
+        <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+            <a class="text-xl font-bold" href="/">D3 Item Salvager</a>
+            <nav class="flex gap-4 text-sm">
+                <a class="link link-hover" href="/">Dashboard</a>
+                <a class="link link-hover" href="https://github.com/czer323/d3-item-salvager" target="_blank"
+                    rel="noreferrer">
+                    Repo
+                </a>
+            </nav>
+        </div>
+    </header>
+    <main class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-8" id="main-content">
+        {% block body %}{% endblock %}
+    </main>
+    <footer class="bg-base-300/70 py-6 text-center text-xs">
+        <p>Powered by HTMX, Jinja2, Tailwind CSS, and DaisyUI.</p>
+    </footer>
+    {% block extra_scripts %}{% endblock %}
+</body>
+
+</html>

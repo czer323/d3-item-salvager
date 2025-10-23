@@ -28,13 +28,13 @@
 
 **Purpose**: Core infrastructure required before any user story work
 
-- [ ] T004 [Foundational] Create immutable configuration dataclass for frontend settings in `frontend/src/config.py` (includes backend base URL, timeout, feature flags).
-- [ ] T005 [Foundational] Implement HTTP client wrapper using `httpx` in `frontend/src/services/backend_client.py` with retry/backoff and error translation helpers.
-- [ ] T006 [Foundational] Implement Flask app factory in `frontend/app.py` that loads config, registers blueprints, configures Jinja2, and exposes `create_app()`.
-- [ ] T007 [Foundational] Scaffold routing package (`frontend/src/routes/__init__.py`, `frontend/src/routes/base.py`) with blueprint registration and root index route placeholder.
-- [ ] T008 [Foundational] Create shared layout template with Tailwind + DaisyUI + HTMX CDN links in `frontend/templates/layout/base.html` including global nav and focus styles.
-- [ ] T009 [Foundational] Add reusable error/empty-state partials in `frontend/templates/components/error_state.html` for backend outages and `frontend/templates/components/loading_spinner.html` for HTMX swaps.
-- [ ] T010 [Foundational] Provide pytest/Playwright fixtures in `frontend/tests/conftest.py` to launch the Flask app on an ephemeral port for UI and contract tests.
+- [x] T004 [Foundational] Create immutable configuration dataclass for frontend settings in `frontend/src/config.py` (includes backend base URL, timeout, feature flags).
+- [x] T005 [Foundational] Implement HTTP client wrapper using `httpx` in `frontend/src/services/backend_client.py` with retry/backoff and error translation helpers.
+- [x] T006 [Foundational] Implement Flask app factory in `frontend/app.py` that loads config, registers blueprints, configures Jinja2, and exposes `create_app()`.
+- [x] T007 [Foundational] Scaffold routing package (`frontend/src/routes/__init__.py`, `frontend/src/routes/base.py`) with blueprint registration and root index route placeholder.
+- [x] T008 [Foundational] Create shared layout template with Tailwind + DaisyUI + HTMX CDN links in `frontend/templates/layout/base.html` including global nav and focus styles.
+- [x] T009 [Foundational] Add reusable error/empty-state partials in `frontend/templates/components/error_state.html` for backend outages and `frontend/templates/components/loading_spinner.html` for HTMX swaps.
+- [x] T010 [Foundational] Provide pytest/Playwright fixtures in `frontend/tests/conftest.py` to launch the Flask app on an ephemeral port for UI and contract tests.
 
 **Checkpoint**: Foundation ready—user story implementation can begin.
 

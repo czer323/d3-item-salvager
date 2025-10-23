@@ -1,0 +1,21 @@
+{% extends "layout/base.html" %}
+
+{% block title %}{{ page_title or "D3 Item Salvager" }}{% endblock %}
+
+{% block body %}
+<section class="space-y-4">
+    <h1 class="text-3xl font-semibold">D3 Item Salvager</h1>
+    <p class="text-sm opacity-80">
+        Welcome to the new frontend prototype. Core interactions will appear here as user stories progress.
+    </p>
+    <div class="rounded-lg border border-base-300 bg-base-100/60 p-6">
+        <h2 class="text-xl font-semibold">Status</h2>
+        <p class="mt-2 text-sm">
+            Backend base URL: <span class="font-mono">{{ frontend_config.backend_base_url }}</span>
+        </p>
+        <p class="mt-2 text-sm">
+            Request timeout (seconds): {{ frontend_config.request_timeout_seconds }}
+        </p>
+    </div>
+</section>
+{% endblock %}
