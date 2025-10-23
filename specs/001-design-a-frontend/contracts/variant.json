@@ -1,0 +1,113 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Frontend Test Contracts - Variant Endpoint",
+        "version": "0.1.0",
+        "description": "Optional JSON-mode endpoint provided by the frontend for automated tests. This endpoint aggregates variant metadata, items and usage contexts into a single payload."
+    },
+    "paths": {
+        "/frontend/variant/{variant_id}.json": {
+            "get": {
+                "summary": "Get variant details (JSON mode)",
+                "parameters": [
+                    {
+                        "name": "variant_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Variant payload",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "variant",
+                                        "items"
+                                    ],
+                                    "properties": {
+                                        "variant": {
+                                            "$ref": "#/components/schemas/Variant"
+                                        },
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ItemUsage"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Variant not found"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Variant": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "name",
+                    "build_guide_id"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "build_guide_id": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ItemUsage": {
+                "type": "object",
+                "required": [
+                    "item_id",
+                    "usage_context",
+                    "item"
+                ],
+                "properties": {
+                    "item_id": {
+                        "type": "string"
+                    },
+                    "usage_context": {
+                        "type": "string"
+                    },
+                    "item": {
+                        "type": "object",
+                        "required": [
+                            "id",
+                            "name",
+                            "slot"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "slot": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
