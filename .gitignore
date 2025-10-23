@@ -18,3 +18,8 @@ cache/
 *.db
 /.specify/scripts
 /.specify/templates
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
