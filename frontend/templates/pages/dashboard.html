@@ -3,19 +3,34 @@
 {% block title %}{{ page_title or "D3 Item Salvager" }}{% endblock %}
 
 {% block body %}
-<section class="space-y-4">
-    <h1 class="text-3xl font-semibold">D3 Item Salvager</h1>
-    <p class="text-sm opacity-80">
-        Welcome to the new frontend prototype. Core interactions will appear here as user stories progress.
-    </p>
-    <div class="rounded-lg border border-base-300 bg-base-100/60 p-6">
-        <h2 class="text-xl font-semibold">Status</h2>
-        <p class="mt-2 text-sm">
-            Backend base URL: <span class="font-mono">{{ frontend_config.backend_base_url }}</span>
-        </p>
-        <p class="mt-2 text-sm">
-            Request timeout (seconds): {{ frontend_config.request_timeout_seconds }}
-        </p>
+<section class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-semibold">D3 Item Salvager</h1>
+            <p class="text-sm opacity-80">
+                Explore build requirements and salvage recommendations for your selected variants.
+            </p>
+        </div>
+        <div class="rounded-lg border border-base-300 bg-base-100/80 px-4 py-3 text-sm">
+            <p>
+                Backend: <span class="font-mono">{{ frontend_config.backend_base_url }}</span>
+            </p>
+            <p>
+                Timeout: {{ frontend_config.request_timeout_seconds }}s
+            </p>
+        </div>
     </div>
+
+    {% if summary_error %}
+    {% include "components/error_state.html" with title="Unable to load summary" message=summary_error %}
+    {% endif %}
+
+    {% if variant_summary %}
+    {% include "variants/summary.html" with summary=variant_summary %}
+    {% else %}
+    <div class="rounded-lg border border-dashed border-base-300 bg-base-100/60 p-6 text-sm">
+        Variant summary data is not available yet. Select a variant once data is loaded.
+    </div>
+    {% endif %}
 </section>
 {% endblock %}

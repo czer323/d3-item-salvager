@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from flask import Flask, g
 
 from frontend.src.config import FrontendConfig
+from frontend.src.routes import register_blueprints
 from frontend.src.services.backend_client import BackendClient
 
 if TYPE_CHECKING:
@@ -64,7 +65,5 @@ def create_app() -> Flask:
     app.before_request(_inject_client)
     app.teardown_request(_teardown_client)
 
-    from frontend.src.routes import base_blueprint
-
-    app.register_blueprint(base_blueprint)
+    register_blueprints(app)
     return app

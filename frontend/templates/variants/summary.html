@@ -1,0 +1,27 @@
+{% from "variants/sections.html" import render_item_section %}
+
+<div class="space-y-6" data-testid="variant-summary">
+    <header class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-2xl font-semibold">Variant Summary</h1>
+            <p class="text-sm opacity-80">
+                Showing results for <span class="font-medium">{{ summary.variant.name }}</span>.
+            </p>
+        </div>
+        <span class="badge badge-neutral">Guide: {{ summary.variant.build_guide_id }}</span>
+    </header>
+
+    {{ render_item_section(
+    "Used by selected builds",
+    summary.used_items,
+    "variant-summary-used",
+    "No items are currently marked as required for the selected variants.",
+    ) }}
+
+    {{ render_item_section(
+    "Not used / Salvage candidates",
+    summary.salvage_items,
+    "variant-summary-salvage",
+    "No salvage recommendations were generated for this selection.",
+    ) }}
+</div>

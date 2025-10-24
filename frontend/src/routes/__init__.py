@@ -1,5 +1,17 @@
 """Routing entrypoints for the frontend application."""
 
-from frontend.src.routes.base import base_blueprint
+from flask import Flask
 
-__all__ = ["base_blueprint"]
+from frontend.src.routes.base import base_blueprint
+from frontend.src.routes.variants import variants_blueprint
+
+BLUEPRINTS = (base_blueprint, variants_blueprint)
+
+
+def register_blueprints(app: Flask) -> None:
+    """Register all blueprints with the provided Flask app."""
+    for blueprint in BLUEPRINTS:
+        app.register_blueprint(blueprint)
+
+
+__all__ = ["BLUEPRINTS", "register_blueprints"]

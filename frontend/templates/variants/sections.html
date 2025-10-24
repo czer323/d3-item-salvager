@@ -1,0 +1,29 @@
+{% macro render_item_section(title, items, data_testid, empty_message) -%}
+<section class="space-y-4" data-testid="{{ data_testid }}">
+    <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold">{{ title }}</h2>
+        <span class="badge badge-outline">{{ items|length }}</span>
+    </div>
+    {% if items %}
+    <ul class="grid gap-3 md:grid-cols-2">
+        {% for item in items %}
+        <li class="card bg-base-200 shadow-md">
+            <div class="card-body gap-2 p-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="card-title text-base">{{ item.name }}</h3>
+                    <span class="badge {{ item.badge_class }} uppercase">{{ item.classification.display_name }}</span>
+                </div>
+                <p class="text-xs uppercase tracking-wide text-base-content/70">{{ item.slot }}</p>
+                <p class="text-sm">{{ item.usage_label or "N/A" }}</p>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="rounded-lg border border-dashed border-base-300 bg-base-100/60 p-6 text-sm"
+        data-testid="{{ data_testid }}-empty">
+        {{ empty_message }}
+    </div>
+    {% endif %}
+</section>
+{%- endmacro %}

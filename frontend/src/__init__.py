@@ -1,5 +1,5 @@
 """Source package for frontend-specific modules."""
 
-from frontend.src.routes import base_blueprint
+from frontend.src.routes import BLUEPRINTS, register_blueprints
 
-__all__ = ["base_blueprint"]
+__all__ = ["BLUEPRINTS", "register_blueprints"]

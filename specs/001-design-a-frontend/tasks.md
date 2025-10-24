@@ -48,16 +48,16 @@
 
 ### Tests for User Story 1 (write first)
 
-- [ ] T011 [P] [US1] Add OpenAPI contract test for `/frontend/variant/{variant_id}.json` in `frontend/tests/contracts/test_variant_endpoint.py` validating schema from `specs/001-design-a-frontend/contracts/variant.json`.
-- [ ] T012 [P] [US1] Create Playwright journey `frontend/tests/playwright/test_variant_summary.py` covering selection → summary view with keep/salvage assertions.
+- [x] T011 [P] [US1] Add OpenAPI contract test for `/frontend/variant/{variant_id}.json` in `frontend/tests/contracts/test_variant_endpoint.py` validating schema from `specs/001-design-a-frontend/contracts/variant.json`.
+- [x] T012 [P] [US1] Create Playwright journey `frontend/tests/playwright/test_variant_summary.py` covering selection → summary view with keep/salvage assertions.
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Implement salvage classification helper in `frontend/src/services/salvage_classifier.py` to tag items (Keep, Salvage, Kanai, Follower).
-- [ ] T014 [US1] Implement variant summary aggregator in `frontend/src/services/variant_summary.py` to compose backend data, deduplicate items, and split used vs salvage lists.
-- [ ] T015 [US1] Implement variant routes and JSON-mode endpoint in `frontend/src/routes/variants.py`, including graceful handling for backend timeouts (uses error partial).
-- [ ] T016 [US1] Build variant summary templates (`frontend/templates/variants/summary.html`, `frontend/templates/variants/sections.html`) rendering used vs salvage sections with slot grouping and badges.
-- [ ] T017 [US1] Create dashboard page template in `frontend/templates/pages/dashboard.html` that extends the base layout and includes HTMX target containers for summary content.
+- [x] T013 [US1] Implement salvage classification helper in `frontend/src/services/salvage_classifier.py` to tag items (Keep, Salvage, Kanai, Follower).
+- [x] T014 [US1] Implement variant summary aggregator in `frontend/src/services/variant_summary.py` to compose backend data, deduplicate items, and split used vs salvage lists.
+- [x] T015 [US1] Implement variant routes and JSON-mode endpoint in `frontend/src/routes/variants.py`, including graceful handling for backend timeouts (uses error partial).
+- [x] T016 [US1] Build variant summary templates (`frontend/templates/variants/summary.html`, `frontend/templates/variants/sections.html`) rendering used vs salvage sections with slot grouping and badges.
+- [x] T017 [US1] Create dashboard page template in `frontend/templates/pages/dashboard.html` that extends the base layout and includes HTMX target containers for summary content.
 
 **Checkpoint**: User Story 1 complete—summary view and JSON contract work end-to-end.
 
