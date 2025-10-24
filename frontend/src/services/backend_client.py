@@ -39,11 +39,14 @@ class BackendClient:
     timeout_seconds: float
     max_attempts: int = 3
     backoff_seconds: float = 0.25
+    transport: httpx.BaseTransport | None = field(default=None, repr=False)
     _client: httpx.Client = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._client = httpx.Client(
-            base_url=self.base_url, timeout=self.timeout_seconds
+            base_url=self.base_url,
+            timeout=self.timeout_seconds,
+            transport=self.transport,
         )
 
     def close(self) -> None:

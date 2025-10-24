@@ -192,3 +192,53 @@ def list_item_usages(
     total = session.exec(count_statement).one()
     usages = session.exec(statement.offset(offset).limit(limit)).all()
     return usages, total
+
+
+def list_build_guides_with_classes(
+    session: Session,
+) -> Sequence[tuple[Build, str | None]]:
+    """Return build guides along with an inferred class name."""
+    class_name_alias = func.min(Profile.class_name).label("class_name")
+    build_id_column = cast("InstrumentedAttribute[int | None]", Build.id)
+    profile_build_id = cast("InstrumentedAttribute[int]", Profile.build_id)
+    statement = (
+        select(Build, class_name_alias)
+        .select_from(Build)
+        .join(Profile, profile_build_id == build_id_column, isouter=True)
+        .group_by(build_id_column)
+        .order_by(Build.title)
+    )
+    return session.exec(statement).all()
+
+
+def list_variants_for_build(session: Session, build_id: int) -> Sequence[Profile]:
+    """Return profile variants associated with a build."""
+    statement = (
+        select(Profile).where(Profile.build_id == build_id).order_by(Profile.name)
+    )
+    return session.exec(statement).all()
+
+
+def get_variant(session: Session, variant_id: int) -> Profile | None:
+    """Return a single profile variant by identifier."""
+    statement = select(Profile).where(Profile.id == variant_id)
+    return session.exec(statement).one_or_none()
+
+
+def list_item_usage_with_items(
+    session: Session,
+    variant_id: int,
+) -> Sequence[tuple[ItemUsage, Item]]:
+    """Return item usage records for a variant with associated item metadata."""
+    item_id_column = cast("InstrumentedAttribute[str]", Item.id)
+    usage_item_id = cast("InstrumentedAttribute[str]", ItemUsage.item_id)
+    usage_profile_id = cast("InstrumentedAttribute[int]", ItemUsage.profile_id)
+    usage_slot = cast("InstrumentedAttribute[str]", ItemUsage.slot)
+    usage_id = cast("InstrumentedAttribute[int | None]", ItemUsage.id)
+    statement = (
+        select(ItemUsage, Item)
+        .join(Item, item_id_column == usage_item_id)
+        .where(usage_profile_id == variant_id)
+        .order_by(usage_slot, usage_id)
+    )
+    return session.exec(statement).all()
