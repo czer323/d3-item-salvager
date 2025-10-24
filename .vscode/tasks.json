@@ -2,6 +2,40 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Start Backend",
+            "type": "shell",
+            "command": "uv run python -m d3_item_salvager api",
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Start Frontend",
+            "type": "shell",
+            "command": "set \"FRONTEND_BACKEND_URL=http://127.0.0.1:8000\" && cd frontend && uv run python -m flask --app app run --port 8001",
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Start Both",
+            "dependsOn": [
+                "Start Backend",
+                "Start Frontend"
+            ],
+            "dependsOrder": "sequence",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
             "type": "shell",
             "label": "Run pytest with uv",
             "command": "uv run --frozen pytest",
@@ -19,5 +53,13 @@
             "command": "gh act -W .github/workflows/ci_v2.yml --rm",
             "group": "test"
         }
-    ]
+    ],
+    "options": {
+        "shell": {
+            "executable": "cmd.exe",
+            "args": [
+                "/c"
+            ]
+        }
+    }
 }
