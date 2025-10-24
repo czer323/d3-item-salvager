@@ -115,14 +115,14 @@
 
 ### Tests for User Story 4 (write first)
 
-- [ ] T030 [P] [US4] Add Playwright test `frontend/tests/playwright/test_item_filtering.py` covering fuzzy search + slot filter interactions and empty-state messaging.
-- [ ] T031 [P] [US4] Add unit test `frontend/tests/unit/test_filtering.py` for fuzzy scoring and slot filter combinations used by client script.
+- [x] T030 [P] [US4] Add Playwright test `frontend/tests/playwright/test_item_filtering.ts` covering fuzzy search + slot filter interactions and empty-state messaging.
+- [x] T031 [P] [US4] Add unit test `frontend/tests/unit/test_filtering.py` for fuzzy scoring and slot filter combinations used by client script.
 
 ### Implementation for User Story 4
 
-- [ ] T032 [US4] Implement client-side filtering utility in `frontend/static/js/filtering.js` with lightweight fuzzy matching and HTMX debounce hooks.
-- [ ] T033 [US4] Extend `frontend/src/routes/variants.py` and `frontend/src/services/variant_summary.py` to surface slot metadata, accept search/filter params, and paginate large result sets for HTMX partial loads.
-- [ ] T034 [US4] Update summary templates (`frontend/templates/variants/summary.html`, `frontend/templates/components/empty_state.html`, `frontend/templates/components/filter_controls.html`) to include search box, slot filter, and "No items found" messaging.
+- [x] T032 [US4] Implement client-side filtering utility in `frontend/static/js/filtering.js` with lightweight fuzzy matching and HTMX debounce hooks.
+- [x] T033 [US4] Extend `frontend/src/routes/variants.py` and `frontend/src/services/variant_summary.py` to surface slot metadata, accept search/filter params, and paginate large result sets for HTMX partial loads.
+- [x] T034 [US4] Update summary templates (`frontend/templates/variants/summary.html`, `frontend/templates/components/empty_state.html`, `frontend/templates/components/filter_controls.html`) to include search box, slot filter, and "No items found" messaging.
 
 **Checkpoint**: User Story 4 complete—search and filter experience fully functional.
 

@@ -13,6 +13,12 @@ from frontend.src.services.backend_client import (
     BackendClientError,
     BackendResponseError,
 )
+from frontend.src.services.filtering import (
+    FilterCriteria,
+    PaginationState,
+    apply_filters,
+    paginate_items,
+)
 from frontend.src.services.salvage_classifier import (
     SalvageLabel,
     classify_usage_contexts,
@@ -67,6 +73,14 @@ class VariantSummary:
     variant: VariantDetails
     used_items: list[ItemSummary]
     salvage_items: list[ItemSummary]
+    filters: FilterCriteria
+    available_slots: tuple[str, ...]
+    used_total: int
+    salvage_total: int
+    filtered_used_total: int
+    filtered_salvage_total: int
+    used_pagination: PaginationState
+    salvage_pagination: PaginationState
 
     def to_contract_payload(self) -> dict[str, Any]:
         """Return JSON payload adhering to the documented contract."""
@@ -79,7 +93,16 @@ class VariantSummary:
         }
 
 
-def build_variant_summary(client: BackendClient, variant_id: str) -> VariantSummary:
+def build_variant_summary(
+    client: BackendClient,
+    variant_id: str,
+    *,
+    search: str = "",
+    slot: str | None = None,
+    used_page: int = 1,
+    salvage_page: int = 1,
+    page_size: int = 60,
+) -> VariantSummary:
     """Fetch backend data and compose a variant summary."""
     variant = _fetch_variant_details(client, variant_id)
     usage_rows = client.get_json(f"/item-usage/{variant_id}")
@@ -134,8 +157,38 @@ def build_variant_summary(client: BackendClient, variant_id: str) -> VariantSumm
         else:
             used_items.append(updated)
 
+    available_slots = tuple(
+        sorted(
+            {item.slot for item in (*used_items, *salvage_items) if item.slot},
+            key=str.casefold,
+        )
+    )
+    criteria = FilterCriteria(search=search, slot=slot)
+    filtered_used = apply_filters(used_items, criteria)
+    filtered_salvage = apply_filters(salvage_items, criteria)
+    used_page_items, used_pagination = paginate_items(
+        filtered_used,
+        page=used_page,
+        page_size=page_size,
+    )
+    salvage_page_items, salvage_pagination = paginate_items(
+        filtered_salvage,
+        page=salvage_page,
+        page_size=page_size,
+    )
+
     return VariantSummary(
-        variant=variant, used_items=used_items, salvage_items=salvage_items
+        variant=variant,
+        used_items=used_page_items,
+        salvage_items=salvage_page_items,
+        filters=criteria,
+        available_slots=available_slots,
+        used_total=len(used_items),
+        salvage_total=len(salvage_items),
+        filtered_used_total=len(filtered_used),
+        filtered_salvage_total=len(filtered_salvage),
+        used_pagination=used_pagination,
+        salvage_pagination=salvage_pagination,
     )
 
 

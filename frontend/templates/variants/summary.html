@@ -7,7 +7,10 @@
 {% endif %}
 
 {% if summary %}
-<div class="space-y-6" data-testid="variant-summary">
+{% set filters_active = not summary.filters.is_empty() %}
+<div class="space-y-6" data-testid="variant-summary" data-filter-root data-variant-id="{{ summary.variant.id }}"
+    data-current-search="{{ summary.filters.search }}" data-current-slot="{{ summary.filters.slot or '' }}"
+    data-page-size="{{ summary.used_pagination.page_size }}">
     <header class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
             <h1 class="text-2xl font-semibold">Variant Summary</h1>
@@ -18,22 +21,37 @@
         <span class="badge badge-neutral">Guide: {{ summary.variant.build_guide_id }}</span>
     </header>
 
+    {% include "components/filter_controls.html" %}
+
     {{ render_item_section(
     "Used by selected builds",
     summary.used_items,
+    "used",
     "variant-summary-used",
     "No items are currently marked as required for the selected variants.",
+    "No used items match your current filters. Try clearing the search or slot filter.",
+    summary.used_total,
+    summary.filtered_used_total,
+    summary.used_pagination,
+    filters_active,
     ) }}
 
     {{ render_item_section(
     "Not used / Salvage candidates",
     summary.salvage_items,
+    "salvage",
     "variant-summary-salvage",
     "No salvage recommendations were generated for this selection.",
+    "No salvage candidates match your filters. Adjust your search or choose a different slot.",
+    summary.salvage_total,
+    summary.filtered_salvage_total,
+    summary.salvage_pagination,
+    filters_active,
     ) }}
 </div>
 {% else %}
-<div class="rounded-lg border border-dashed border-base-300 bg-base-100/60 p-6 text-sm">
-    Variant summary data is not available yet. Select a variant once data is loaded.
-</div>
+{% set testid = "variant-summary-empty" %}
+{% set title = "Variant summary unavailable" %}
+{% set message = "Variant summary data is not available yet. Select a variant once data is loaded." %}
+{% include "components/empty_state.html" with context %}
 {% endif %}

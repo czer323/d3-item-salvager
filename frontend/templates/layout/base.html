@@ -35,6 +35,7 @@
     [], 'builds': [], 'variants': []} %}
     <script id="preferences-defaults" type="application/json">{{ _preferences_defaults | tojson }}</script>
     <script src="{{ url_for('static', filename='js/preferences.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/filtering.js') }}" defer></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 
