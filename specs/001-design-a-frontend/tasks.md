@@ -71,15 +71,15 @@
 
 ### Tests for User Story 2 (write first)
 
-- [ ] T018 [P] [US2] Add Playwright journey `frontend/tests/playwright/test_selection_controls.py` verifying selector interactions refresh the summary list.
-- [ ] T019 [P] [US2] Add unit test `frontend/tests/unit/test_selection_view.py` ensuring selection view model groups build guides by class and marks selected options.
+- [x] T018 [P] [US2] Add Playwright journey `frontend/tests/playwright/test_selection_controls.py` verifying selector interactions refresh the summary list.
+- [x] T019 [P] [US2] Add unit test `frontend/tests/unit/test_selection_view.py` ensuring selection view model groups build guides by class and marks selected options.
 
 ### Implementation for User Story 2
 
-- [ ] T020 [US2] Implement selection data service in `frontend/src/services/selection.py` to fetch build guides/variants and map them to selector view models.
-- [ ] T021 [US2] Add selection routes & HTMX endpoints in `frontend/src/routes/selection.py` serving selectors and triggering summary refresh events.
-- [ ] T022 [US2] Create selector templates (`frontend/templates/selection/controls.html`, `frontend/templates/selection/option_group.html`) with DaisyUI components and HTMX triggers.
-- [ ] T023 [US2] Update `frontend/templates/pages/dashboard.html` to embed selection controls, wire HTMX requests to `/frontend/variant/{variant_id}` endpoints, and ensure deduped state flows into summary.
+- [x] T020 [US2] Implement selection data service in `frontend/src/services/selection.py` to fetch build guides/variants and map them to selector view models.
+- [x] T021 [US2] Add selection routes & HTMX endpoints in `frontend/src/routes/selection.py` serving selectors and triggering summary refresh events.
+- [x] T022 [US2] Create selector templates (`frontend/templates/selection/controls.html`, `frontend/templates/selection/option_group.html`) with DaisyUI components and HTMX triggers.
+- [x] T023 [US2] Update `frontend/templates/pages/dashboard.html` to embed selection controls, wire HTMX requests to `/frontend/variant/{variant_id}` endpoints, and ensure deduped state flows into summary.
 
 **Checkpoint**: User Stories 1 & 2 functional—core MVP ready for feedback.
 

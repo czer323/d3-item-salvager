@@ -42,7 +42,12 @@ def variant_summary_partial(variant_id: str) -> str:
     """Render the HTML partial containing used and salvage sections."""
     client = _get_backend_client()
     summary = _build_summary(client, variant_id)
-    return render_template("variants/summary.html", summary=summary)
+    summary_error = cast("str | None", getattr(g, "summary_error", None))
+    return render_template(
+        "variants/summary.html",
+        summary=summary,
+        summary_error=summary_error,
+    )
 
 
 def _build_summary(client: BackendClient, variant_id: str) -> VariantSummary:

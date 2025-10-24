@@ -1,0 +1,72 @@
+{% from "selection/option_group.html" import render_select_field %}
+
+{% set hx_url = url_for('selection.controls') %}
+
+<div class="card bg-base-200/60 shadow-md" id="selection-controls" data-testid="selection-controls">
+    <div class="card-body space-y-4">
+        <header class="flex flex-col gap-1">
+            <h2 class="text-xl font-semibold">Select classes, builds, and variants</h2>
+            <p class="text-sm text-base-content/70">
+                Choose a class to filter builds, then select a variant to refresh the summary instantly.
+            </p>
+        </header>
+
+        {% if selection_error %}
+        {% set title = "Unable to load selection data" %}
+        {% set message = selection_error %}
+        {% include "components/error_state.html" %}
+        {% elif selection_view %}
+        <form id="selection-form" class="grid gap-4 lg:grid-cols-3">
+            {{ render_select_field(
+            "Class",
+            "class_id",
+            selection_view.classes,
+            "class-select",
+            "class-select",
+            hx_url,
+            "#selection-controls",
+            "#selection-controls-indicator"
+            ) }}
+
+            {{ render_select_field(
+            "Build",
+            "build_id",
+            selection_view.builds,
+            "build-select",
+            "build-select",
+            hx_url,
+            "#selection-controls",
+            "#selection-controls-indicator"
+            ) }}
+
+            {{ render_select_field(
+            "Variant",
+            "variant",
+            selection_view.variants,
+            "variant-select",
+            "variant-select",
+            hx_url,
+            "#selection-controls",
+            "#selection-controls-indicator"
+            ) }}
+        </form>
+        <p class="text-xs text-base-content/60">
+            Hint: Bookmark the page once you have a variant selected to return directly to the same summary.
+        </p>
+        {% else %}
+        <div class="rounded-lg border border-dashed border-base-300 bg-base-100/60 p-6 text-sm">
+            Selection data is loading. The controls will appear once build guides are available.
+        </div>
+        {% endif %}
+
+        <div id="selection-controls-indicator" class="htmx-indicator">
+            {% include "components/loading_spinner.html" %}
+        </div>
+    </div>
+
+    {% if prefetch_summary and selection_view and selection_view.selected_variant_id %}
+    <div hx-get="{{ url_for('variants.variant_summary_partial', variant_id=selection_view.selected_variant_id) }}"
+        hx-target="#variant-summary-content" hx-trigger="load" hx-indicator="#variant-summary-indicator"
+        hx-include="#selection-form" aria-hidden="true"></div>
+    {% endif %}
+</div>

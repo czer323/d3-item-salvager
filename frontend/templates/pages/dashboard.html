@@ -21,19 +21,18 @@
         </div>
     </div>
 
-    {% if summary_error %}
-    {% set title = "Unable to load summary" %}
-    {% set message = summary_error %}
-    {% include "components/error_state.html" %}
-    {% endif %}
+    {% with prefetch_summary=False %}
+    {% include "selection/controls.html" %}
+    {% endwith %}
 
-    {% if variant_summary %}
-    {% set summary = variant_summary %}
-    {% include "variants/summary.html" %}
-    {% else %}
-    <div class="rounded-lg border border-dashed border-base-300 bg-base-100/60 p-6 text-sm">
-        Variant summary data is not available yet. Select a variant once data is loaded.
+    <div class="space-y-3">
+        <div id="variant-summary-indicator" class="htmx-indicator">
+            {% include "components/loading_spinner.html" %}
+        </div>
+        <div id="variant-summary-content">
+            {% set summary = variant_summary %}
+            {% include "variants/summary.html" %}
+        </div>
     </div>
-    {% endif %}
 </section>
 {% endblock %}
