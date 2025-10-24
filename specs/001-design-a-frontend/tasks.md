@@ -93,15 +93,15 @@
 
 ### Tests for User Story 3 (write first)
 
-- [ ] T024 [P] [US3] Add Playwright test `frontend/tests/playwright/test_preferences_persistence.py` validating save → reload → restore flow and JSON import/export.
-- [ ] T025 [P] [US3] Add unit test `frontend/tests/unit/test_preferences.py` covering serialization, versioning, and validation of preferences payloads.
+- [x] T024 [P] [US3] Add Playwright test `frontend/tests/playwright/test_preferences_persistence.ts` validating save → reload → restore flow and JSON import/export.
+- [x] T025 [P] [US3] Add unit test `frontend/tests/unit/test_preferences.py` covering serialization, versioning, and validation of preferences payloads.
 
 ### Implementation for User Story 3
 
-- [ ] T026 [US3] Implement preferences service in `frontend/src/services/preferences.py` to format defaults, enforce versioning, and provide import/export helpers.
-- [ ] T027 [US3] Create client script `frontend/static/js/preferences.js` handling localStorage persistence, HTMX event integration, and import/export actions.
-- [ ] T028 [US3] Add preferences modal and controls in `frontend/templates/selection/preferences_modal.html` with save/export/import buttons and status toasts.
-- [ ] T029 [US3] Integrate preferences controls into `frontend/templates/layout/base.html` and `frontend/templates/pages/dashboard.html`, binding JS hooks and ensuring initial load reads saved state.
+- [x] T026 [US3] Implement preferences service in `frontend/src/services/preferences.py` to format defaults, enforce versioning, and provide import/export helpers.
+- [x] T027 [US3] Create client script `frontend/static/js/preferences.js` handling localStorage persistence, HTMX event integration, and import/export actions.
+- [x] T028 [US3] Add preferences modal and controls in `frontend/templates/selection/preferences_modal.html` with save/export/import buttons and status toasts.
+- [x] T029 [US3] Integrate preferences controls into `frontend/templates/layout/base.html` and `frontend/templates/pages/dashboard.html`, binding JS hooks and ensuring initial load reads saved state.
 
 **Checkpoint**: User Story 3 validated—preferences persist and import/export works.
 

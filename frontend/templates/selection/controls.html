@@ -64,6 +64,17 @@
         </div>
     </div>
 
+    <div class="border-t border-base-200/80 bg-base-200/40 px-6 py-4">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm">
+            <p class="text-xs text-base-content/60">
+                Save these selections as preferences or import a saved JSON to restore them later.
+            </p>
+            <button class="btn btn-outline btn-sm sm:btn-md" type="button" data-testid="preferences-open-button">
+                Preferences
+            </button>
+        </div>
+    </div>
+
     {% if prefetch_summary and selection_view and selection_view.selected_variant_id %}
     <div hx-get="{{ url_for('variants.variant_summary_partial', variant_id=selection_view.selected_variant_id) }}"
         hx-target="#variant-summary-content" hx-trigger="load" hx-indicator="#variant-summary-indicator"

@@ -1,0 +1,56 @@
+<dialog id="preferences-modal" class="modal" data-testid="preferences-modal">
+    <div class="modal-box max-w-2xl space-y-4">
+        <header class="space-y-2">
+            <h3 class="text-lg font-semibold">Saved preferences</h3>
+            <p class="text-sm text-base-content/70">
+                Store your current class, build, and variant selections locally. Export them as JSON to back up
+                or share with teammates, then import to restore the same configuration later.
+            </p>
+        </header>
+
+        <section class="space-y-3">
+            <button class="btn btn-primary w-full" type="button" data-testid="preferences-save-button">
+                Save current selection
+            </button>
+            <p class="text-xs text-base-content/60">
+                Saved selections are tied to preferences version {{ preferences_payload.version }}. Export a backup
+                before clearing browser storage.
+            </p>
+        </section>
+
+        <section class="space-y-3">
+            <header class="space-y-1">
+                <h4 class="text-sm font-semibold">Import / Export JSON</h4>
+                <p class="text-xs text-base-content/60">
+                    Use the editor below to copy your preferences JSON or paste a previously exported payload to
+                    restore it.
+                </p>
+            </header>
+            <textarea class="textarea textarea-bordered h-32 w-full font-mono text-xs" spellcheck="false"
+                data-testid="preferences-json-editor"
+                placeholder="Preferences JSON will appear here when exported."></textarea>
+            <div class="flex flex-col gap-2 sm:flex-row">
+                <button class="btn btn-outline flex-1" type="button" data-testid="preferences-export-button">
+                    Export to JSON
+                </button>
+                <button class="btn btn-secondary flex-1" type="button" data-testid="preferences-import-button">
+                    Import from JSON
+                </button>
+            </div>
+        </section>
+
+        <footer class="text-xs text-base-content/60">
+            Preferences are stored in your browser only. Importing JSON will overwrite the saved state.
+        </footer>
+
+        <div class="modal-action">
+            <form method="dialog">
+                <button class="btn" type="submit" data-testid="preferences-close-button">Close</button>
+            </form>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop" aria-label="Dismiss preferences modal">
+        <button type="submit">Close</button>
+    </form>
+</dialog>
+<div id="preferences-toast" data-testid="preferences-toast" class="toast hidden"></div>

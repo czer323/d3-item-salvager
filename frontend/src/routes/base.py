@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, cast
 from flask import Blueprint, current_app, g, render_template, request
 
 from frontend.src.services.backend_client import BackendClient, BackendClientError
+from frontend.src.services.preferences import compose_preferences, to_payload
 from frontend.src.services.selection import build_selection_view
 from frontend.src.services.variant_summary import VariantSummary, build_variant_summary
 
@@ -59,6 +60,12 @@ def dashboard() -> str:
         selection_view.selected_variant_id if selection_view else requested_variant
     )
 
+    preferences_state = compose_preferences(
+        selection_view,
+        default_variant_ids=config.default_variant_ids,
+    )
+    preferences_payload = to_payload(preferences_state)
+
     return render_template(
         "pages/dashboard.html",
         page_title="D3 Item Salvager",
@@ -68,4 +75,5 @@ def dashboard() -> str:
         selection_view=selection_view,
         selection_error=selection_error,
         target_variant_id=target_variant_id,
+        preferences_payload=preferences_payload,
     )
