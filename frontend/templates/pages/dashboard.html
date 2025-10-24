@@ -22,11 +22,14 @@
     </div>
 
     {% if summary_error %}
-    {% include "components/error_state.html" with title="Unable to load summary" message=summary_error %}
+    {% set title = "Unable to load summary" %}
+    {% set message = summary_error %}
+    {% include "components/error_state.html" %}
     {% endif %}
 
     {% if variant_summary %}
-    {% include "variants/summary.html" with summary=variant_summary %}
+    {% set summary = variant_summary %}
+    {% include "variants/summary.html" %}
     {% else %}
     <div class="rounded-lg border border-dashed border-base-300 bg-base-100/60 p-6 text-sm">
         Variant summary data is not available yet. Select a variant once data is loaded.
