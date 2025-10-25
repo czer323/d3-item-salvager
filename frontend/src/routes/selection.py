@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from flask import Blueprint, current_app, g, render_template, request
+from flask import Blueprint, g, render_template, request
 
 from frontend.src.services.backend_client import BackendClient, BackendClientError
 from frontend.src.services.selection import build_selection_view
 
 if TYPE_CHECKING:
-    from frontend.src.config import FrontendConfig
+    from frontend.src.services.selection import SelectionViewModel
 
 selection_blueprint = Blueprint("selection", __name__, url_prefix="/frontend/selection")
 
@@ -23,33 +23,43 @@ def _get_backend_client() -> BackendClient:
     return cast("BackendClient", client)
 
 
-@selection_blueprint.get("/controls")
-def controls() -> str:
-    """Render the selection controls partial for HTMX swaps."""
-    config = cast("FrontendConfig", current_app.config["FRONTEND_CONFIG"])
+@selection_blueprint.route("/controls", methods=["GET", "POST"], endpoint="controls")
+def controls_partial() -> str:
+    """Render or update the selection controls partial."""
     client = _get_backend_client()
-    class_id = request.args.get("class_id")
-    build_id = request.args.get("build_id")
-    variant_id = request.args.get("variant") or request.args.get("variant_id")
 
+    form = request.form if request.method == "POST" else request.args
+    action = form.get("action")
+    if action == "reset":
+        class_ids: list[str] = []
+        build_ids: list[str] = []
+        load_builds = False
+        prefetch_items = False
+    else:
+        class_ids = form.getlist("class_ids")
+        build_ids = form.getlist("build_ids")
+        if action in {"load_builds", "apply_items"}:
+            load_builds = True
+        else:
+            load_builds = bool(build_ids)
+        prefetch_items = action == "apply_items"
+
+    selection_view: SelectionViewModel | None = None
     selection_error: str | None = None
-    selection_view = None
 
     try:
         selection_view = build_selection_view(
             client,
-            default_variant_ids=config.default_variant_ids,
-            class_id=class_id,
-            build_id=build_id,
-            variant_id=variant_id,
+            class_ids=class_ids,
+            build_ids=build_ids,
+            load_builds=load_builds,
         )
     except BackendClientError as exc:
         selection_error = str(exc)
-        current_app.logger.exception("Unable to load selection controls")
 
     return render_template(
         "selection/controls.html",
         selection_view=selection_view,
         selection_error=selection_error,
-        prefetch_summary=True,
+        prefetch_items=prefetch_items,
     )

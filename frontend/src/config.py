@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 _DEFAULT_BACKEND_URL = "http://127.0.0.1:8000"
 _DEFAULT_TIMEOUT_SECONDS = 10.0
 _FEATURE_FLAG_ENV = "FRONTEND_FEATURE_FLAGS"
-_DEFAULT_VARIANT_IDS = ("demo-variant",)
 
 
 def _parse_feature_flags(raw_value: str | None) -> Mapping[str, bool]:
@@ -46,16 +45,6 @@ def _resolve_backend_url(raw_url: str | None) -> str:
     return raw_url.rstrip("/")
 
 
-def _parse_default_variants(raw_value: str | None) -> tuple[str, ...]:
-    """Parse a comma-separated list of variant identifiers."""
-    if not raw_value:
-        return _DEFAULT_VARIANT_IDS
-    variants = tuple(
-        variant.strip() for variant in raw_value.split(",") if variant.strip()
-    )
-    return variants or _DEFAULT_VARIANT_IDS
-
-
 @dataclass(frozen=True, slots=True)
 class FrontendConfig:
     """Immutable configuration for the frontend service layer."""
@@ -66,7 +55,6 @@ class FrontendConfig:
         default_factory=lambda: MappingProxyType({})
     )
     debug: bool = field(default=False)
-    default_variant_ids: tuple[str, ...] = field(default=_DEFAULT_VARIANT_IDS)
 
     @classmethod
     def from_env(cls) -> FrontendConfig:
@@ -75,18 +63,15 @@ class FrontendConfig:
         timeout_raw = os.getenv("FRONTEND_REQUEST_TIMEOUT", "")
         flags_raw = os.getenv(_FEATURE_FLAG_ENV)
         debug_raw = os.getenv("FRONTEND_DEBUG", "false")
-        default_variants_raw = os.getenv("FRONTEND_DEFAULT_VARIANT_IDS")
 
         timeout = cls._safe_float(timeout_raw, fallback=_DEFAULT_TIMEOUT_SECONDS)
         debug_enabled = debug_raw.lower() in {"1", "true", "yes", "on"}
-        default_variant_ids = _parse_default_variants(default_variants_raw)
 
         return cls(
             backend_base_url=backend_url,
             request_timeout_seconds=timeout,
             feature_flags=_parse_feature_flags(flags_raw),
             debug=debug_enabled,
-            default_variant_ids=default_variant_ids,
         )
 
     @staticmethod

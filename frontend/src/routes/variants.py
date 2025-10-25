@@ -30,9 +30,25 @@ def _get_backend_client() -> BackendClient:
     return cast("BackendClient", client)
 
 
-def _resolve_variant_id(path_variant_id: str) -> str:
-    query_variant = request.args.get("variant")
-    return query_variant or path_variant_id
+def _resolve_variant_ids(path_variant_id: str) -> tuple[str, ...]:
+    values: list[str] = []
+    values.extend(request.args.getlist("variant_ids"))
+    values.extend(request.args.getlist("variant"))
+    fallback = request.args.get("variant_id")
+    if fallback:
+        values.append(fallback)
+    if not values and path_variant_id:
+        values.append(path_variant_id)
+
+    unique: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        normalised = value.strip()
+        if not normalised or normalised in seen:
+            continue
+        seen.add(normalised)
+        unique.append(normalised)
+    return tuple(unique)
 
 
 @variants_blueprint.get("/<variant_id>.json")
@@ -57,7 +73,7 @@ def variant_summary_partial(variant_id: str) -> str:
 
 
 def _build_summary(client: BackendClient, variant_id: str) -> VariantSummary:
-    resolved_variant_id = _resolve_variant_id(variant_id)
+    resolved_variant_ids = _resolve_variant_ids(variant_id)
     search_term = request.args.get("search", "")
     slot_filter = request.args.get("slot")
     used_page = parse_page(request.args.get("used_page"), default=1)
@@ -66,7 +82,7 @@ def _build_summary(client: BackendClient, variant_id: str) -> VariantSummary:
     try:
         return build_variant_summary(
             client,
-            resolved_variant_id,
+            resolved_variant_ids,
             search=search_term,
             slot=slot_filter,
             used_page=used_page,
@@ -75,12 +91,20 @@ def _build_summary(client: BackendClient, variant_id: str) -> VariantSummary:
         )
     except BackendClientError as exc:
         filters = FilterCriteria(search=search_term, slot=slot_filter)
+        variants = tuple(
+            VariantDetails(id=item, name=item, build_guide_id="unknown")
+            for item in resolved_variant_ids
+        )
+        if not variants:
+            variants = (
+                VariantDetails(
+                    id=variant_id,
+                    name=variant_id,
+                    build_guide_id="unknown",
+                ),
+            )
         fallback = VariantSummary(
-            variant=VariantDetails(
-                id=resolved_variant_id,
-                name=resolved_variant_id,
-                build_guide_id="unknown",
-            ),
+            variants=variants,
             used_items=[],
             salvage_items=[],
             filters=filters,

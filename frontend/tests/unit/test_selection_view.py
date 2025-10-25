@@ -78,36 +78,67 @@ def test_build_selection_view_groups_builds_by_class_and_marks_selected(
 
     view = build_selection_view(
         cast("BackendClient", fake_client),
-        default_variant_ids=("v-barb-1",),
     )
 
-    assert view.selected_class_id == "Barbarian"
-    assert view.selected_build_id == "1"
-    assert view.selected_variant_id == "v-barb-1"
+    expected_classes = {
+        "Barbarian",
+        "Crusader",
+        "Demon Hunter",
+        "Monk",
+        "Necromancer",
+        "Witch Doctor",
+        "Wizard",
+    }
+    assert set(view.selected_class_ids) == expected_classes
+    assert tuple(sorted(view.selected_build_ids)) == ("1", "2", "3")
+    assert view.selected_variant_ids == ()
 
     class_labels = {option.label for option in view.classes}
-    assert class_labels == {"Barbarian", "Wizard"}
+    assert class_labels == expected_classes
+    for class_option in view.classes:
+        # All classes are active when no explicit selection is provided.
+        assert class_option.selected is True
     barbarian_option = next(
         option for option in view.classes if option.id == "Barbarian"
     )
-    assert barbarian_option.selected is True
     assert barbarian_option.build_count == 2
 
     # Only builds for the selected class should be surfaced in the build dropdown.
     build_ids = [option.id for option in view.builds]
-    assert build_ids == ["1", "3"]
-    selected_build = next(option for option in view.builds if option.selected)
-    assert selected_build.id == "1"
+    assert build_ids == ["1", "3", "2"]
+    selected_build_ids = {option.id for option in view.builds if option.selected}
+    assert selected_build_ids == {"1", "2", "3"}
 
-    variant_ids = [option.id for option in view.variants]
-    assert sorted(variant_ids) == ["v-barb-1", "v-barb-2"]
-    selected_variant = next(option for option in view.variants if option.selected)
-    assert selected_variant.id == "v-barb-1"
+    assert view.variants == ()
 
-    # Ensure the backend was queried for builds and the variants of the active class.
+    # Ensure the backend was queried for builds only (variants are deferred to item lookup).
     requested_paths = {request.path for request in fake_client.requests}
     assert "/build-guides" in requested_paths
-    assert "/build-guides/1/variants" in requested_paths
+    assert not any(path.endswith("/variants") for path in requested_paths)
+
+
+def test_build_selection_view_skips_build_loading_until_requested() -> None:
+    """Classes are returned without build data when load_builds is disabled."""
+    from frontend.src.services.selection import build_selection_view
+
+    view = build_selection_view(
+        client=cast("BackendClient", FakeBackendClient({})),
+        load_builds=False,
+    )
+
+    assert view.builds == ()
+    assert view.variants == ()
+    class_names = {option.id for option in view.classes}
+    expected_classes = {
+        "Barbarian",
+        "Crusader",
+        "Demon Hunter",
+        "Monk",
+        "Necromancer",
+        "Witch Doctor",
+        "Wizard",
+    }
+    assert class_names == expected_classes
 
 
 def test_build_selection_view_respects_explicit_selection(
@@ -118,16 +149,14 @@ def test_build_selection_view_respects_explicit_selection(
 
     view = build_selection_view(
         cast("BackendClient", fake_client),
-        default_variant_ids=("v-barb-1",),
-        class_id="Wizard",
-        build_id="2",
-        variant_id="v-wiz-1",
+        class_ids=("Wizard",),
+        build_ids=("2",),
     )
 
     # No variants are registered for the wizard build in the fake client, so the
     # service should gracefully fall back to an empty collection while retaining
     # the explicit selections.
-    assert view.selected_class_id == "Wizard"
-    assert view.selected_build_id == "2"
-    assert view.selected_variant_id == "v-wiz-1"
+    assert view.selected_class_ids == ("Wizard",)
+    assert view.selected_build_ids == ("2",)
+    assert view.selected_variant_ids == ()
     assert view.variants == ()

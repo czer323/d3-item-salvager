@@ -14,19 +14,13 @@ from frontend.src.services.preferences import (
     export_preferences,
     import_preferences,
 )
-from frontend.src.services.selection import (
-    BuildOption,
-    ClassOption,
-    SelectionViewModel,
-    VariantOption,
-)
+from frontend.src.services.selection import BuildOption, ClassOption, SelectionViewModel
 
 
 def _build_selection_view(
     *,
     class_id: str,
     build_id: str,
-    variant_id: str,
 ) -> SelectionViewModel:
     """Construct a minimal selection view populated with chosen options."""
     return SelectionViewModel(
@@ -46,46 +40,33 @@ def _build_selection_view(
                 selected=True,
             ),
         ),
-        variants=(
-            VariantOption(
-                id=variant_id,
-                label=f"Variant {variant_id}",
-                build_id=build_id,
-                selected=True,
-            ),
-        ),
-        selected_class_id=class_id,
-        selected_build_id=build_id,
-        selected_variant_id=variant_id,
+        variants=(),
+        selected_class_ids=(class_id,),
+        selected_build_ids=(build_id,),
+        selected_variant_ids=(),
     )
 
 
 def test_compose_preferences_reflects_active_selection() -> None:
-    """Selected class/build/variant identifiers are captured in the snapshot."""
+    """Selected class/build identifiers are captured in the snapshot."""
     selection_view = _build_selection_view(
         class_id="barbarian",
         build_id="build-1",
-        variant_id="variant-7",
     )
 
-    state = compose_preferences(
-        selection_view,
-        default_variant_ids=("fallback",),
-    )
+    state = compose_preferences(selection_view)
 
     assert state.version == PREFERENCES_VERSION
     assert state.classes == ("barbarian",)
     assert state.builds == ("build-1",)
-    assert state.variants == ("variant-7",)
 
 
-def test_compose_preferences_uses_default_variants_when_selection_missing() -> None:
-    """Default variant identifiers populate the snapshot when selection is absent."""
-    state = compose_preferences(None, default_variant_ids=("demo-alpha", "demo-beta"))
+def test_compose_preferences_returns_empty_state_when_selection_missing() -> None:
+    """Missing selections produce an empty snapshot."""
+    state = compose_preferences(None)
 
     assert state.classes == ()
     assert state.builds == ()
-    assert state.variants == ("demo-alpha", "demo-beta")
 
 
 def test_import_preferences_round_trips_serialized_payload() -> None:
@@ -93,9 +74,8 @@ def test_import_preferences_round_trips_serialized_payload() -> None:
     selection_view = _build_selection_view(
         class_id="wizard",
         build_id="build-9",
-        variant_id="variant-2",
     )
-    original_state = compose_preferences(selection_view, default_variant_ids=())
+    original_state = compose_preferences(selection_view)
 
     exported = export_preferences(original_state)
     imported_state = import_preferences(exported)
@@ -110,7 +90,6 @@ def test_import_preferences_rejects_mismatched_version() -> None:
             "version": PREFERENCES_VERSION + 1,
             "classes": ["wizard"],
             "builds": [],
-            "variants": [],
         }
     )
 
@@ -125,7 +104,6 @@ def test_import_preferences_requires_iterable_fields() -> None:
             "version": PREFERENCES_VERSION,
             "classes": "druid",
             "builds": [],
-            "variants": [],
         }
     )
 
@@ -139,7 +117,6 @@ def test_export_preferences_normalises_empty_collections() -> None:
         version=PREFERENCES_VERSION,
         classes=(),
         builds=(),
-        variants=(),
     )
 
     exported = export_preferences(empty_state)
@@ -149,5 +126,21 @@ def test_export_preferences_normalises_empty_collections() -> None:
         "version": PREFERENCES_VERSION,
         "classes": [],
         "builds": [],
-        "variants": [],
     }
+
+
+def test_import_preferences_upgrades_version_one_payloads() -> None:
+    """Legacy version 1 payloads are coerced into the new schema."""
+    payload = json.dumps(
+        {
+            "version": 1,
+            "classes": ["barbarian"],
+            "builds": ["build-1"],
+            "variants": ["legacy"],
+        }
+    )
+
+    state = import_preferences(payload)
+
+    assert state.classes == ("barbarian",)
+    assert state.builds == ("build-1",)

@@ -8,17 +8,34 @@
 
 {% if summary %}
 {% set filters_active = not summary.filters.is_empty() %}
-<div class="space-y-6" data-testid="variant-summary" data-filter-root data-variant-id="{{ summary.variant.id }}"
+<div class="space-y-6" data-testid="variant-summary" data-filter-root data-variant-count="{{ summary.variant_count }}"
     data-current-search="{{ summary.filters.search }}" data-current-slot="{{ summary.filters.slot or '' }}"
     data-page-size="{{ summary.used_pagination.page_size }}">
     <header class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
+        <div class="space-y-1">
             <h1 class="text-2xl font-semibold">Variant Summary</h1>
+            {% if summary.variant_count > 1 %}
             <p class="text-sm opacity-80">
-                Showing results for <span class="font-medium">{{ summary.variant.name }}</span>.
+                Showing combined results for <span class="font-medium">{{ summary.variant_count }}</span> variants.
             </p>
+            {% else %}
+            {% set single_variant = summary.variants[0] if summary.variants else None %}
+            <p class="text-sm opacity-80">
+                Showing results for <span class="font-medium">{{ single_variant.name if single_variant else 'Unknown
+                    Variant' }}</span>.
+            </p>
+            {% endif %}
         </div>
-        <span class="badge badge-neutral">Guide: {{ summary.variant.build_guide_id }}</span>
+        {% if summary.variant_count == 1 %}
+        {% set single_variant = summary.variants[0] %}
+        <span class="badge badge-neutral">Guide: {{ single_variant.build_guide_id }}</span>
+        {% else %}
+        <div class="flex flex-wrap gap-2">
+            {% for variant in summary.variants %}
+            <span class="badge badge-outline" data-testid="variant-summary-variant-badge">{{ variant.name }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
     </header>
 
     {% include "components/filter_controls.html" %}

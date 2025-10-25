@@ -4,16 +4,6 @@ import { test, expect } from '@playwright/test';
 const TEST_PORT = process.env.FRONTEND_PLAYWRIGHT_PORT ?? '8001';
 const TEST_BASE_URL = process.env.FRONTEND_BASE_URL ?? `http://127.0.0.1:${TEST_PORT}`;
 
-async function findAlternateOption(selectLocator) {
-  const currentValue = await selectLocator.inputValue();
-  const options = await selectLocator
-    .locator('option')
-    .evaluateAll((nodes) =>
-      nodes.map((node) => ({ value: node.value, label: node.textContent ?? '' }))
-    );
-  return options.find((option) => option.value && option.value !== currentValue) ?? null;
-}
-
 test.describe('Preferences persistence', () => {
   test('saves selections, restores on reload, and supports import/export', async ({ page }) => {
     await page.goto(`${TEST_BASE_URL}/`);
@@ -21,13 +11,23 @@ test.describe('Preferences persistence', () => {
     const controlsCard = page.getByTestId('selection-controls');
     await expect(controlsCard).toBeVisible();
 
-    const classSelect = page.getByTestId('class-select');
-    const variantSelect = page.getByTestId('variant-select');
+    const variantCheckboxes = page.getByTestId('variant-checkbox');
+    const checkboxCount = await variantCheckboxes.count();
+    expect(checkboxCount, 'expected at least one variant checkbox').toBeGreaterThan(0);
 
-    const alternateVariant = await findAlternateOption(variantSelect);
-    const targetVariantValue = alternateVariant
-      ? alternateVariant.value
-      : await variantSelect.inputValue();
+    let toggleIndex = -1;
+    for (let i = 0; i < checkboxCount; i += 1) {
+      if (!(await variantCheckboxes.nth(i).isChecked())) {
+        toggleIndex = i;
+        break;
+      }
+    }
+    test.skip(toggleIndex === -1, 'All variants already selected; unable to validate preference toggling.');
+
+    const targetIndex = toggleIndex >= 0 ? toggleIndex : 0;
+    const targetVariant = variantCheckboxes.nth(targetIndex);
+    const targetVariantValue = await targetVariant.getAttribute('value');
+    expect(targetVariantValue, 'variant checkbox should expose a value').toBeTruthy();
 
     const selectionRequest = page.waitForResponse((response) =>
       response.url().includes('/frontend/selection/controls') && response.request().method() === 'GET'
@@ -36,13 +36,7 @@ test.describe('Preferences persistence', () => {
       response.url().includes('/frontend/variant/') && !response.url().endsWith('.json')
     );
 
-    if (alternateVariant) {
-      await variantSelect.selectOption(alternateVariant.value);
-    } else {
-      const alternateClass = await findAlternateOption(classSelect);
-      expect(alternateClass, 'expected at least one alternate class option').toBeTruthy();
-      await classSelect.selectOption(alternateClass.value);
-    }
+    await targetVariant.check();
 
     await Promise.all([selectionRequest, summaryRequest]);
 
@@ -58,7 +52,10 @@ test.describe('Preferences persistence', () => {
 
     await page.reload();
     await expect(page.getByTestId('selection-controls')).toBeVisible();
-    await expect(page.getByTestId('variant-select')).toHaveValue(targetVariantValue);
+    const restoredLocator = page.locator(
+      `input[type="checkbox"][name="variant_ids"][value="${targetVariantValue}"]`
+    );
+    await expect(restoredLocator).toBeChecked();
 
     await page.getByTestId('preferences-open-button').click();
     await expect(page.getByTestId('preferences-modal')).toBeVisible();
@@ -88,7 +85,10 @@ test.describe('Preferences persistence', () => {
     await importSummaryRequest;
 
     await expect(page.getByTestId('preferences-toast')).toContainText('Preferences imported');
-    await expect(page.getByTestId('variant-select')).toHaveValue(targetVariantValue);
+    const postImportLocator = page.locator(
+      `input[type="checkbox"][name="variant_ids"][value="${targetVariantValue}"]`
+    );
+    await expect(postImportLocator).toBeChecked();
 
     await page.getByTestId('preferences-close-button').click();
   });

@@ -3,10 +3,9 @@
 
     const STORAGE_KEY = 'd3-item-salvager.preferences';
     const DEFAULT_PAYLOAD = Object.freeze({
-        version: 1,
+        version: 2,
         classes: [],
         builds: [],
-        variants: [],
     });
     const DEFAULTS_SCRIPT_ID = 'preferences-defaults';
     const OPEN_BUTTON_TEST_ID = 'preferences-open-button';
@@ -16,7 +15,8 @@
     const EXPORT_BUTTON_TEST_ID = 'preferences-export-button';
     const IMPORT_BUTTON_TEST_ID = 'preferences-import-button';
     const EDITOR_TEST_ID = 'preferences-json-editor';
-    const CONTROLS_ID = 'selection-controls';
+    const CONTROLS_CARD_ID = 'selection-controls';
+    const FORM_ID = 'selection-form';
 
     function readDefaults() {
         const script = document.getElementById(DEFAULTS_SCRIPT_ID);
@@ -32,12 +32,10 @@
             const version = typeof parsed.version === 'number' ? parsed.version : DEFAULT_PAYLOAD.version;
             const classes = normaliseList(parsed.classes);
             const builds = normaliseList(parsed.builds);
-            const variants = normaliseList(parsed.variants);
             return {
                 version,
                 classes,
                 builds,
-                variants,
             };
         } catch (_error) {
             return DEFAULT_PAYLOAD;
@@ -105,7 +103,6 @@
                 version: defaultPayload.version ?? DEFAULT_PAYLOAD.version,
                 classes: normaliseList(defaultPayload.classes),
                 builds: normaliseList(defaultPayload.builds),
-                variants: normaliseList(defaultPayload.variants),
             };
             this.storageKey = STORAGE_KEY;
             this.pendingState = null;
@@ -188,10 +185,10 @@
             }
             window.htmx.on('htmx:afterSwap', (event) => {
                 const target = event.detail && event.detail.target;
-                if (target && target.id === CONTROLS_ID) {
+                if (target && target.id === CONTROLS_CARD_ID) {
                     this.bindControlHandlers();
                     if (this.pendingState) {
-                        this.applyState(this.pendingState, { initial: false });
+                        this.applyState(this.pendingState, { skipTrigger: true });
                     }
                 }
             });
@@ -204,15 +201,15 @@
                     return this.defaults;
                 }
                 const parsed = JSON.parse(raw);
-                if (typeof parsed.version !== 'number' || parsed.version !== this.defaults.version) {
-                    this.toast.show('Saved preferences are outdated. Please re-save.', 'warning');
+                const parsedVersion = typeof parsed.version === 'number' ? parsed.version : DEFAULT_PAYLOAD.version;
+                if (parsedVersion > this.defaults.version) {
+                    this.toast.show('Saved preferences are from a newer version and cannot be loaded.', 'warning');
                     return this.defaults;
                 }
                 return {
                     version: this.defaults.version,
-                    classes: normaliseList(parsed.classes),
-                    builds: normaliseList(parsed.builds),
-                    variants: normaliseList(parsed.variants) || this.defaults.variants,
+                    classes: normaliseList(parsed.classes) || this.defaults.classes,
+                    builds: normaliseList(parsed.builds) || this.defaults.builds,
                 };
             } catch (_error) {
                 this.toast.show('Failed to read saved preferences from localStorage.', 'error');
@@ -240,7 +237,8 @@
             }
             try {
                 const parsed = JSON.parse(raw);
-                if (typeof parsed.version !== 'number' || parsed.version !== this.defaults.version) {
+                const parsedVersion = typeof parsed.version === 'number' ? parsed.version : DEFAULT_PAYLOAD.version;
+                if (parsedVersion > this.defaults.version) {
                     this.toast.show('Imported preferences are incompatible with this version.', 'error');
                     return;
                 }
@@ -248,7 +246,6 @@
                     version: this.defaults.version,
                     classes: normaliseList(parsed.classes),
                     builds: normaliseList(parsed.builds),
-                    variants: normaliseList(parsed.variants) || this.defaults.variants,
                 };
                 this.writeToStorage(state);
                 this.applyState(state, { initial: true });
@@ -259,104 +256,66 @@
         }
 
         captureCurrentState() {
-            const controls = document.getElementById(CONTROLS_ID);
-            const classes = [];
-            const builds = [];
-            const variants = [];
-            if (controls) {
-                const classSelect = controls.querySelector('[data-testid="class-select"]');
-                const buildSelect = controls.querySelector('[data-testid="build-select"]');
-                const variantSelect = controls.querySelector('[data-testid="variant-select"]');
-                this.maybeAppendValue(classSelect, classes);
-                this.maybeAppendValue(buildSelect, builds);
-                this.maybeAppendValue(variantSelect, variants);
-            }
+            const form = document.getElementById(FORM_ID);
+            const classes = this.collectSelectValues(form, 'class_ids');
+            const builds = this.collectSelectValues(form, 'build_ids');
             return {
                 version: this.defaults.version,
                 classes,
                 builds,
-                variants: variants.length ? variants : this.defaults.variants,
             };
         }
 
-        maybeAppendValue(select, target) {
-            if (!select) {
-                return;
-            }
-            const value = String(select.value ?? '').trim();
-            if (value && !target.includes(value)) {
-                target.push(value);
-            }
-        }
-
         applyState(state, options = {}) {
-            const controls = document.getElementById(CONTROLS_ID);
-            if (!controls) {
+            const form = document.getElementById(FORM_ID);
+            if (!form) {
                 this.pendingState = state;
                 return;
             }
 
-            const classSelect = controls.querySelector('[data-testid="class-select"]');
-            const buildSelect = controls.querySelector('[data-testid="build-select"]');
-            const variantSelect = controls.querySelector('[data-testid="variant-select"]');
-
-            const classTarget = state.classes[0] ?? null;
-            const buildTarget = state.builds[0] ?? null;
-            const variantTarget = state.variants[0] ?? null;
-
-            const changeEventOptions = { bubbles: true };
-            const isInitialApply = Boolean(options && options.initial);
-            let triggeredRefresh = false;
-            if (classSelect && classTarget && classSelect.value !== classTarget) {
-                if (this.setSelectValue(classSelect, classTarget, false)) {
-                    if (isInitialApply) {
-                        triggeredRefresh = true;
-                        classSelect.dispatchEvent(new Event('change', changeEventOptions));
-                    }
-                } else {
-                    this.toast.show('Saved class is no longer available.', 'warning');
-                }
-            }
-
-            if (triggeredRefresh) {
-                this.pendingState = state;
-                return;
-            }
-
-            if (buildSelect && buildTarget && buildSelect.value !== buildTarget) {
-                if (!this.setSelectValue(buildSelect, buildTarget, false)) {
-                    this.toast.show('Saved build is no longer available.', 'warning');
-                }
-            }
-            if (variantSelect && variantTarget) {
-                if (!this.setSelectValue(variantSelect, variantTarget, true)) {
-                    this.toast.show('Saved variant is no longer available.', 'warning');
-                }
-            }
-
+            const classSelect = form.querySelector('select[name="class_ids"]');
+            const buildSelect = form.querySelector('select[name="build_ids"]');
+            this.applySelectValues(classSelect, state.classes);
+            this.applySelectValues(buildSelect, state.builds);
             this.pendingState = null;
-        }
-
-        setSelectValue(select, value, triggerChange) {
-            if (!select || !value) {
-                return false;
-            }
-            const option = Array.from(select.options).find((item) => item.value === value);
-            if (!option) {
-                return false;
-            }
-            const needsChange = select.value !== value;
-            if (needsChange) {
-                select.value = value;
-            }
-            if (triggerChange) {
-                select.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-            return true;
         }
 
         getEditor() {
             return document.querySelector(`[data-testid="${EDITOR_TEST_ID}"]`);
+        }
+
+        collectSelectValues(root, name) {
+            if (!root) {
+                return [];
+            }
+            const select = root.querySelector(`select[name="${name}"]`);
+            if (!select) {
+                return [];
+            }
+            const values = [];
+            Array.from(select.options).forEach((option) => {
+                if (option.selected) {
+                    const value = String(option.value ?? '').trim();
+                    if (value && !values.includes(value)) {
+                        values.push(value);
+                    }
+                }
+            });
+            return values;
+        }
+
+        applySelectValues(select, values) {
+            if (!select) {
+                return;
+            }
+            const target = new Set(values ?? []);
+            Array.from(select.options).forEach((option) => {
+                if (target.size === 0) {
+                    option.selected = false;
+                } else {
+                    option.selected = target.has(option.value);
+                }
+            });
         }
     }
 

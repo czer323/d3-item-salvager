@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:  # pragma: no cover - import for type checking only
     from frontend.src.services.selection import SelectionViewModel
 
-PREFERENCES_VERSION = 1
+PREFERENCES_VERSION = 2
 PREFERENCES_STORAGE_KEY = "d3-item-salvager.preferences"
 
 
@@ -25,45 +25,30 @@ class PreferencesState:
     version: int
     classes: tuple[str, ...]
     builds: tuple[str, ...]
-    variants: tuple[str, ...]
 
 
 def compose_preferences(
     selection_view: SelectionViewModel | None,
-    *,
-    default_variant_ids: Sequence[str],
 ) -> PreferencesState:
     """Create a snapshot of the current selections for local persistence.
 
     Args:
         selection_view: The current selection view rendered for the request.
-        default_variant_ids: Variant identifiers used when no variant selection
-            is available in the view.
 
     Returns:
         A :class:`PreferencesState` capturing the selection and version.
     """
-    classes = _collect_selected_ids(
-        selection_view.classes if selection_view else (),
-        extra=(selection_view.selected_class_id,) if selection_view else (),
-    )
-    builds = _collect_selected_ids(
-        selection_view.builds if selection_view else (),
-        extra=(selection_view.selected_build_id,) if selection_view else (),
-    )
-    variants = _collect_selected_ids(
-        selection_view.variants if selection_view else (),
-        extra=(selection_view.selected_variant_id,) if selection_view else (),
-    )
-
-    if not variants:
-        variants = _normalize_iterable(default_variant_ids)
+    if selection_view:
+        classes = _normalize_iterable(selection_view.selected_class_ids)
+        builds = _normalize_iterable(selection_view.selected_build_ids)
+    else:
+        classes = ()
+        builds = ()
 
     return PreferencesState(
         version=PREFERENCES_VERSION,
         classes=classes,
         builds=builds,
-        variants=variants,
     )
 
 
@@ -73,7 +58,6 @@ def to_payload(state: PreferencesState) -> dict[str, Any]:
         "version": state.version,
         "classes": list(state.classes),
         "builds": list(state.builds),
-        "variants": list(state.variants),
     }
 
 
@@ -128,34 +112,18 @@ def import_preferences(payload: object) -> PreferencesState:
 
 def _coerce_state(data: Mapping[str, Any]) -> PreferencesState:
     version = data.get("version")
-    if version != PREFERENCES_VERSION:
+    if version not in (None, 1, 2):
         msg = "Preferences payload version mismatch"
         raise PreferencesValidationError(msg)
 
     classes = _normalize_iterable(_as_iterable(data.get("classes", ()), "classes"))
     builds = _normalize_iterable(_as_iterable(data.get("builds", ()), "builds"))
-    variants = _normalize_iterable(_as_iterable(data.get("variants", ()), "variants"))
 
     return PreferencesState(
         version=PREFERENCES_VERSION,
         classes=classes,
         builds=builds,
-        variants=variants,
     )
-
-
-def _collect_selected_ids(
-    options: Iterable[object],
-    *,
-    extra: Iterable[str | None] = (),
-) -> tuple[str, ...]:
-    values: list[str | None] = [
-        getattr(option, "id", None)
-        for option in options
-        if getattr(option, "selected", False)
-    ]
-    values.extend(extra)
-    return _normalize_iterable(values)
 
 
 def _normalize_iterable(values: Iterable[object]) -> tuple[str, ...]:

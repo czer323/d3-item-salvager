@@ -85,15 +85,20 @@ def test_frontend_variant_json_round_trip(
     flask_app = frontend_app_module.create_app()
     test_client = flask_app.test_client()
 
-    variant_id = dataset["profiles"]["leapquake"]
-    response = test_client.get(f"/frontend/variant/{variant_id}.json")
+    build_id = dataset["builds"]["one"]
+    response = test_client.get(
+        "/frontend/items/summary.json",
+        query_string={"build_ids": build_id},
+    )
 
     assert response.status_code == 200
     payload = response.get_json()
-    assert payload["variant"]["id"] == str(variant_id)
-    item_ids = {entry["item_id"] for entry in payload["items"]}
+    assert payload["filters"]["search"] == ""
+    assert str(build_id) in payload["context"]["build_ids"]
+    item_ids = {entry["item_id"] for entry in payload["rows"]}
     assert dataset["items"]["weapon"] in item_ids
-    assert any(entry["item"]["name"] == "Mighty Weapon" for entry in payload["items"])
+    used_entries = [entry for entry in payload["rows"] if entry["status"] == "used"]
+    assert any(entry["name"] == "Mighty Weapon" for entry in used_entries)
 
     backend_app.dependency_overrides.clear()
     backend_http_client.close()

@@ -31,8 +31,8 @@
     <footer class="bg-base-300/70 py-6 text-center text-xs">
         <p>Powered by HTMX, Jinja2, Tailwind CSS, and DaisyUI.</p>
     </footer>
-    {% set _preferences_defaults = preferences_payload if preferences_payload is defined else {'version': 1, 'classes':
-    [], 'builds': [], 'variants': []} %}
+    {% set _preferences_defaults = preferences_payload if preferences_payload is defined else {'version': 2, 'classes':
+    [], 'builds': []} %}
     <script id="preferences-defaults" type="application/json">{{ _preferences_defaults | tojson }}</script>
     <script src="{{ url_for('static', filename='js/preferences.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/filtering.js') }}" defer></script>

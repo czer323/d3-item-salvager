@@ -222,7 +222,7 @@
     if (window.htmx) {
         window.htmx.on('htmx:afterSwap', (event) => {
             const target = event.detail && event.detail.target;
-            if (target && target.id === 'variant-summary-content') {
+            if (target && target.id === 'item-summary-content') {
                 Filtering.init(target.querySelector('[data-filter-root]'));
             }
         });
@@ -233,7 +233,7 @@
                 return;
             }
             const path = detail.path ?? '';
-            if (!path.includes('/frontend/variant') || path.endsWith('.json')) {
+            if (!path.includes('/frontend/items') || path.endsWith('.json')) {
                 return;
             }
             detail.parameters = detail.parameters || {};

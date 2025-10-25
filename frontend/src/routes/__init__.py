@@ -3,10 +3,10 @@
 from flask import Flask
 
 from frontend.src.routes.base import base_blueprint
+from frontend.src.routes.items import items_blueprint
 from frontend.src.routes.selection import selection_blueprint
-from frontend.src.routes.variants import variants_blueprint
 
-BLUEPRINTS = (base_blueprint, variants_blueprint, selection_blueprint)
+BLUEPRINTS = (base_blueprint, items_blueprint, selection_blueprint)
 
 
 def register_blueprints(app: Flask) -> None:

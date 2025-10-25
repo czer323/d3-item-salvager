@@ -1,13 +1,12 @@
-{% from "selection/option_group.html" import render_select_field %}
-
 {% set hx_url = url_for('selection.controls') %}
 
 <div class="card bg-base-200/60 shadow-md" id="selection-controls" data-testid="selection-controls">
-    <div class="card-body space-y-4">
-        <header class="flex flex-col gap-1">
-            <h2 class="text-xl font-semibold">Select classes, builds, and variants</h2>
+    <div class="card-body space-y-6">
+        <header class="space-y-2">
+            <h2 class="text-xl font-semibold">Select classes and builds</h2>
             <p class="text-sm text-base-content/70">
-                Choose a class to filter builds, then select a variant to refresh the summary instantly.
+                Choose your classes, load their builds, then apply the filter to analyse item usage. Nothing is fetched
+                until you apply.
             </p>
         </header>
 
@@ -16,43 +15,76 @@
         {% set message = selection_error %}
         {% include "components/error_state.html" %}
         {% elif selection_view %}
-        <form id="selection-form" class="grid gap-4 lg:grid-cols-3">
-            {{ render_select_field(
-            "Class",
-            "class_id",
-            selection_view.classes,
-            "class-select",
-            "class-select",
-            hx_url,
-            "#selection-controls",
-            "#selection-controls-indicator"
-            ) }}
+        <form id="selection-form" class="space-y-6" hx-post="{{ hx_url }}" hx-target="#selection-controls"
+            hx-swap="outerHTML" hx-indicator="#selection-controls-indicator" hx-include="this"
+            data-testid="selection-form">
+            <input type="hidden" name="mode" value="{{ request.args.get('mode', '') }}" />
+            <section class="space-y-3">
+                <header class="space-y-1">
+                    <h3 class="text-lg font-semibold">Classes</h3>
+                    <p class="text-xs text-base-content/60">
+                        Select one or more classes, then click "Load builds" to retrieve available guides.
+                    </p>
+                </header>
+                <select class="select select-bordered" name="class_ids" multiple size="7"
+                    data-testid="class-multiselect">
+                    {% for option in selection_view.classes %}
+                    <option value="{{ option.id }}" {% if option.selected %}selected{% endif %}>{{ option.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="flex flex-wrap gap-2">
+                    <button class="btn btn-primary" type="submit" name="action" value="load_builds"
+                        data-testid="load-builds-button">
+                        Load builds
+                    </button>
+                    <button class="btn btn-ghost" type="submit" name="action" value="reset"
+                        data-testid="selection-reset-button">
+                        Reset
+                    </button>
+                </div>
+            </section>
 
-            {{ render_select_field(
-            "Build",
-            "build_id",
-            selection_view.builds,
-            "build-select",
-            "build-select",
-            hx_url,
-            "#selection-controls",
-            "#selection-controls-indicator"
-            ) }}
+            <section class="space-y-3">
+                <header class="space-y-1">
+                    <h3 class="text-lg font-semibold">Builds</h3>
+                    <p class="text-xs text-base-content/60">
+                        Builds for your selected classes appear here after loading. All builds are selected by default.
+                    </p>
+                </header>
+                <select class="select select-bordered" name="build_ids" multiple size="8"
+                    data-testid="build-multiselect">
+                    {% for build in selection_view.builds %}
+                    <option value="{{ build.id }}" {% if build.selected %}selected{% endif %}>
+                        {{ build.label }} ({{ build.class_id }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </section>
 
-            {{ render_select_field(
-            "Variant",
-            "variant",
-            selection_view.variants,
-            "variant-select",
-            "variant-select",
-            hx_url,
-            "#selection-controls",
-            "#selection-controls-indicator"
-            ) }}
+            <section class="space-y-3">
+                <header class="space-y-1">
+                    <h3 class="text-lg font-semibold">Actions</h3>
+                    <p class="text-xs text-base-content/60">
+                        Apply the current class and build selections to refresh the item table. Items stay unchanged
+                        until you click "Apply filter".
+                    </p>
+                </header>
+                <div class="flex flex-wrap gap-2">
+                    <button class="btn btn-secondary" type="submit" name="action" value="apply_items"
+                        data-testid="apply-filter-button">
+                        Apply filter
+                    </button>
+                    <button class="btn btn-outline" type="button" data-testid="preferences-open-button">
+                        Preferences
+                    </button>
+                </div>
+                <p class="text-xs text-base-content/60">
+                    Classes selected: {{ selection_view.selected_class_ids | length }} · Builds selected:
+                    {{ selection_view.selected_build_ids | length }}
+                </p>
+            </section>
         </form>
-        <p class="text-xs text-base-content/60">
-            Hint: Bookmark the page once you have a variant selected to return directly to the same summary.
-        </p>
         {% else %}
         <div class="rounded-lg border border-dashed border-base-300 bg-base-100/60 p-6 text-sm">
             Selection data is loading. The controls will appear once build guides are available.
@@ -64,20 +96,8 @@
         </div>
     </div>
 
-    <div class="border-t border-base-200/80 bg-base-200/40 px-6 py-4">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm">
-            <p class="text-xs text-base-content/60">
-                Save these selections as preferences or import a saved JSON to restore them later.
-            </p>
-            <button class="btn btn-outline btn-sm sm:btn-md" type="button" data-testid="preferences-open-button">
-                Preferences
-            </button>
-        </div>
-    </div>
-
-    {% if prefetch_summary and selection_view and selection_view.selected_variant_id %}
-    <div hx-get="{{ url_for('variants.variant_summary_partial', variant_id=selection_view.selected_variant_id) }}"
-        hx-target="#variant-summary-content" hx-trigger="load" hx-indicator="#variant-summary-indicator"
-        hx-include="#selection-form" aria-hidden="true"></div>
+    {% if prefetch_items and selection_view %}
+    <div hx-post="{{ url_for('items.summary_partial') }}" hx-target="#item-summary-content" hx-trigger="load"
+        hx-indicator="#item-summary-indicator" hx-include="#selection-form" aria-hidden="true"></div>
     {% endif %}
 </div>
