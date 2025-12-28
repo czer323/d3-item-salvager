@@ -42,6 +42,29 @@ class ItemRecord:
     slot: str
 
 
+def normalize_class_name(raw: object | None) -> str:
+    """Normalize class names returned by the backend to the canonical display form.
+
+    Mirrors server-side normalization: removes non-alphanumeric characters for keying
+    and maps known compact variants to Title Case labels. Falls back to title-casing.
+    """
+    if raw is None:
+        return "Unknown"
+    s = str(raw).strip()
+    key = "".join(ch for ch in s.lower() if ch.isalnum())
+    mapping: dict[str, str] = {
+        "barbarian": "Barbarian",
+        "crusader": "Crusader",
+        "demonhunter": "Demon Hunter",
+        "monk": "Monk",
+        "necromancer": "Necromancer",
+        "witchdoctor": "Witch Doctor",
+        "wizard": "Wizard",
+        "druid": "Druid",
+    }
+    return mapping.get(key, s.title() if s else "Unknown")
+
+
 def load_builds(client: BackendClient) -> list[BuildRecord]:
     """Load all build guides from the backend service."""
     candidate_paths = ("/build-guides", "/builds")
@@ -61,7 +84,7 @@ def load_builds(client: BackendClient) -> list[BuildRecord]:
             title_raw = row.get("title") or row.get("name") or build_id
             title = str(title_raw).strip() or build_id
             class_name_raw = row.get("class_name") or row.get("class") or "Unknown"
-            class_name = str(class_name_raw).strip() or "Unknown"
+            class_name = normalize_class_name(class_name_raw)
             records.append(BuildRecord(id=build_id, title=title, class_name=class_name))
         if records:
             records.sort(

@@ -127,20 +127,28 @@ def build_selection_view(
     all_class_ids = tuple(sorted_classes)
 
     if requested_class_ids:
+        # Respect explicit selections but only include those classes that have matching builds.
+        # Do NOT fallback to all classes if the requested classes are missing; this avoids
+        # unintentionally showing every build when a user selects a class with no available builds.
         active_class_ids = tuple(
             class_id for class_id in requested_class_ids if class_id in class_groups
         )
-        if not active_class_ids:
-            active_class_ids = all_class_ids
     else:
         active_class_ids = all_class_ids
+
+    # Mark classes as selected based on explicit requested_class_ids when provided;
+    # otherwise, default to selecting all classes.
+    if requested_class_ids:
+        selected_set = set(requested_class_ids)
+    else:
+        selected_set = set(all_class_ids)
 
     class_options = tuple(
         ClassOption(
             id=class_name,
             label=class_name,
             build_count=len(class_groups.get(class_name, [])),
-            selected=class_name in active_class_ids,
+            selected=class_name in selected_set,
         )
         for class_name in sorted_classes
     )
@@ -150,7 +158,10 @@ def build_selection_view(
     for class_id in active_class_ids:
         active_build_records.extend(class_groups.get(class_id, []))
 
-    if not active_build_records:
+    # If no build records were found for the requested classes, do not fall back to
+    # showing all builds — instead surface an empty list so the user sees there are
+    # no matching builds for their selection.
+    if not active_build_records and not requested_class_ids:
         active_build_records = builds.copy()
 
     ordered_build_ids = tuple(record.id for record in active_build_records)

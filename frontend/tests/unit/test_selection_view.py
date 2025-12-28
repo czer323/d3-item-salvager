@@ -160,3 +160,21 @@ def test_build_selection_view_respects_explicit_selection(
     assert view.selected_build_ids == ("2",)
     assert view.selected_variant_ids == ()
     assert view.variants == ()
+
+
+def test_build_selection_view_handles_missing_class(
+    fake_client: FakeBackendClient,
+) -> None:
+    """When the user requests a class that has no builds, the build list should be empty."""
+    from frontend.src.services.selection import build_selection_view
+
+    # Fake client has builds for Barbarian and Wizard only; request 'Monk'.
+    view = build_selection_view(cast("BackendClient", fake_client), class_ids=("Monk",))
+
+    # The selection should preserve the explicit requested class, but no builds should be surfaced.
+    assert view.selected_class_ids == ("Monk",)
+    assert view.builds == ()
+    assert view.selected_build_ids == ()
+    # Classes list still includes Monk and the option should be selected
+    monk_option = next(opt for opt in view.classes if opt.id == "Monk")
+    assert monk_option.selected is True

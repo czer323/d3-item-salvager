@@ -100,5 +100,23 @@ def test_frontend_variant_json_round_trip(
     used_entries = [entry for entry in payload["rows"] if entry["status"] == "used"]
     assert any(entry["name"] == "Mighty Weapon" for entry in used_entries)
 
+    # Now test that requesting a class with no builds results in an empty build list
+    post_resp = test_client.post(
+        "/frontend/selection/controls",
+        data={"action": "load_builds", "class_ids": "Monk"},
+    )
+    assert post_resp.status_code == 200
+    html = post_resp.get_data(as_text=True)
+    # The builds select should be present but have no <option> entries for builds
+    assert 'name="build_ids"' in html
+    # Ensure the specific builds select block contains no <option> entries
+    start = html.find('name="build_ids"')
+    select_start = html.rfind("<select", 0, start)
+    select_end = html.find("</select>", start)
+    assert select_start != -1, "Could not locate the start of the builds select element"
+    assert select_end != -1, "Could not locate the end of the builds select element"
+    builds_block = html[select_start:select_end]
+    assert "<option" not in builds_block
+
     backend_app.dependency_overrides.clear()
     backend_http_client.close()

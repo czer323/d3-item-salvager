@@ -147,3 +147,55 @@ def test_get_items_for_profile(sqlite_test_engine: Engine) -> None:
         items = get_items_for_profile(session, profile_id)
         assert len(items) == 1
         assert items[0].name == "Test Sword"
+
+
+def test_list_build_guides_with_classes_picks_most_common(
+    sqlite_test_engine: Engine,
+) -> None:
+    """When a build has profiles with mixed classes, the most common normalized class is chosen."""
+    from d3_item_salvager.data.models import Build, Profile
+    from d3_item_salvager.data.queries import list_build_guides_with_classes
+    from d3_item_salvager.utility.class_names import normalize_class_name
+
+    with Session(sqlite_test_engine) as session:
+        # Create a build and mixed profiles
+        build = Build(title="Mixed Guide", url="/mixed")
+        session.add(build)
+        session.commit()
+        session.refresh(build)
+        # Ensure build.id is present before using it for profile foreign keys
+        assert build.id is not None
+        b_id = build.id
+        session.add_all(
+            [
+                Profile(build_id=b_id, name="A", class_name="demonhunter"),
+                Profile(build_id=b_id, name="B", class_name="demonhunter"),
+                Profile(build_id=b_id, name="C", class_name="Wizard"),
+            ]
+        )
+        session.commit()
+
+        rows = list_build_guides_with_classes(session)
+        found = [r for r in rows if r[0].title == "Mixed Guide"]
+        assert len(found) == 1
+        _, class_name = found[0]
+        assert class_name == normalize_class_name("demonhunter")
+
+
+def test_list_build_guides_with_classes_none_when_no_profiles(
+    sqlite_test_engine: Engine,
+) -> None:
+    """Builds with no profiles report None for class_name."""
+    from d3_item_salvager.data.models import Build
+    from d3_item_salvager.data.queries import list_build_guides_with_classes
+
+    with Session(sqlite_test_engine) as session:
+        build = Build(title="Lonely Guide", url="/lonely")
+        session.add(build)
+        session.commit()
+
+        rows = list_build_guides_with_classes(session)
+        found = [r for r in rows if r[0].title == "Lonely Guide"]
+        assert len(found) == 1
+        _, class_name = found[0]
+        assert class_name is None

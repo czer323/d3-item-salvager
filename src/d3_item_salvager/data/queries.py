@@ -1,5 +1,6 @@
 """Query and filter logic for Diablo 3 Item Salvager database."""
 
+from collections import Counter
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, cast
 
@@ -197,18 +198,34 @@ def list_item_usages(
 def list_build_guides_with_classes(
     session: Session,
 ) -> Sequence[tuple[Build, str | None]]:
-    """Return build guides along with an inferred class name."""
-    class_name_alias = func.min(Profile.class_name).label("class_name")
-    build_id_column = cast("InstrumentedAttribute[int | None]", Build.id)
-    profile_build_id = cast("InstrumentedAttribute[int]", Profile.build_id)
-    statement = (
-        select(Build, class_name_alias)
-        .select_from(Build)
-        .join(Profile, profile_build_id == build_id_column, isouter=True)
-        .group_by(build_id_column)
-        .order_by(Build.title)
-    )
-    return session.exec(statement).all()
+    """Return build guides along with an inferred class name.
+
+    Previous implementation used MIN(Profile.class_name) which could pick a
+    lexicographically small value when a build had profiles from multiple classes
+    (e.g., a stray 'demonhunter' would mask the intended 'Wizard'). This routine
+    now determines the canonical class by inspecting profile values per-build and
+    selecting the most common normalized class name. Returns None when no profiles
+    exist for a build.
+    """
+    from d3_item_salvager.utility.class_names import normalize_class_name
+
+    builds = session.exec(select(Build).order_by(Build.title)).all()
+    results: list[tuple[Build, str | None]] = []
+    for build in builds:
+        if build.id is None:
+            results.append((build, None))
+            continue
+        rows = session.exec(
+            select(Profile.class_name).where(Profile.build_id == build.id)
+        ).all()
+        normalized = [normalize_class_name(c) for c in rows if c]
+        if not normalized:
+            results.append((build, None))
+            continue
+        counts = Counter(normalized)
+        most_common_class = counts.most_common(1)[0][0]
+        results.append((build, most_common_class))
+    return results
 
 
 def list_variants_for_build(session: Session, build_id: int) -> Sequence[Profile]:
