@@ -6,6 +6,8 @@ const DEFAULT_BASE_URL = process.env.FRONTEND_BASE_URL ?? `http://127.0.0.1:${DE
 
 export default defineConfig({
   testDir: './',
+  // include our test_*.ts naming convention in addition to Playwright defaults
+  testMatch: ['**/test_*.ts', '**/*.spec.ts', '**/*.test.ts'],
   timeout: 30_000,
   expect: {
     timeout: 5_000,

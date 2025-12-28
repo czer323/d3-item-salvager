@@ -160,7 +160,12 @@ async def list_build_guides(session: SessionDep) -> BuildGuideListResponse:
                 class_name=class_name or "Unknown",
             )
         )
-    return BuildGuideListResponse(data=data)
+    # Provide pagination metadata even though this endpoint currently returns all
+    # results so that response schemas remain consistent with other list
+    # endpoints used by frontend clients.
+    return BuildGuideListResponse(
+        data=data, meta=build_pagination(len(data), 0, len(data))
+    )
 
 
 @router.get(
@@ -186,7 +191,11 @@ async def list_variants(
                 class_name=profile.class_name,
             )
         )
-    return VariantListResponse(data=payload)
+    # Provide pagination metadata so the frontend can consume the response
+    # using the same schema as other list endpoints.
+    return VariantListResponse(
+        data=payload, meta=build_pagination(len(payload), 0, len(payload))
+    )
 
 
 @router.get(

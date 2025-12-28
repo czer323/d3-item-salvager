@@ -47,6 +47,7 @@ class BuildGuideListResponse(BaseModel):
     """API response payload for build guide listings."""
 
     data: list[BuildGuideSchema]
+    meta: Pagination
 
 
 class ProfileSchema(BaseModel):
@@ -73,6 +74,7 @@ class VariantListResponse(BaseModel):
     """API response payload for variant list endpoints."""
 
     data: list[VariantSchema]
+    meta: Pagination
 
 
 class ItemUsageSchema(BaseModel):

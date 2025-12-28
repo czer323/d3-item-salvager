@@ -51,8 +51,6 @@ def fake_client_fixture() -> FakeBackendClient:
             {"id": "v-barb-2", "name": "HotA Slam", "build_guide_id": 1},
         ],
         "/build-guides/2/variants": [],
-        "/builds/2/variants": [],
-        "/variants/2": [],
         "/build-guides/3/variants": [
             {"id": "v-barb-3", "name": "Leap Quake", "build_guide_id": 3},
         ],
@@ -73,7 +71,7 @@ def fake_client_fixture() -> FakeBackendClient:
 def test_build_selection_view_groups_builds_by_class_and_marks_selected(
     fake_client: FakeBackendClient,
 ) -> None:
-    """Default selection should honour variant defaults and mark active options."""
+    """Default selection should defer variant loading and mark active options."""
     from frontend.src.services.selection import build_selection_view
 
     view = build_selection_view(

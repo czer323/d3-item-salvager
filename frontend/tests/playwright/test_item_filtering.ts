@@ -10,17 +10,14 @@ function firstFragment(text) {
         return '';
     }
     const parts = trimmed.split(/\s+/);
-    if (!parts.length) {
-        return trimmed.slice(0, 4);
-    }
     if (parts[0].length >= 4) {
         return parts[0].slice(0, 4);
     }
     return trimmed.slice(0, Math.min(6, trimmed.length));
 }
 
-test.describe('Realtime item filtering', () => {
-    test('filters by search term and slot, showing empty state when nothing matches', async ({ page }) => {
+test.describe('Item summary filtering', () => {
+    test('filters items by search and slot', async ({ page }) => {
         await page.goto(`${TEST_BASE_URL}/`);
 
         await page.getByRole('button', { name: 'Load builds' }).click();
@@ -44,7 +41,11 @@ test.describe('Realtime item filtering', () => {
 
         const searchInput = page.getByTestId('item-filter-search');
         await searchInput.fill(searchTerm);
-        await page.waitForTimeout(200);
+
+        // Wait for debounce + UI update: poll until the filtered rows count is > 0 and <= original visibleCount
+        const getFilteredCount = async () => await rows.count();
+        await expect.poll(getFilteredCount, { timeout: 2000, interval: 100 }).toBeGreaterThan(0);
+        await expect.poll(getFilteredCount, { timeout: 2000, interval: 100 }).toBeLessThanOrEqual(visibleCount);
 
         const filteredCount = await rows.count();
         expect(filteredCount).toBeGreaterThan(0);
@@ -55,7 +56,8 @@ test.describe('Realtime item filtering', () => {
             const hasOption = await slotSelect.locator(`option[value="${itemSlot}"]`).count();
             if (hasOption > 0) {
                 await slotSelect.selectOption(itemSlot);
-                await page.waitForTimeout(150);
+                // Wait for UI update after slot selection (poll until we see > 0 filtered rows)
+                await expect.poll(getFilteredCount, { timeout: 2000, interval: 100 }).toBeGreaterThan(0);
                 const slotFilteredCount = await rows.count();
                 expect(slotFilteredCount).toBeGreaterThan(0);
                 await expect(firstRow).toBeVisible();
@@ -63,14 +65,15 @@ test.describe('Realtime item filtering', () => {
         }
 
         await searchInput.fill('zzzxxyy');
-        await page.waitForTimeout(250);
         const emptyState = summaryRoot.locator('[data-filter-empty]');
-        await expect(emptyState).toBeVisible();
-        await expect(rows).toHaveCount(0);
+        // Wait for empty state to be visible and rows to become empty (no visible items)
+        await expect(emptyState).toBeVisible({ timeout: 2000 });
+        await expect(rows).toHaveCount(0, { timeout: 2000 });
 
         const clearButton = page.getByTestId('item-filter-clear');
         await clearButton.click();
-        await page.waitForTimeout(200);
+        // Wait for at least one row to be visible again
+        await expect(rows.first()).toBeVisible({ timeout: 2000 });
         const restoredCount = await rows.count();
         expect(restoredCount).toBeGreaterThan(0);
     });

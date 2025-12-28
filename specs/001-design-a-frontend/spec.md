@@ -176,6 +176,54 @@ The frontend assumes the following FastAPI backend endpoints are available. All 
     ]
     ```
 
+### Error Responses
+- **Purpose**: Define a small set of standardized error payloads so clients can render consistent messages and make correct retry decisions.
+
+**Common error responses (examples):**
+
+- **400 Bad Request** - invalid parameters or schema validation failures
+  - **Response Body** (application/json):
+    ```json
+    {
+      "detail": "Invalid request parameters",
+      "errors": [
+        {"field": "guide_id", "message": "invalid format"}
+      ]
+    }
+    ```
+
+- **404 Not Found** - requested resource does not exist
+  - **Response Body** (application/json):
+    ```json
+    {
+      "detail": "Resource not found"
+    }
+    ```
+
+- **500 Internal Server Error** - unexpected server error
+  - **Response Body** (application/json):
+    ```json
+    {
+      "detail": "Internal server error",
+      "request_id": "string (optional trace id for debugging)"
+    }
+    ```
+
+**Client guidance:**
+- Treat **4xx** responses as client errors: surface friendly messages and do not retry automatically (except after user correction).
+- Treat **5xx** responses as transient: show a friendly error and **retry** with exponential backoff (see below).
+
+### Empty-state Success Responses
+- Endpoints that return collections MUST return **200 OK** with an empty array `[]` when there are no resources to return (e.g., a guide with no variants, or a variant with no items).
+  - Example: `GET /variants/{guide_id}` → `200 OK` with `[]` if the guide has no variants.
+  - Example: `GET /items/{variant_id}` → `200 OK` with `[]` if the variant has no items.
+- For single-resource endpoints where the resource is absent, return **404 Not Found**.
+
+### Timeout & Retry Semantics
+- **Network timeouts** (e.g., socket/connect timeouts) are typically transient — clients should retry with **exponential backoff** and jitter (recommended: initial delay ~200ms, double each attempt, max 3 attempts, add randomized jitter).
+- **Server 5xx** responses should be treated as transient and can be retried with the same backoff policy (cap retries to avoid overwhelming the service).
+- **Do not retry** on **4xx** responses except in cases where user action corrects the request (e.g., after fixing invalid input).
+
 ### Client-Side Preferences Model
 
 For MVP, user preferences are stored as a single client-scoped object in browser localStorage under the key `"d3-item-salvager-preferences"`.

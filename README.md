@@ -89,6 +89,36 @@ The workers process uses APScheduler with a persistent SQLite job store (`cache/
 - Type annotations and Google-style docstrings required for public APIs
 - Pre-commit hooks enforce style, type, and test standards
 
+### Playwright E2E (TypeScript) 🔧
+
+Playwright TypeScript tests live in `frontend/tests/playwright/` and produce an HTML report at `frontend/playwright-report/`.
+
+- Tests use the `test_*.ts` filename pattern (we added this to `playwright.config.ts`).
+- Run tests locally with:
+
+```sh
+# discover & run tests
+npx playwright test --config frontend/tests/playwright/playwright.config.ts
+
+# view the HTML report
+npx playwright show-report frontend/playwright-report
+```
+
+If you prefer an npm-based workflow, install Playwright with your package manager and add a script, e.g.:
+
+```json
+{
+  "scripts": {
+    "test:e2e": "playwright test --config frontend/tests/playwright/playwright.config.ts"
+  },
+  "devDependencies": {
+    "playwright": "latest"
+  }
+}
+```
+
+Note: Playwright may require a running frontend dev server at `http://127.0.0.1:8001` (the `FRONTEND_BACKEND_URL` task sets this).
+
 ## Support & Community
 
 For questions, feature requests, or bug reports, please open a GitHub issue.

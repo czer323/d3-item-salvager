@@ -55,14 +55,17 @@ def frontend_server_url(frontend_app: Flask) -> Iterator[str]:
     _wait_for_server(port)
 
     base_url = f"http://127.0.0.1:{port}"
-    os.environ.setdefault("FRONTEND_BASE_URL", base_url)
-    os.environ.setdefault("FRONTEND_PLAYWRIGHT_PORT", str(port))
+    os.environ["FRONTEND_BASE_URL"] = base_url
+    os.environ["FRONTEND_PLAYWRIGHT_PORT"] = str(port)
 
     try:
         yield base_url
     finally:
         server.shutdown()
         thread.join(timeout=5)
+        if thread.is_alive():
+            msg = "Frontend server thread did not terminate within timeout"
+            raise RuntimeError(msg)
 
 
 @pytest.fixture

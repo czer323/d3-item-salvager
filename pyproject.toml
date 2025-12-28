@@ -52,7 +52,7 @@ packages = ["src/d3_item_salvager"]
 [tool.pytest.ini_options]
 pythonpath = ["src", "."]
 addopts = ["-v", "--color=yes"]
-testpaths = ["tests"]
+testpaths = ["tests", "frontend/tests"]
 python_files = "test_*.py"
 
 

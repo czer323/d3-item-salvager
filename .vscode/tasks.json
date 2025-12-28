@@ -7,10 +7,24 @@
             "command": "uv run python -m d3_item_salvager api",
             "isBackground": true,
             "presentation": {
-                "reveal": "always",
+                "reveal": "silent",
+                "revealProblems": "onProblem",
                 "panel": "shared"
             },
-            "problemMatcher": []
+            "problemMatcher": [
+                {
+                    "owner": "uvicorn",
+                    "source": "uvicorn",
+                    "pattern": {
+                        "regexp": "^$"
+                    },
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": ".*Started server process.*",
+                        "endsPattern": ".*Uvicorn running on .*"
+                    }
+                }
+            ]
         },
         {
             "label": "Start Frontend",
@@ -18,10 +32,24 @@
             "command": "set \"FRONTEND_BACKEND_URL=http://127.0.0.1:8000\" && cd frontend && uv run python -m flask --app app run --port 8001",
             "isBackground": true,
             "presentation": {
-                "reveal": "always",
+                "reveal": "silent",
+                "revealProblems": "onProblem",
                 "panel": "shared"
             },
-            "problemMatcher": []
+            "problemMatcher": [
+                {
+                    "owner": "werkzeug",
+                    "source": "werkzeug",
+                    "pattern": {
+                        "regexp": "^$"
+                    },
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": "^\\s*\\* Serving Flask app .*",
+                        "endsPattern": "^\\s*\\* Running on .*"
+                    }
+                }
+            ]
         },
         {
             "label": "Start Both",
@@ -31,7 +59,8 @@
             ],
             "dependsOrder": "sequence",
             "presentation": {
-                "reveal": "always",
+                "reveal": "silent",
+                "revealProblems": "onProblem",
                 "panel": "shared"
             }
         },
@@ -46,20 +75,6 @@
             "label": "Run pre-commit check",
             "command": "uv run pre-commit run --all-files",
             "group": "test"
-        },
-        {
-            "label": "Run GitHub Actions workflow locally with act",
-            "type": "shell",
-            "command": "gh act -W .github/workflows/ci_v2.yml --rm",
-            "group": "test"
         }
-    ],
-    "options": {
-        "shell": {
-            "executable": "cmd.exe",
-            "args": [
-                "/c"
-            ]
-        }
-    }
+    ]
 }

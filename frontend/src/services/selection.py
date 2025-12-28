@@ -158,12 +158,6 @@ def build_selection_view(
     for class_id in active_class_ids:
         active_build_records.extend(class_groups.get(class_id, []))
 
-    # If no build records were found for the requested classes, do not fall back to
-    # showing all builds — instead surface an empty list so the user sees there are
-    # no matching builds for their selection.
-    if not active_build_records and not requested_class_ids:
-        active_build_records = builds.copy()
-
     ordered_build_ids = tuple(record.id for record in active_build_records)
     available_build_ids = set(ordered_build_ids)
 
