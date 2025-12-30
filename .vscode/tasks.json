@@ -75,6 +75,28 @@
             "label": "Run pre-commit check",
             "command": "uv run pre-commit run --all-files",
             "group": "test"
+        },
+        {
+            "type": "shell",
+            "label": "Run Playwright tests",
+            "command": "cd frontend && npm run test:e2e",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Run Playwright with servers",
+            "dependsOn": [
+                "Start Both",
+                "Run Playwright tests"
+            ],
+            "dependsOrder": "sequence",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
         }
     ]
 }

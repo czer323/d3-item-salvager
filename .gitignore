@@ -24,3 +24,5 @@ Thumbs.db
 *.tmp
 *.swp
 playwright-report
+/frontend/test-results
+playwright-debug

@@ -57,10 +57,11 @@
             this.slotSelect = null;
             this.clearButton = null;
             this.sectionNodes = [];
-            this.debouncedApply = debounce(() => this.applyFilters(), DEFAULT_DEBOUNCE_MS);
+            this.debouncedApply = debounce(() => { this.applyFilters(); this.maybeTriggerServerRefresh(); }, DEFAULT_DEBOUNCE_MS);
             this.boundSearchHandler = null;
             this.boundSlotHandler = null;
             this.boundClearHandler = null;
+            this.pendingServerRequest = false;
         }
 
         init() {
@@ -71,6 +72,12 @@
             this.slotSelect = this.root.querySelector('[data-filter-controls] [data-filter-slot]');
             this.clearButton = this.root.querySelector('[data-filter-controls] [data-filter-clear]');
             this.sectionNodes = Array.from(this.root.querySelectorAll('[data-filter-section]'));
+
+            // Record the server-provided search/slot so we can detect when the user
+            // clears/changes the search and needs a server refresh.
+            this.state.serverSearch = this.root.getAttribute('data-current-search') ?? '';
+            this.state.serverSlot = this.root.getAttribute('data-current-slot') ?? '';
+            this.pendingServerRequest = false;
 
             if (this.searchInput) {
                 if (this.state.search) {
@@ -106,6 +113,29 @@
                         this.slotSelect.value = '';
                     }
                     this.applyFilters();
+
+                    // Trigger a server-side refresh of the item summary via HTMX by
+                    // submitting the selection form if it exists. This ensures the
+                    // server-rendered DOM is updated to match cleared filters.
+                    try {
+                        // Prefer clicking the Apply filter button so the 'action=apply_items' field
+                        // is included in the form submission; fall back to HTMX submit if the
+                        // button is not available.
+                        const applyBtn = document.querySelector('[data-testid="apply-filter-button"]');
+                        if (applyBtn) {
+                            applyBtn.click();
+                        } else if (window.htmx) {
+                            const selectionForm = document.querySelector('#selection-form');
+                            if (selectionForm) {
+                                htmx.trigger(selectionForm, 'submit');
+                            }
+                        }
+                    } catch (e) {
+                        // Ignore errors - this is a best-effort enhancement
+                        // and should not break client-side filtering.
+                        // eslint-disable-next-line no-console
+                        console.warn('HTMX submit on clear failed', e);
+                    }
                 };
                 this.clearButton.addEventListener('click', this.boundClearHandler);
             }
@@ -129,6 +159,49 @@
             const filtersActive = Boolean((this.state.search ?? '').trim() || (this.state.slot ?? '').trim());
             for (const section of this.sectionNodes) {
                 this.applySectionFilters(section, filtersActive);
+            }
+        }
+
+        // If the user clears the search (or changes it back to a value different
+        // from the last server-provided search) we should refresh the server-rendered
+        // summary so the DOM includes the correct set of items. This is a best-effort
+        // check and uses a debounce to avoid excessive requests.
+        maybeTriggerServerRefresh() {
+            try {
+                const current = (this.state.search ?? '').trim();
+                const server = (this.state.serverSearch ?? '').trim();
+                if (this.pendingServerRequest) {
+                    return;
+                }
+                // trigger a refresh when the user clears the search while the server
+                // had a non-empty search (i.e., they expect more items), or when the
+                // server search differs from the current value and the current is empty
+                // (covers manual clear) - keep condition minimal to avoid noisy requests.
+                if (current === '' && server !== '') {
+                    this.pendingServerRequest = true;
+                    this.triggerApply();
+                }
+            } catch (e) {
+                // swallow errors - not critical
+                // eslint-disable-next-line no-console
+                console.warn('maybeTriggerServerRefresh failed', e);
+            }
+        }
+
+        triggerApply() {
+            try {
+                const applyBtn = document.querySelector('[data-testid="apply-filter-button"]');
+                if (applyBtn) {
+                    applyBtn.click();
+                } else if (window.htmx) {
+                    const selectionForm = document.querySelector('#selection-form');
+                    if (selectionForm) {
+                        htmx.trigger(selectionForm, 'submit');
+                    }
+                }
+            } catch (e) {
+                // eslint-disable-next-line no-console
+                console.warn('triggerApply failed', e);
             }
         }
 
