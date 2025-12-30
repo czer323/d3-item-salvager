@@ -74,7 +74,16 @@ class BackendClient:
                 response.raise_for_status()
                 return response.json()
             except httpx.HTTPStatusError as exc:
-                raise BackendResponseError(str(exc)) from exc
+                # Convert client errors (4xx) into BackendResponseError so callers
+                # get a clear, non-retryable error. For server errors (5xx) re-raise
+                # the original HTTPStatusError so higher-level retry middleware can
+                # detect and retry transient server failures.
+                status = exc.response.status_code
+                if 400 <= status < 500:
+                    raise BackendResponseError(str(exc)) from exc
+                # For 5xx (and other non-4xx) responses, re-raise the original
+                # HTTPStatusError to allow retry logic to handle it.
+                raise
             except httpx.RequestError as exc:
                 last_error = exc
                 if attempt == self.max_attempts:
