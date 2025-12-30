@@ -16,3 +16,13 @@ logs/
 precommit_logs
 cache/
 *.db
+/.specify/scripts
+/.specify/templates
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+playwright-report
+/frontend/test-results
+playwright-debug

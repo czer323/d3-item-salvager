@@ -34,6 +34,22 @@ class BuildSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class BuildGuideSchema(BaseModel):
+    """Serializable representation of a build guide with aggregated metadata."""
+
+    id: int
+    title: str
+    url: str
+    class_name: str | None = None
+
+
+class BuildGuideListResponse(BaseModel):
+    """API response payload for build guide listings."""
+
+    data: list[BuildGuideSchema]
+    meta: Pagination
+
+
 class ProfileSchema(BaseModel):
     """Serializable representation of a build profile."""
 
@@ -43,6 +59,22 @@ class ProfileSchema(BaseModel):
     class_name: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class VariantSchema(BaseModel):
+    """Serializable representation of a build variant for frontend consumers."""
+
+    id: int
+    build_guide_id: int
+    name: str
+    class_name: str
+
+
+class VariantListResponse(BaseModel):
+    """API response payload for variant list endpoints."""
+
+    data: list[VariantSchema]
+    meta: Pagination
 
 
 class ItemUsageSchema(BaseModel):
@@ -55,6 +87,20 @@ class ItemUsageSchema(BaseModel):
     usage_context: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ItemReferenceSchema(BaseModel):
+    """Nested item payload exposed in item usage responses."""
+
+    id: str
+    name: str
+    slot: str
+
+
+class ItemUsageWithItemSchema(ItemUsageSchema):
+    """Item usage entry enriched with nested item metadata."""
+
+    item: ItemReferenceSchema
 
 
 class ItemListResponse(BaseModel):

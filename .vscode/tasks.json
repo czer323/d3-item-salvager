@@ -2,10 +2,84 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Start Backend",
+            "type": "shell",
+            "command": "uv run python -m d3_item_salvager api",
+            "isBackground": true,
+            "presentation": {
+                "reveal": "silent",
+                "revealProblems": "onProblem",
+                "panel": "shared"
+            },
+            "problemMatcher": [
+                {
+                    "owner": "uvicorn",
+                    "source": "uvicorn",
+                    "pattern": {
+                        "regexp": "^$"
+                    },
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": ".*Started server process.*",
+                        "endsPattern": ".*Uvicorn running on .*"
+                    }
+                }
+            ]
+        },
+        {
+            "label": "Start Frontend",
+            "type": "shell",
+            "command": "uv run python -m flask --app app run --port 8001",
+            "isBackground": true,
+            "options": {
+                "cwd": "${workspaceFolder}/frontend",
+                "env": {
+                    "FRONTEND_BACKEND_URL": "http://127.0.0.1:8000"
+                }
+            },
+            "presentation": {
+                "reveal": "silent",
+                "revealProblems": "onProblem",
+                "panel": "shared"
+            },
+            "problemMatcher": [
+                {
+                    "owner": "werkzeug",
+                    "source": "werkzeug",
+                    "pattern": {
+                        "regexp": "^$"
+                    },
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": "^\\s*\\* Serving Flask app .*",
+                        "endsPattern": "^\\s*\\* Running on .*"
+                    }
+                }
+            ]
+        },
+        {
+            "label": "Start Both",
+            "dependsOn": [
+                "Start Backend",
+                "Start Frontend"
+            ],
+            "dependsOrder": "sequence",
+            "presentation": {
+                "reveal": "silent",
+                "revealProblems": "onProblem",
+                "panel": "shared"
+            }
+        },
+        {
             "type": "shell",
             "label": "Run pytest with uv",
             "command": "uv run --frozen pytest",
-            "group": "test"
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "showReuseMessage": false
+            }
         },
         {
             "type": "shell",
@@ -14,10 +88,33 @@
             "group": "test"
         },
         {
-            "label": "Run GitHub Actions workflow locally with act",
-            "type": "shell",
-            "command": "gh act -W .github/workflows/ci_v2.yml --rm",
-            "group": "test"
+            "type": "process",
+            "label": "Run Playwright tests",
+            "command": "npm",
+            "args": [
+                "run",
+                "test:e2e"
+            ],
+            "group": "test",
+            "options": {
+                "cwd": "${workspaceFolder}/frontend"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Run Playwright with servers",
+            "dependsOn": [
+                "Start Both",
+                "Run Playwright tests"
+            ],
+            "dependsOrder": "sequence",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
         }
     ]
 }

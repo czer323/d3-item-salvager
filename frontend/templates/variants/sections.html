@@ -1,0 +1,50 @@
+{% macro render_item_section(
+title,
+items,
+section_key,
+data_testid,
+empty_message,
+filtered_message,
+total_count,
+filtered_count,
+pagination,
+filters_active
+) -%}
+{% set has_items = items and (items | length) > 0 %}
+<section class="space-y-4" data-testid="{{ data_testid }}" data-filter-section="{{ section_key }}"
+    data-total-count="{{ total_count }}" data-filtered-count="{{ filtered_count }}"
+    data-current-page="{{ pagination.page if pagination else 1 }}"
+    data-page-count="{{ pagination.page_count if pagination else 1 }}">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <h2 class="text-xl font-semibold">{{ title }}</h2>
+        <span class="badge badge-outline" data-filter-count data-testid="{{ data_testid }}-count">
+            {{ filtered_count }}
+        </span>
+    </div>
+    <ul class="grid gap-3 md:grid-cols-2" data-filter-list {% if not has_items %}hidden{% endif %}>
+        {% for item in items %}
+        <li class="card bg-base-100 shadow-sm" data-item-name="{{ (item.name or 'Unknown') | lower }}"
+            data-testid="{{ data_testid }}-item">
+            <div class="card-body gap-2 p-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-medium">{{ item.name or 'Unknown' }}</h3>
+                    <span class="badge {{ item.badge_class }} uppercase"
+                        data-testid="{{ data_testid }}-item-classification">
+                        {{ (item.classification.display_name if item.classification else 'Unknown') }}
+                    </span>
+                </div>
+                <p class="text-xs uppercase tracking-wide text-base-content/70"
+                    data-testid="{{ data_testid }}-item-slot">{{
+                    item.slot or 'Unknown' }}</p>
+                <p class="text-sm" data-testid="{{ data_testid }}-item-usage">{{ item.usage_label or "N/A" }}</p>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    <div class="rounded-lg border border-dashed border-base-300 bg-base-100/60 p-6 text-sm"
+        data-testid="{{ data_testid }}-empty" data-filter-empty {% if has_items %}hidden{% endif %}
+        data-empty-default="{{ empty_message }}" data-empty-filtered="{{ filtered_message }}">
+        {{ filtered_message if filters_active else empty_message }}
+    </div>
+</section>
+{%- endmacro %}

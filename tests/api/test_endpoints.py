@@ -10,127 +10,7 @@ from sqlmodel import Session, SQLModel
 
 from d3_item_salvager.api.dependencies import get_db_session
 from d3_item_salvager.api.factory import create_app
-from d3_item_salvager.data.models import Build, Item, ItemUsage, Profile
-
-
-def _seed_database(session: Session) -> dict[str, Any]:
-    """Insert representative data and return created identifiers."""
-    build_one = Build(title="Guide One", url="https://example.com/one")
-    build_two = Build(title="Guide Two", url="https://example.com/two")
-    session.add(build_one)
-    session.add(build_two)
-    session.commit()
-    session.refresh(build_one)
-    session.refresh(build_two)
-    assert build_one.id is not None
-    assert build_two.id is not None
-
-    build_one_id = build_one.id
-    build_two_id = build_two.id
-
-    profile_a = Profile(
-        build_id=build_one_id,
-        name="Leapquake",
-        class_name="Barbarian",
-    )
-    profile_b = Profile(
-        build_id=build_one_id,
-        name="Support",
-        class_name="Barbarian",
-    )
-    profile_c = Profile(
-        build_id=build_two_id,
-        name="Archon",
-        class_name="Wizard",
-    )
-    session.add(profile_a)
-    session.add(profile_b)
-    session.add(profile_c)
-    session.commit()
-    session.refresh(profile_a)
-    session.refresh(profile_b)
-    session.refresh(profile_c)
-    assert profile_a.id is not None
-    assert profile_b.id is not None
-    assert profile_c.id is not None
-
-    item_one = Item(
-        id="item_001",
-        name="Mighty Weapon",
-        type="weapon",
-        quality="set",
-    )
-    item_two = Item(
-        id="item_002",
-        name="Aquila Cuirass",
-        type="chest",
-        quality="legendary",
-    )
-    item_three = Item(
-        id="item_003",
-        name="Chantodo's Will",
-        type="weapon",
-        quality="set",
-    )
-    session.add(item_one)
-    session.add(item_two)
-    session.add(item_three)
-    session.commit()
-
-    profile_a_id = profile_a.id
-    profile_b_id = profile_b.id
-    profile_c_id = profile_c.id
-
-    usage_a = ItemUsage(
-        profile_id=profile_a_id,
-        item_id=item_one.id,
-        slot="mainhand",
-        usage_context="main",
-    )
-    usage_b = ItemUsage(
-        profile_id=profile_b_id,
-        item_id=item_two.id,
-        slot="chest",
-        usage_context="follower",
-    )
-    usage_c = ItemUsage(
-        profile_id=profile_c_id,
-        item_id=item_three.id,
-        slot="mainhand",
-        usage_context="kanai",
-    )
-    session.add(usage_a)
-    session.add(usage_b)
-    session.add(usage_c)
-    session.commit()
-    session.refresh(usage_a)
-    session.refresh(usage_b)
-    session.refresh(usage_c)
-    assert usage_a.id is not None
-    assert usage_b.id is not None
-    assert usage_c.id is not None
-    usage_a_id = usage_a.id
-    usage_b_id = usage_b.id
-    usage_c_id = usage_c.id
-
-    return {
-        "builds": {"one": build_one_id, "two": build_two_id},
-        "profiles": {
-            "leapquake": profile_a_id,
-            "support": profile_b_id,
-            "archon": profile_c_id,
-        },
-        "items": {
-            "weapon": item_one.id,
-            "chest": item_two.id,
-            "wand": item_three.id,
-        },
-        "usages": {
-            "main": usage_a_id,
-            "follower": usage_b_id,
-            "kanai": usage_c_id,
-        },
-    }
+from tests.fakes.test_db_utils import seed_salvage_dataset
 
 
 @pytest.fixture
@@ -142,7 +22,7 @@ def api_client(
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:
-        data = _seed_database(session)
+        data = seed_salvage_dataset(session)
 
     app = create_app()
 
@@ -227,3 +107,67 @@ def test_list_item_usages_filters_by_item(
     assert response.status_code == 200
     assert payload["meta"]["total"] == 1
     assert payload["data"][0]["item_id"] == data["items"]["weapon"]
+
+
+def test_build_guides_endpoint_exposes_class_metadata(
+    api_client: tuple[TestClient, dict[str, Any]],
+) -> None:
+    """Build guides endpoint includes aggregated class metadata."""
+    client, _ = api_client
+    response = client.get("/build-guides")
+    assert response.status_code == 200
+    payload = response.json()
+    guides = payload["data"]
+    assert len(guides) == 2
+    assert {guide["class_name"] for guide in guides} == {"Barbarian", "Wizard"}
+
+
+def test_build_variants_endpoint_returns_profiles(
+    api_client: tuple[TestClient, dict[str, Any]],
+) -> None:
+    """Variant listing returns profiles for a build guide."""
+    client, data = api_client
+    build_id = data["builds"]["one"]
+    response = client.get(f"/build-guides/{build_id}/variants")
+    assert response.status_code == 200
+    payload = response.json()
+    variants = payload["data"]
+    assert {variant["name"] for variant in variants} == {"Leapquake", "Support"}
+    assert all(variant["build_guide_id"] == build_id for variant in variants)
+
+
+def test_variant_detail_endpoint_returns_single_profile(
+    api_client: tuple[TestClient, dict[str, Any]],
+) -> None:
+    """Variant detail endpoint returns a single profile payload."""
+    client, data = api_client
+    profile_id = data["profiles"]["leapquake"]
+    response = client.get(f"/variants/{profile_id}")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["id"] == profile_id
+    assert payload["name"] == "Leapquake"
+
+
+def test_item_usage_variant_endpoint_returns_nested_items(
+    api_client: tuple[TestClient, dict[str, Any]],
+) -> None:
+    """Item usage endpoint returns nested item metadata for a variant."""
+    client, data = api_client
+    profile_id = data["profiles"]["leapquake"]
+    response = client.get(f"/item-usage/{profile_id}")
+    assert response.status_code == 200
+    payload = response.json()
+    assert isinstance(payload, list)
+    assert payload, "expected non-empty payload list"
+    assert payload[0]["item"]["name"] == "Mighty Weapon"
+    assert payload[0]["item"]["slot"] == "mainhand"
+
+
+def test_variant_detail_endpoint_returns_404_when_missing(
+    api_client: tuple[TestClient, dict[str, Any]],
+) -> None:
+    """Variant detail endpoint returns 404 for missing profile id."""
+    client, _ = api_client
+    response = client.get("/variants/99999")
+    assert response.status_code == 404

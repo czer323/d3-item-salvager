@@ -1,0 +1,18 @@
+{#
+Shared error state partial for backend outages or unexpected failures.
+Expected context variables:
+- title (optional): short heading for the error block
+- message (optional): longer message to display
+- retry_target (optional): URL for the retry control (HTMX compatible)
+#}
+<div class="alert alert-error" role="alert">
+    <div>
+        <span class="font-semibold">{{ title or "Unable to fetch data" }}</span>
+        <p class="text-sm">{{ message or "Please verify the backend service is running and try again." }}</p>
+    </div>
+    {% if retry_target %}
+    <button class="btn btn-sm" hx-get="{{ retry_target }}" hx-target="closest .htmx-target" hx-swap="outerHTML">
+        Retry
+    </button>
+    {% endif %}
+</div>

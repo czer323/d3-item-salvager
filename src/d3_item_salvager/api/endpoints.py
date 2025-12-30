@@ -1,17 +1,23 @@
 """API route definitions for the FastAPI application."""
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 
 from d3_item_salvager.api.dependencies import SessionDep
 from d3_item_salvager.api.schemas import (
+    BuildGuideListResponse,
+    BuildGuideSchema,
     BuildListResponse,
     BuildSchema,
     ItemListResponse,
+    ItemReferenceSchema,
     ItemSchema,
     ItemUsageListResponse,
     ItemUsageSchema,
+    ItemUsageWithItemSchema,
     ProfileListResponse,
     ProfileSchema,
+    VariantListResponse,
+    VariantSchema,
     build_pagination,
 )
 from d3_item_salvager.data import queries
@@ -134,3 +140,111 @@ async def list_item_usages(
     return ItemUsageListResponse(
         data=payload, meta=build_pagination(limit, offset, total)
     )
+
+
+@router.get(
+    "/build-guides", response_model=BuildGuideListResponse, tags=["build-guides"]
+)
+async def list_build_guides(session: SessionDep) -> BuildGuideListResponse:
+    """Return build guides enriched with inferred class metadata."""
+    rows = queries.list_build_guides_with_classes(session)
+    data: list[BuildGuideSchema] = []
+    for build, class_name in rows:
+        if build.id is None:
+            continue
+        data.append(
+            BuildGuideSchema(
+                id=build.id,
+                title=build.title,
+                url=build.url,
+                class_name=class_name or "Unknown",
+            )
+        )
+    # Provide pagination metadata even though this endpoint currently returns all
+    # results so that response schemas remain consistent with other list
+    # endpoints used by frontend clients.
+    return BuildGuideListResponse(
+        data=data, meta=build_pagination(len(data), 0, len(data))
+    )
+
+
+@router.get(
+    "/build-guides/{build_id}/variants",
+    response_model=VariantListResponse,
+    tags=["variants"],
+)
+async def list_variants(
+    build_id: int,
+    session: SessionDep,
+) -> VariantListResponse:
+    """Return variants (profiles) associated with a build guide."""
+    profiles = queries.list_variants_for_build(session, build_id)
+    payload: list[VariantSchema] = []
+    for profile in profiles:
+        if profile.id is None:
+            continue
+        payload.append(
+            VariantSchema(
+                id=profile.id,
+                name=profile.name,
+                build_guide_id=profile.build_id,
+                class_name=profile.class_name,
+            )
+        )
+    # Provide pagination metadata so the frontend can consume the response
+    # using the same schema as other list endpoints.
+    return VariantListResponse(
+        data=payload, meta=build_pagination(len(payload), 0, len(payload))
+    )
+
+
+@router.get(
+    "/variants/{variant_id}",
+    response_model=VariantSchema,
+    tags=["variants"],
+)
+async def get_variant(variant_id: int, session: SessionDep) -> VariantSchema:
+    """Return details for a single variant (profile)."""
+    profile = queries.get_variant(session, variant_id)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="Variant not found")
+    if profile.id is None:
+        raise HTTPException(status_code=404, detail="Variant not found")
+    return VariantSchema(
+        id=profile.id,
+        name=profile.name,
+        build_guide_id=profile.build_id,
+        class_name=profile.class_name,
+    )
+
+
+@router.get(
+    "/item-usage/{variant_id}",
+    response_model=list[ItemUsageWithItemSchema],
+    tags=["item-usage"],
+)
+async def list_item_usage_for_variant(
+    variant_id: int,
+    session: SessionDep,
+) -> list[ItemUsageWithItemSchema]:
+    """Return item usage entries (with nested item metadata) for a variant."""
+    rows = queries.list_item_usage_with_items(session, variant_id)
+    payload: list[ItemUsageWithItemSchema] = []
+    for usage, item in rows:
+        if usage.id is None:
+            continue
+        payload.append(
+            ItemUsageWithItemSchema(
+                id=usage.id,
+                profile_id=usage.profile_id,
+                item_id=usage.item_id,
+                slot=usage.slot,
+                usage_context=usage.usage_context,
+                item=ItemReferenceSchema(
+                    id=item.id,
+                    name=item.name,
+                    slot=item.type or usage.slot,
+                ),
+            )
+        )
+    return payload

@@ -1,0 +1,11 @@
+{
+    "name": "d3-item-salvager-frontend-tests",
+    "private": true,
+    "devDependencies": {
+        "@playwright/test": "^1.55.0"
+    },
+    "scripts": {
+        "test:e2e": "npx playwright test --config ./tests/playwright/playwright.config.ts",
+        "show-report": "npx playwright show-report ./playwright-report"
+    }
+}
