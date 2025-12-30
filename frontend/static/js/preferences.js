@@ -208,8 +208,12 @@
                 }
                 return {
                     version: this.defaults.version,
-                    classes: normaliseList(parsed.classes) || this.defaults.classes,
-                    builds: normaliseList(parsed.builds) || this.defaults.builds,
+                    classes: Object.prototype.hasOwnProperty.call(parsed, 'classes')
+                        ? normaliseList(parsed.classes)
+                        : this.defaults.classes,
+                    builds: Object.prototype.hasOwnProperty.call(parsed, 'builds')
+                        ? normaliseList(parsed.builds)
+                        : this.defaults.builds,
                 };
             } catch (_error) {
                 this.toast.show('Failed to read saved preferences from localStorage.', 'error');

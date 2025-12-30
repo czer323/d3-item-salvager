@@ -98,7 +98,6 @@ test.describe('Item summary filtering', () => {
 
         // Pick first build and apply
         const firstValue = await buildSelect.locator('option').first().getAttribute('value');
-        const secondValue = await buildSelect.locator('option').nth(1).getAttribute('value');
         await buildSelect.selectOption(firstValue);
         await page.getByTestId('apply-filter-button').click();
 

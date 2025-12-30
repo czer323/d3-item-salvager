@@ -6,12 +6,13 @@ from typing import TYPE_CHECKING, cast
 
 from flask import Blueprint, current_app, g, render_template, request
 
-from frontend.src.services.backend_client import BackendClient, BackendClientError
+from frontend.src.services.backend_client import BackendClientError
 from frontend.src.services.preferences import compose_preferences, to_payload
 from frontend.src.services.selection import build_selection_view
 
 if TYPE_CHECKING:
     from frontend.src.config import FrontendConfig
+    from frontend.src.services.backend_client import BackendClient
 
 base_blueprint = Blueprint("pages", __name__)
 
