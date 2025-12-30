@@ -23,19 +23,21 @@ filters_active
     </div>
     <ul class="grid gap-3 md:grid-cols-2" data-filter-list {% if not has_items %}hidden{% endif %}>
         {% for item in items %}
-        data-item-name="{{ (item.name or 'Unknown') | lower }}" data-testid="{{ data_testid }}-item"> data-item-name="{{
-        item.name | lower }}" data-testid="{{ data_testid }}-item">
-        <div class="card-body gap-2 p-4">
-            <div class="flex items-center justify-between">
-                <span class="badge {{ item.badge_class }} uppercase"
-                    data-testid="{{ data_testid }}-item-classification">{{
-                    (item.classification.display_name if item.classification else 'Unknown')
-                    }}</span> }}</span>
+        <li class="card bg-base-100 shadow-sm" data-item-name="{{ (item.name or 'Unknown') | lower }}"
+            data-testid="{{ data_testid }}-item">
+            <div class="card-body gap-2 p-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-medium">{{ item.name or 'Unknown' }}</h3>
+                    <span class="badge {{ item.badge_class }} uppercase"
+                        data-testid="{{ data_testid }}-item-classification">
+                        {{ (item.classification.display_name if item.classification else 'Unknown') }}
+                    </span>
+                </div>
+                <p class="text-xs uppercase tracking-wide text-base-content/70"
+                    data-testid="{{ data_testid }}-item-slot">{{
+                    item.slot or 'Unknown' }}</p>
+                <p class="text-sm" data-testid="{{ data_testid }}-item-usage">{{ item.usage_label or "N/A" }}</p>
             </div>
-            <p class="text-xs uppercase tracking-wide text-base-content/70" data-testid="{{ data_testid }}-item-slot">{{
-                item.slot or 'Unknown' }}</p>
-            <p class="text-sm" data-testid="{{ data_testid }}-item-usage">{{ item.usage_label or "N/A" }}</p>
-        </div>
         </li>
         {% endfor %}
     </ul>
