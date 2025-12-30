@@ -23,11 +23,11 @@ def dashboard() -> str:
     selection_view = None
     selection_error: str | None = None
 
-    requested_class_ids = _extract_list_values(
+    requested_class_ids = extract_list_values(
         primary_key="class_ids",
         fallback_keys=("class_id",),
     )
-    requested_build_ids = _extract_list_values(
+    requested_build_ids = extract_list_values(
         primary_key="build_ids",
         fallback_keys=("build_id",),
     )
@@ -60,7 +60,7 @@ def dashboard() -> str:
     )
 
 
-def _extract_list_values(
+def extract_list_values(
     *, primary_key: str, fallback_keys: tuple[str, ...]
 ) -> list[str]:
     values = list(request.args.getlist(primary_key))
@@ -68,4 +68,13 @@ def _extract_list_values(
         value = request.args.get(key)
         if value:
             values.append(value)
-    return values
+
+    # Deduplicate while preserving order so callers receive unique values
+    seen: set[str] = set()
+    unique_values: list[str] = []
+    for v in values:
+        if v not in seen:
+            seen.add(v)
+            unique_values.append(v)
+
+    return unique_values
