@@ -206,25 +206,42 @@ def list_build_guides_with_classes(
     now determines the canonical class by inspecting profile values per-build and
     selecting the most common normalized class name. Returns None when no profiles
     exist for a build.
+
+    This implementation performs a single query that outer-joins Build to
+    Profile and groups class names in Python to avoid N+1 queries.
     """
     from d3_item_salvager.utility.class_names import normalize_class_name
 
-    builds = session.exec(select(Build).order_by(Build.title)).all()
+    # Fetch all builds with any associated profile class names in one round-trip
+    statement = (
+        select(Build, Profile.class_name)
+        .join(Profile, isouter=True)
+        .order_by(Build.title)
+    )
+    rows = session.exec(statement).all()
+
+    # Group normalized class names by build id and remember build objects in order
+    classes_by_build_id: dict[int | None, list[str]] = {}
+    builds_by_id: dict[int | None, Build] = {}
+
+    for build, class_name in rows:
+        key = build.id
+        # Preserve the first-seen Build for each key to maintain ordering
+        builds_by_id.setdefault(key, build)
+        if class_name:
+            classes_by_build_id.setdefault(key, []).append(
+                normalize_class_name(class_name)
+            )
+
     results: list[tuple[Build, str | None]] = []
-    for build in builds:
-        if build.id is None:
+    for key, build in builds_by_id.items():
+        normalized_classes = classes_by_build_id.get(key, [])
+        if not normalized_classes:
             results.append((build, None))
             continue
-        rows = session.exec(
-            select(Profile.class_name).where(Profile.build_id == build.id)
-        ).all()
-        normalized = [normalize_class_name(c) for c in rows if c]
-        if not normalized:
-            results.append((build, None))
-            continue
-        counts = Counter(normalized)
-        most_common_class = counts.most_common(1)[0][0]
+        most_common_class = Counter(normalized_classes).most_common(1)[0][0]
         results.append((build, most_common_class))
+
     return results
 
 

@@ -159,6 +159,7 @@ def test_item_usage_variant_endpoint_returns_nested_items(
     assert response.status_code == 200
     payload = response.json()
     assert isinstance(payload, list)
+    assert payload, "expected non-empty payload list"
     assert payload[0]["item"]["name"] == "Mighty Weapon"
     assert payload[0]["item"]["slot"] == "mainhand"
 
