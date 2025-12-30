@@ -29,8 +29,14 @@
         {
             "label": "Start Frontend",
             "type": "shell",
-            "command": "set \"FRONTEND_BACKEND_URL=http://127.0.0.1:8000\" && cd frontend && uv run python -m flask --app app run --port 8001",
+            "command": "uv run python -m flask --app app run --port 8001",
             "isBackground": true,
+            "options": {
+                "cwd": "${workspaceFolder}/frontend",
+                "env": {
+                    "FRONTEND_BACKEND_URL": "http://127.0.0.1:8000"
+                }
+            },
             "presentation": {
                 "reveal": "silent",
                 "revealProblems": "onProblem",
@@ -68,7 +74,12 @@
             "type": "shell",
             "label": "Run pytest with uv",
             "command": "uv run --frozen pytest",
-            "group": "test"
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "showReuseMessage": false
+            }
         },
         {
             "type": "shell",
@@ -77,10 +88,17 @@
             "group": "test"
         },
         {
-            "type": "shell",
+            "type": "process",
             "label": "Run Playwright tests",
-            "command": "cd frontend && npm run test:e2e",
+            "command": "npm",
+            "args": [
+                "run",
+                "test:e2e"
+            ],
             "group": "test",
+            "options": {
+                "cwd": "${workspaceFolder}/frontend"
+            },
             "presentation": {
                 "reveal": "always",
                 "panel": "shared"

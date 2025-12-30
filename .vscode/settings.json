@@ -6,10 +6,6 @@
         "speckit.tasks": true,
         "speckit.implement": true
     },
-    "chat.tools.terminal.autoApprove": {
-        ".specify/scripts/bash/": true,
-        ".specify/scripts/powershell/": true
-    },
     "python.testing.pytestArgs": [
         "-v",
         "tests",
