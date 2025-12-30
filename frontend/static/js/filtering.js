@@ -61,6 +61,8 @@
             this.boundSearchHandler = null;
             this.boundSlotHandler = null;
             this.boundClearHandler = null;
+            this.boundHtmxAfterRequest = null;
+            this.pendingServerRequestTimerId = null;
             this.pendingServerRequest = false;
         }
 
@@ -78,6 +80,28 @@
             this.state.serverSearch = this.root.getAttribute('data-current-search') ?? '';
             this.state.serverSlot = this.root.getAttribute('data-current-slot') ?? '';
             this.pendingServerRequest = false;
+
+            // Wire up an HTMX completion handler to clear the pending flag when the
+            // server-side request finishes. Store the bound handler so it can be
+            // removed later in destroy().
+            if (window.htmx) {
+                this.boundHtmxAfterRequest = (event) => {
+                    try {
+                        const target = event && event.detail && event.detail.target;
+                        if (target && target.id === 'item-summary-content') {
+                            this.pendingServerRequest = false;
+                            if (this.pendingServerRequestTimerId) {
+                                window.clearTimeout(this.pendingServerRequestTimerId);
+                                this.pendingServerRequestTimerId = null;
+                            }
+                        }
+                    } catch (e) {
+                        // eslint-disable-next-line no-console
+                        console.warn('htmx afterRequest handler failed', e);
+                    }
+                };
+                window.htmx.on('htmx:afterRequest', this.boundHtmxAfterRequest);
+            }
 
             if (this.searchInput) {
                 if (this.state.search) {
@@ -114,28 +138,9 @@
                     }
                     this.applyFilters();
 
-                    // Trigger a server-side refresh of the item summary via HTMX by
-                    // submitting the selection form if it exists. This ensures the
-                    // server-rendered DOM is updated to match cleared filters.
-                    try {
-                        // Prefer clicking the Apply filter button so the 'action=apply_items' field
-                        // is included in the form submission; fall back to HTMX submit if the
-                        // button is not available.
-                        const applyBtn = document.querySelector('[data-testid="apply-filter-button"]');
-                        if (applyBtn) {
-                            applyBtn.click();
-                        } else if (window.htmx) {
-                            const selectionForm = document.querySelector('#selection-form');
-                            if (selectionForm) {
-                                htmx.trigger(selectionForm, 'submit');
-                            }
-                        }
-                    } catch (e) {
-                        // Ignore errors - this is a best-effort enhancement
-                        // and should not break client-side filtering.
-                        // eslint-disable-next-line no-console
-                        console.warn('HTMX submit on clear failed', e);
-                    }
+                    // Reuse centralized server-refresh logic to avoid duplicating code.
+                    // `triggerApply` already handles best-effort submit and warnings.
+                    this.triggerApply();
                 };
                 this.clearButton.addEventListener('click', this.boundClearHandler);
             }
@@ -153,6 +158,24 @@
             if (this.clearButton && this.boundClearHandler) {
                 this.clearButton.removeEventListener('click', this.boundClearHandler);
             }
+
+            // Remove HTMX handler if registered and clear any fallback timer
+            try {
+                if (this.boundHtmxAfterRequest && window.htmx) {
+                    window.htmx.off('htmx:afterRequest', this.boundHtmxAfterRequest);
+                    this.boundHtmxAfterRequest = null;
+                }
+            } catch (e) {
+                // eslint-disable-next-line no-console
+                console.warn('Failed to remove htmx handler', e);
+            }
+
+            if (this.pendingServerRequestTimerId) {
+                window.clearTimeout(this.pendingServerRequestTimerId);
+                this.pendingServerRequestTimerId = null;
+            }
+
+            this.pendingServerRequest = false;
         }
 
         applyFilters() {
@@ -202,6 +225,22 @@
             } catch (e) {
                 // eslint-disable-next-line no-console
                 console.warn('triggerApply failed', e);
+            }
+
+            // Fallback: if HTMX isn't available, ensure we clear the pending flag
+            // after a short timeout so the UI isn't permanently blocked.
+            try {
+                if (!window.htmx && this.pendingServerRequest) {
+                    if (this.pendingServerRequestTimerId) {
+                        window.clearTimeout(this.pendingServerRequestTimerId);
+                    }
+                    this.pendingServerRequestTimerId = window.setTimeout(() => {
+                        this.pendingServerRequest = false;
+                        this.pendingServerRequestTimerId = null;
+                    }, 3000);
+                }
+            } catch (e) {
+                // ignore
             }
         }
 
