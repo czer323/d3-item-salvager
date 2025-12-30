@@ -91,10 +91,10 @@ def summary_partial() -> str:
             current_app.logger.exception(
                 "Runtime error while building item usage table"
             )
-            table_error = "An unexpected error occurred"
+            table_error = "Internal server error"
     except Exception:  # pragma: no cover - defensive logging
         current_app.logger.exception("Unexpected error while building item usage table")
-        table_error = "An unexpected error occurred"
+        table_error = "Internal server error"
 
     return render_template(
         "items/summary.html",
