@@ -220,12 +220,18 @@ def list_build_guides_with_classes(
     )
     rows = session.exec(statement).all()
 
-    # Group normalized class names by build id and remember build objects in order
-    classes_by_build_id: dict[int | None, list[str]] = {}
-    builds_by_id: dict[int | None, Build] = {}
+    # Group normalized class names by build id and remember build objects in order.
+    # Build.id is None for transient/unsaved objects, but rows returned from the
+    # database should contain persisted Build records with a non-None id. Add an
+    # assertion to guard against unexpected transient objects and tighten the
+    # local dict key types to `int`.
+    classes_by_build_id: dict[int, list[str]] = {}
+    builds_by_id: dict[int, Build] = {}
 
     for build, class_name in rows:
         key = build.id
+        # Persisted builds must have an id — fail fast if we encounter a None id.
+        assert key is not None, "Expected persisted Build records with non-None id"
         # Preserve the first-seen Build for each key to maintain ordering
         builds_by_id.setdefault(key, build)
         if class_name:

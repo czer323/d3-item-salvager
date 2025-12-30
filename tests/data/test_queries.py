@@ -1,5 +1,6 @@
 """Unit tests for query/filter logic in queries.py."""
 
+import pytest
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, select
 
@@ -199,3 +200,28 @@ def test_list_build_guides_with_classes_none_when_no_profiles(
         assert len(found) == 1
         _, class_name = found[0]
         assert class_name is None
+
+
+def test_list_build_guides_with_classes_asserts_on_none_id() -> None:
+    """If a Build with None id is encountered from query rows, an assertion is raised."""
+    from typing import cast
+
+    from d3_item_salvager.data.models import Build
+    from d3_item_salvager.data.queries import list_build_guides_with_classes
+
+    class FakeResult:
+        def __init__(self, rows: list[tuple[Build, str]]) -> None:
+            self._rows = rows
+
+        def all(self) -> list[tuple[Build, str]]:
+            return self._rows
+
+    class FakeSession:
+        def exec(self, _stmt: object) -> FakeResult:
+            # Return a Build object with id None to simulate a transient object in rows
+            b = Build(title="Transient", url="/t")
+            b.id = None
+            return FakeResult([(b, "Wizard")])
+
+    with pytest.raises(AssertionError, match="Expected persisted Build records"):
+        list_build_guides_with_classes(cast("Session", FakeSession()))
