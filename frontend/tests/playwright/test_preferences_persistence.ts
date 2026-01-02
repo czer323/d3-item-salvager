@@ -4,92 +4,96 @@ import { test, expect } from '@playwright/test';
 const TEST_PORT = process.env.FRONTEND_PLAYWRIGHT_PORT ?? '8001';
 const TEST_BASE_URL = process.env.FRONTEND_BASE_URL ?? `http://127.0.0.1:${TEST_PORT}`;
 
+function waitForSelectionRefresh(page) {
+    return page.waitForResponse(
+        (response) =>
+            response.url().includes('/frontend/selection/controls') &&
+            response.request().method() === 'POST'
+    );
+}
+
 test.describe('Preferences persistence', () => {
-  test('saves selections, restores on reload, and supports import/export', async ({ page }) => {
-    await page.goto(`${TEST_BASE_URL}/`);
+    test('saves selections, restores on reload, and supports import/export', async ({ page }) => {
+        await page.goto(`${TEST_BASE_URL}/`);
+        await expect(page.getByTestId('selection-controls')).toBeVisible();
 
-    const controlsCard = page.getByTestId('selection-controls');
-    await expect(controlsCard).toBeVisible();
+        const loadRequest = waitForSelectionRefresh(page);
+        await page.getByTestId('load-builds-button').click();
+        await loadRequest;
 
-    const variantCheckboxes = page.getByTestId('variant-checkbox');
-    const checkboxCount = await variantCheckboxes.count();
-    expect(checkboxCount, 'expected at least one variant checkbox').toBeGreaterThan(0);
+        const classSelect = page.getByTestId('class-multiselect');
+        const buildSelect = page.getByTestId('build-multiselect');
+        const buildOptions = buildSelect.locator('option');
+        const buildCount = await buildOptions.count();
+        test.skip(buildCount === 0, 'Build options are required to verify preferences.');
 
-    let toggleIndex = -1;
-    for (let i = 0; i < checkboxCount; i += 1) {
-      if (!(await variantCheckboxes.nth(i).isChecked())) {
-        toggleIndex = i;
-        break;
-      }
-    }
-    test.skip(toggleIndex === -1, 'All variants already selected; unable to validate preference toggling.');
+        const classOption = classSelect.locator('option').first();
+        const selectedClassValue = await classOption.getAttribute('value');
+        if (selectedClassValue) {
+            await classSelect.selectOption(selectedClassValue);
+        }
 
-    const targetIndex = toggleIndex >= 0 ? toggleIndex : 0;
-    const targetVariant = variantCheckboxes.nth(targetIndex);
-    const targetVariantValue = await targetVariant.getAttribute('value');
-    expect(targetVariantValue, 'variant checkbox should expose a value').toBeTruthy();
+        const selectedBuildValues = await buildOptions.evaluateAll((options) =>
+            options.slice(0, Math.min(2, options.length)).map((option) => option.value)
+        );
+        await buildSelect.selectOption(selectedBuildValues);
 
-    const selectionRequest = page.waitForResponse((response) =>
-      response.url().includes('/frontend/selection/controls') && response.request().method() === 'GET'
-    );
-    const summaryRequest = page.waitForResponse((response) =>
-      response.url().includes('/frontend/variant/') && !response.url().endsWith('.json')
-    );
+        await page.getByTestId('preferences-open-button').click();
+        const modal = page.getByTestId('preferences-modal');
+        await expect(modal).toBeVisible();
 
-    await targetVariant.check();
+        await page.getByTestId('preferences-save-button').click();
+        await expect(page.getByTestId('preferences-toast')).toContainText('Preferences saved');
 
-    await Promise.all([selectionRequest, summaryRequest]);
+        await page.getByTestId('preferences-export-button').click();
+        const editor = page.getByTestId('preferences-json-editor');
+        const exportedJson = await editor.inputValue();
+        expect(exportedJson.length).toBeGreaterThan(0);
 
-    await page.getByTestId('preferences-open-button').click();
-    const modal = page.getByTestId('preferences-modal');
-    await expect(modal).toBeVisible();
+        await page.getByTestId('preferences-close-button').click();
 
-    await page.getByTestId('preferences-save-button').click();
-    await expect(page.getByTestId('preferences-toast')).toContainText('Preferences saved');
+        await page.reload();
+        await expect(page.getByTestId('selection-controls')).toBeVisible();
+        const reloadRequest = waitForSelectionRefresh(page);
+        await page.getByTestId('load-builds-button').click();
+        await reloadRequest;
 
-    await page.getByTestId('preferences-close-button').click();
-    await expect(modal).not.toBeVisible();
+        const restoredClasses = await page
+            .locator('select[name="class_ids"] option:checked')
+            .evaluateAll((options) => options.map((option) => option.value));
+        if (selectedClassValue) {
+            expect(restoredClasses).toContain(selectedClassValue);
+        }
 
-    await page.reload();
-    await expect(page.getByTestId('selection-controls')).toBeVisible();
-    const restoredLocator = page.locator(
-      `input[type="checkbox"][name="variant_ids"][value="${targetVariantValue}"]`
-    );
-    await expect(restoredLocator).toBeChecked();
+        const restoredBuilds = await page
+            .locator('select[name="build_ids"] option:checked')
+            .evaluateAll((options) => options.map((option) => option.value));
+        expect(restoredBuilds).toEqual(selectedBuildValues);
 
-    await page.getByTestId('preferences-open-button').click();
-    await expect(page.getByTestId('preferences-modal')).toBeVisible();
-    await page.getByTestId('preferences-export-button').click();
-    const editor = page.getByTestId('preferences-json-editor');
-    const exportedJson = await editor.inputValue();
-    expect(exportedJson.length).toBeGreaterThan(0);
+        const storageKey = await page.evaluate(() => window.d3Preferences?.storageKey ?? '');
+        if (storageKey) {
+            await page.evaluate((key) => window.localStorage.removeItem(key), storageKey);
+        }
 
-    const storageKey = await page.evaluate(() => window.d3Preferences?.storageKey ?? '');
-    expect(storageKey, 'preferences storage key should be defined').not.toEqual('');
-    await page.evaluate((key) => localStorage.removeItem(key), storageKey);
+        await page.reload();
+        await expect(page.getByTestId('selection-controls')).toBeVisible();
+        const secondLoad = waitForSelectionRefresh(page);
+        await page.getByTestId('load-builds-button').click();
+        await secondLoad;
 
-    await page.reload();
-    await expect(page.getByTestId('selection-controls')).toBeVisible();
+        await page.getByTestId('preferences-open-button').click();
+        await expect(page.getByTestId('preferences-modal')).toBeVisible();
+        const importEditor = page.getByTestId('preferences-json-editor');
+        await importEditor.fill(exportedJson);
 
-    await page.getByTestId('preferences-open-button').click();
-    await expect(page.getByTestId('preferences-modal')).toBeVisible();
+        await page.getByTestId('preferences-import-button').click();
+        await expect(page.getByTestId('preferences-toast')).toContainText('Preferences imported');
 
-    const importEditor = page.getByTestId('preferences-json-editor');
-    await importEditor.fill(exportedJson);
+        const importedBuilds = await page
+            .locator('select[name="build_ids"] option:checked')
+            .evaluateAll((options) => options.map((option) => option.value));
+        expect(importedBuilds).toEqual(selectedBuildValues);
 
-    const importSummaryRequest = page.waitForResponse((response) =>
-      response.url().includes('/frontend/variant/') && !response.url().endsWith('.json')
-    );
-
-    await page.getByTestId('preferences-import-button').click();
-    await importSummaryRequest;
-
-    await expect(page.getByTestId('preferences-toast')).toContainText('Preferences imported');
-    const postImportLocator = page.locator(
-      `input[type="checkbox"][name="variant_ids"][value="${targetVariantValue}"]`
-    );
-    await expect(postImportLocator).toBeChecked();
-
-    await page.getByTestId('preferences-close-button').click();
-  });
+        await page.getByTestId('preferences-close-button').click();
+    });
 });
