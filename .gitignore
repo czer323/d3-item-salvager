@@ -23,6 +23,6 @@ Thumbs.db
 *.log
 *.tmp
 *.swp
-playwright-report
-/frontend/test-results
-playwright-debug
+**/playwright-report
+**/test-results
+**/playwright-debug
