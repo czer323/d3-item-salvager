@@ -58,6 +58,13 @@ test.describe('Preferences persistence', () => {
         await page.getByTestId('load-builds-button').click();
         await reloadRequest;
 
+        // Wait until the UI reflects restored selections to avoid race conditions.
+        // Prefer Playwright web-first assertions which auto-retry until condition is met.
+        await expect(page.locator('select[name="build_ids"] option:checked')).toHaveCount(selectedBuildValues.length);
+        if (selectedClassValue) {
+            await expect(page.locator('select[name="class_ids"] option:checked')).toHaveCount(1);
+        }
+
         const restoredClasses = await page
             .locator('select[name="class_ids"] option:checked')
             .evaluateAll((options) => options.map((option) => option.value));
@@ -88,6 +95,10 @@ test.describe('Preferences persistence', () => {
 
         await page.getByTestId('preferences-import-button').click();
         await expect(page.getByTestId('preferences-toast')).toContainText('Preferences imported');
+
+        // Wait until the selected build options reflect the imported preferences.
+        // Prefer a locator assertion which auto-waits for the expected number of checked options.
+        await expect(page.locator('select[name="build_ids"] option:checked')).toHaveCount(selectedBuildValues.length);
 
         const importedBuilds = await page
             .locator('select[name="build_ids"] option:checked')

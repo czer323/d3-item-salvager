@@ -43,7 +43,9 @@ PYTHON = (
     os.environ.get("PYTHON") or sys.executable or "python"
 )  # allow overriding the interpreter with env var for CI/Playwright
 
-FRONTEND_CWD = os.path.join(os.path.dirname(__file__), "../..")  # frontend root
+FRONTEND_CWD = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..")
+)  # frontend root
 # Repo root is one level above the frontend root
 REPO_ROOT = os.path.abspath(os.path.join(FRONTEND_CWD, ".."))
 
@@ -101,7 +103,7 @@ def start_frontend() -> subprocess.Popen[bytes] | None:
             "-m",
             "flask",
             "--app",
-            "app",
+            "app:create_app",
             "run",
             "--port",
             str(FRONTEND_PORT),
@@ -112,7 +114,7 @@ def start_frontend() -> subprocess.Popen[bytes] | None:
             "-m",
             "flask",
             "--app",
-            "app",
+            "app:create_app",
             "run",
             "--port",
             str(FRONTEND_PORT),
