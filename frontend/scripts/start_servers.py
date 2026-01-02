@@ -165,16 +165,40 @@ def main() -> None:
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
 
-    start_backend()
-    start_frontend()
+    backend_proc = start_backend()
+    frontend_proc = start_frontend()
 
-    print(f"Waiting for backend at {BACKEND_URL}...")
-    wait_for_url(BACKEND_URL, timeout_sec=10)
-    print("Backend is up.")
+    started_ok = False
+    try:
+        print(f"Waiting for backend at {BACKEND_URL}...")
+        wait_for_url(BACKEND_URL, timeout_sec=10)
+        print("Backend is up.")
 
-    print(f"Waiting for frontend at {FRONTEND_URL}...")
-    wait_for_url(FRONTEND_URL, timeout_sec=10)
-    print("Frontend is up.")
+        print(f"Waiting for frontend at {FRONTEND_URL}...")
+        wait_for_url(FRONTEND_URL, timeout_sec=10)
+        print("Frontend is up.")
+
+        started_ok = True
+    except Exception:
+        print("Error during startup; shutting down spawned processes.", file=sys.stderr)
+        raise
+    finally:
+        if not started_ok:
+            # Ensure any processes we started are terminated
+            for p in (backend_proc, frontend_proc):
+                if p is None:
+                    continue
+                with contextlib.suppress(Exception):
+                    p.terminate()
+
+            # give them a second
+            time.sleep(1)
+            for p in (backend_proc, frontend_proc):
+                if p is None:
+                    continue
+                if p.poll() is None:
+                    with contextlib.suppress(Exception):
+                        p.kill()
 
     print("Both servers are ready. Sleeping until signalled.")
     try:
