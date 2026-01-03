@@ -280,8 +280,13 @@
             const classSelect = form.querySelector('select[name="class_ids"]');
             const buildSelect = form.querySelector('select[name="build_ids"]');
             this.applySelectValues(classSelect, state.classes);
-            this.applySelectValues(buildSelect, state.builds);
-            this.pendingState = null;
+            const hasBuildOptions = Boolean(buildSelect && buildSelect.options && buildSelect.options.length > 0);
+            if (hasBuildOptions) {
+                this.applySelectValues(buildSelect, state.builds);
+                this.pendingState = null;
+            } else {
+                this.pendingState = state;
+            }
         }
 
         getEditor() {

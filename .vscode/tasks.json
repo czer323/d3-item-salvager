@@ -103,18 +103,6 @@
                 "reveal": "always",
                 "panel": "shared"
             }
-        },
-        {
-            "label": "Run Playwright with servers",
-            "dependsOn": [
-                "Start Both",
-                "Run Playwright tests"
-            ],
-            "dependsOrder": "sequence",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            }
         }
     ]
 }
