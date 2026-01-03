@@ -6,16 +6,16 @@ This tasks.md follows the speckit tasks format. Tasks are grouped into phases an
 
 Phase 1 — Setup
 
-- [ ] T001 [P] Create contracts directory and add initial contracts in `specs/002-frontend-ui-redesign/contracts/` (`build-items.json`, `items-lookup.json`) — `specs/002-frontend-ui-redesign/contracts/`
+- [x] T001 [P] Create contracts directory and add initial contracts in `specs/002-frontend-ui-redesign/contracts/` (`build-items.json`, `items-lookup.json`) — `specs/002-frontend-ui-redesign/contracts/`
 - [ ] T002 Add quickstart and README entries for the feature (`specs/002-frontend-ui-redesign/quickstart.md`, `README.md`) — `specs/002-frontend-ui-redesign/quickstart.md`, `specs/002-frontend-ui-redesign/README.md`
-- [ ] T003 [P] Add research notes and link to existing fuzzy impl (`specs/002-frontend-ui-redesign/research.md`) — `specs/002-frontend-ui-redesign/research.md`
+- [x] T003 [P] Add research notes and link to existing fuzzy impl (`specs/002-frontend-ui-redesign/research.md`) — `specs/002-frontend-ui-redesign/research.md`
 
 Phase 2 — Foundational / Backend (blocking)
 
-- [ ] T004 [US3] [P] Port `fuzzy_score` into a backend shared util at `src/d3_item_salvager/utility/search.py` with unit tests mirroring frontend tests — `src/d3_item_salvager/utility/search.py`, `tests/unit/test_search.py`
-- [ ] T005 [P] Implement `GET /items/lookup` API endpoint returning `SearchResult` (match_type, item, suggestions, salvageable) and wire to shared search util — `src/d3_item_salvager/api/endpoints.py`, `src/d3_item_salvager/api/schemas.py`, `tests/integration/test_items_lookup.py`
-- [ ] T006 [P] Implement `GET /builds/items?build_ids=...` API endpoint that returns the union of items for provided build ids (de-duplicated, alphabetical, paginated) — `src/d3_item_salvager/api/endpoints.py`, `tests/integration/test_builds_items.py`
-- [ ] T007 Add backend unit & contract tests for T005/T006 and ensure OpenAPI matches `specs/002-frontend-ui-redesign/contracts/` — `tests/contract/`, `tests/unit/`
+- [x] T004 [US3] [P] Port `fuzzy_score` into a backend shared util at `src/d3_item_salvager/utility/search.py` with unit tests mirroring frontend tests — `src/d3_item_salvager/utility/search.py`, `tests/unit/test_search.py`
+- [x] T005 [P] Implement `GET /items/lookup` API endpoint returning `SearchResult` (match_type, item, suggestions, salvageable) and wire to shared search util — `src/d3_item_salvager/api/endpoints.py`, `src/d3_item_salvager/api/schemas.py`, `tests/integration/test_items_lookup.py`
+- [x] T006 [P] Implement `GET /builds/items?build_ids=...` API endpoint that returns the union of items for provided build ids (de-duplicated, alphabetical, paginated) — `src/d3_item_salvager/api/endpoints.py`, `tests/integration/test_builds_items.py`
+- [x] T007 Add backend unit & contract tests for T005/T006 and ensure OpenAPI matches `specs/002-frontend-ui-redesign/contracts/` — `tests/contract/`, `tests/unit/`
 
 Phase 3 — Frontend: Selection UI (US1)
 
@@ -62,9 +62,9 @@ Phase 7 — Integration, QA & Accessibility
 
 ### Phase 2–6 — Test-first subtasks (explicit placeholders)
 
-- [ ] T004a [P] Write failing unit tests for the backend fuzzy util (T004); `tests/unit/filtering/test_search_util.py` (test-first)
-- [ ] T005a [P] Write failing integration tests for `/items/lookup` (T005); `tests/integration/test_items_lookup.py` (test-first)
-- [ ] T006a [P] Write failing integration tests for `/builds/items` (T006); `tests/integration/test_builds_items.py` (test-first)
+- [x] T004a [P] Write failing unit tests for the backend fuzzy util (T004); `tests/unit/filtering/test_search_util.py` (test-first)
+- [x] T005a [P] Write failing integration tests for `/items/lookup` (T005); `tests/integration/test_items_lookup.py` (test-first)
+- [x] T006a [P] Write failing integration tests for `/builds/items` (T006); `tests/integration/test_builds_items.py` (test-first)
 - [ ] T008a [P] Write failing unit/integration tests for selection panel behaviors (T008); `frontend/tests/unit/test_selection_panel.py` (test-first)
 - [ ] T009a [P] Write failing tests for selection summary and collapse (T009); `frontend/tests/unit/test_selection_summary.py` (test-first)
 - [ ] T010a [P] Write failing keyboard/accessibility tests for selection flows (T010); `frontend/tests/unit/test_selection_keyboard.py` (test-first)

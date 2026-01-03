@@ -131,6 +131,38 @@ class ItemUsageListResponse(BaseModel):
     meta: Pagination
 
 
+class BuildItemSchema(BaseModel):
+    """Item representation used by the builds items endpoint."""
+
+    id: str
+    name: str
+    slot: str
+    quality: str
+
+
+class BuildItemsResponse(BaseModel):
+    """API response payload for items aggregated across builds."""
+
+    data: list[BuildItemSchema]
+    meta: Pagination
+
+
+class SuggestionSchema(BaseModel):
+    """Compact suggestion representation returned by the lookup endpoint."""
+
+    id: str
+    name: str
+
+
+class SearchResult(BaseModel):
+    """Search result payload for item lookup endpoint."""
+
+    match_type: str
+    item: ItemReferenceSchema | None = None
+    suggestions: list[SuggestionSchema] = []
+    salvageable: bool = False
+
+
 def build_pagination(limit: int, offset: int, total: int) -> Pagination:
     """Helper function to build pagination metadata."""
     return Pagination(limit=limit, offset=offset, total=total)

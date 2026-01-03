@@ -16,11 +16,8 @@ from frontend.src.services.backend_client import BackendClient
 from tests.fakes.test_db_utils import seed_salvage_dataset
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
-
     from sqlalchemy.engine import Engine
 else:  # pragma: no cover - typing fallbacks for runtime
-    Generator = Any  # type: ignore[assignment]
     Engine = Any  # type: ignore[assignment]
 
 
@@ -38,7 +35,8 @@ def test_frontend_variant_json_round_trip(
 
     backend_app = create_backend_app()
 
-    def override_session() -> Generator[Session, None, None]:
+    def override_session():  # noqa: ANN202
+        # Provide a generator-style dependency that yields a DB session
         with Session(engine) as session:
             yield session
 
