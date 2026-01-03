@@ -4,6 +4,11 @@ import { test, expect } from '@playwright/test';
 const TEST_PORT = process.env.FRONTEND_PLAYWRIGHT_PORT ?? '8001';
 const TEST_BASE_URL = process.env.FRONTEND_BASE_URL ?? `http://127.0.0.1:${TEST_PORT}`;
 
+/**
+ * Load builds, apply the selection, and return the item summary locator.
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<import('@playwright/test').Locator>}
+ */
 async function loadItemSummary(page) {
   await page.goto(`${TEST_BASE_URL}/`);
   await expect(page.getByTestId('selection-controls')).toBeVisible();

@@ -24,6 +24,7 @@ import socket
 import subprocess
 import sys
 import time
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 FRONTEND_PORT = int(
@@ -135,10 +136,12 @@ def wait_for_url(url: str, timeout_sec: int = 5) -> None:
     while time.time() < deadline:
         try:
             req = Request(url, method="GET")
-            with urlopen(req, timeout=2) as resp:  # type: ignore
-                if resp.status == 200:
+            with urlopen(req, timeout=2) as resp:
+                if getattr(resp, "status", None) == 200:
                     return
-        except Exception:
+        except (URLError, HTTPError, OSError):
+            # Ignore any connection/HTTP errors during polling; we will raise below if the
+            # service does not become available before the timeout expires.
             pass
         time.sleep(0.5)
     msg = f"Timed out waiting for {url}"

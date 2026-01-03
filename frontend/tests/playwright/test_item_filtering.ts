@@ -16,6 +16,11 @@ function firstFragment(text: string) {
     return trimmed.slice(0, Math.min(6, trimmed.length));
 }
 
+/**
+ * Load up to 3 builds for the first available class and populate the build selector.
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<void>}
+ */
 async function loadBuilds(page) {
     await page.goto(`${TEST_BASE_URL}/`);
     await expect(page.getByTestId('selection-controls')).toBeVisible();
@@ -46,6 +51,11 @@ async function loadBuilds(page) {
     }
 }
 
+/**
+ * Apply selection and wait for the item summary to be visible.
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<import('@playwright/test').Locator>}
+ */
 async function applySelection(page) {
     const summary = page.getByTestId('item-summary');
     await page.getByTestId('apply-filter-button').click();
@@ -128,6 +138,9 @@ test.describe('Item summary filtering', () => {
 
         const firstBuildValue = await buildOptions.nth(0).getAttribute('value');
         const secondBuildValue = await buildOptions.nth(1).getAttribute('value');
+        if (!secondBuildValue) {
+            test.skip('Second build value is not available for this test run.');
+        }
 
         await buildSelect.selectOption(firstBuildValue ?? undefined);
         const summaryRoot = await applySelection(page);
@@ -166,7 +179,7 @@ test.describe('Item summary filtering', () => {
         );
         await Promise.all([clearButton.click(), clearReload]);
 
-        await expect.poll(async () => await rows.count(), { timeout: 5000 }).toBeGreaterThanOrEqual(postSwitchCount);
+        await expect.poll(async () => await rows.count(), { timeout: 5000 }).toBeGreaterThan(postSwitchCount);
         await expect(searchInput).toHaveValue('');
     });
 });

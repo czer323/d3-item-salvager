@@ -4,6 +4,11 @@ import { test, expect } from '@playwright/test';
 const TEST_PORT = process.env.FRONTEND_PLAYWRIGHT_PORT ?? '8001';
 const TEST_BASE_URL = process.env.FRONTEND_BASE_URL ?? `http://127.0.0.1:${TEST_PORT}`;
 
+/**
+ * Wait for the selection control POST request which refreshes available builds/classes.
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<import('@playwright/test').APIResponse>}
+ */
 function waitForSelectionRefresh(page) {
     return page.waitForResponse(
         (response) =>
@@ -87,6 +92,10 @@ test.describe('Preferences persistence', () => {
         const secondLoad = waitForSelectionRefresh(page);
         await page.getByTestId('load-builds-button').click();
         await secondLoad;
+
+        // After clearing localStorage, selections should be empty/default.
+        await expect(page.locator('select[name="build_ids"] option:checked')).toHaveCount(0);
+        await expect(page.locator('select[name="class_ids"] option:checked')).toHaveCount(0);
 
         await page.getByTestId('preferences-open-button').click();
         await expect(page.getByTestId('preferences-modal')).toBeVisible();

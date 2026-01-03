@@ -9,7 +9,7 @@ import type { PlaywrightTestConfig } from '@playwright/test';
 // If `@types/node` is not installed in the frontend package, declare Node globals
 // used by this config so TypeScript doesn't complain in the editor/CI.
 declare const __dirname: string;
-declare const process: any;
+declare const process: { env: Record<string, string | undefined>; platform?: string | undefined };
 
 const DEFAULT_PORT = process.env.FRONTEND_PLAYWRIGHT_PORT ?? '8001';
 const DEFAULT_BASE_URL = process.env.FRONTEND_BASE_URL ?? `http://127.0.0.1:${DEFAULT_PORT}`;
@@ -24,13 +24,23 @@ const VENV_PY = process.platform === 'win32'
   ? path.join(FRONTEND_ROOT, '..', '.venv', 'Scripts', 'python.exe')
   : path.join(FRONTEND_ROOT, '..', '.venv', 'bin', 'python');
 
+const quoteForShell = (p: string): string => {
+  if (!p) return '';
+  if (process.platform === 'win32') {
+    // Wrap in double quotes and escape internal double quotes for cmd.exe / PowerShell.
+    return `"${p.replace(/"/g, '\\"')}"`;
+  }
+  // POSIX-style: wrap in single quotes and escape existing single quotes.
+  return "'" + p.replace(/'/g, "'\\''") + "'";
+};
+
 const projectRoot = path.resolve(FRONTEND_ROOT, '..');
 const startServersScript = path.join(FRONTEND_ROOT, 'scripts', 'start_servers.py');
 const preferredPython = process.env.PYTHON ?? VENV_PY;
 const pythonPath = preferredPython && fs.existsSync(preferredPython) ? preferredPython : undefined;
 const startServersCommand = process.env.PLAYWRIGHT_USE_UV === '0'
-  ? `${pythonPath ?? 'python'} ${JSON.stringify(startServersScript)}`
-  : `uv run --project ${JSON.stringify(projectRoot)} python ${JSON.stringify(startServersScript)}`;
+  ? `${pythonPath ?? 'python'} ${quoteForShell(startServersScript)}`
+  : `uv run --project ${quoteForShell(projectRoot)} python ${quoteForShell(startServersScript)}`;
 
 const webServerEnv: Record<string, string> = {
   FRONTEND_PLAYWRIGHT_PORT: DEFAULT_PORT,
