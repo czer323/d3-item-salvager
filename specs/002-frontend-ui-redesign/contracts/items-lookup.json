@@ -1,0 +1,89 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Items Lookup",
+        "version": "0.1.0"
+    },
+    "paths": {
+        "/items/lookup": {
+            "get": {
+                "summary": "Lookup an item by query (exact|fuzzy)",
+                "parameters": [
+                    {
+                        "name": "query",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 3
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Search result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "match_type"
+                                    ],
+                                    "properties": {
+                                        "match_type": {
+                                            "type": "string",
+                                            "enum": [
+                                                "exact",
+                                                "fuzzy",
+                                                "none"
+                                            ]
+                                        },
+                                        "item": {
+                                            "type": "object",
+                                            "nullable": true,
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "slot": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        },
+                                        "suggestions": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "salvageable": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

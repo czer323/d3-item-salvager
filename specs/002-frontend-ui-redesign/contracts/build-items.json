@@ -1,0 +1,99 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Build Items",
+        "version": "0.1.0"
+    },
+    "paths": {
+        "/builds/items": {
+            "get": {
+                "summary": "Get items for the provided build(s)",
+                "parameters": [
+                    {
+                        "name": "build_ids",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "Comma-separated build ids e.g., 1,2"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 100
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 0
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of unique items for the build set",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": [
+                                                    "id",
+                                                    "name",
+                                                    "slot"
+                                                ],
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "slot": {
+                                                        "type": "string"
+                                                    },
+                                                    "quality": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "set",
+                                                            "legendary"
+                                                        ],
+                                                        "description": "Item quality. Mutually exclusive: 'set' or 'legendary'"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "limit": {
+                                                    "type": "integer"
+                                                },
+                                                "offset": {
+                                                    "type": "integer"
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
