@@ -39,8 +39,8 @@ const startServersScript = path.join(FRONTEND_ROOT, 'scripts', 'start_servers.py
 const preferredPython = process.env.PYTHON ?? VENV_PY;
 const pythonPath = preferredPython && fs.existsSync(preferredPython) ? preferredPython : undefined;
 const startServersCommand = process.env.PLAYWRIGHT_USE_UV === '0'
-  ? `${pythonPath ?? 'python'} ${quoteForShell(startServersScript)}`
-  : `uv run --project ${quoteForShell(projectRoot)} python ${quoteForShell(startServersScript)}`;
+  ? `${quoteForShell(pythonPath ?? 'python')} ${quoteForShell(startServersScript)}`
+  : `uv run --project ${quoteForShell(projectRoot)} ${quoteForShell(pythonPath ?? 'python')} ${quoteForShell(startServersScript)}`;
 
 const webServerEnv: Record<string, string> = {
   FRONTEND_PLAYWRIGHT_PORT: DEFAULT_PORT,
