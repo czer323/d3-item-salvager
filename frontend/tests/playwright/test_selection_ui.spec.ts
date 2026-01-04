@@ -54,4 +54,40 @@ test.describe('Selection UI - collapsed summary and edit affordance', () => {
         const controls = page.getByTestId('selection-controls');
         await expect(controls).toBeVisible();
     });
+
+    test('applying selection collapses the UI into the summary', async ({ page }) => {
+        await page.goto(`${TEST_BASE_URL}/`);
+
+        // Ensure controls visible initially
+        await expect(page.getByTestId('selection-controls')).toBeVisible();
+
+        // Load builds first
+        const loadRequest = page.waitForResponse((resp) =>
+            resp.url().includes('/frontend/selection/controls') && resp.request().method() === 'POST'
+        );
+        await page.getByTestId('load-builds-button').click();
+        await loadRequest;
+
+        // Select at least one build option if available
+        const buildOptions = page.locator('select[name="build_ids"] option');
+        const count = await buildOptions.count();
+        test.skip(count === 0, 'No build options available to test apply behavior');
+
+        const firstVal = await buildOptions.first().getAttribute('value');
+        if (firstVal) {
+            await page.locator('select[name="build_ids"]').selectOption(firstVal);
+        }
+
+        // Click Apply and wait for the POST which triggers collapse
+        const applyRequest = page.waitForResponse((resp) =>
+            resp.url().includes('/frontend/selection/controls') && resp.request().method() === 'POST'
+        );
+
+        await page.getByTestId('apply-filter-button').click();
+        await applyRequest;
+
+        // Summary should be visible and controls hidden
+        await expect(page.locator('#selection-summary')).toBeVisible();
+        await expect(page.getByTestId('selection-controls')).toBeHidden();
+    });
 });
