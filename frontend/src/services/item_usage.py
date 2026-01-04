@@ -39,7 +39,6 @@ class ItemUsageStatus(str, Enum):
     """Disposition of an item relative to the selected builds."""
 
     USED = "used"
-    SALVAGE = "salvage"
 
 
 @dataclass(slots=True)
@@ -258,46 +257,17 @@ def _merge_catalogue_with_usage(
     rows: list[ItemUsageRow] = []
     catalogue_map = {record.id: record for record in catalogue}
 
-    for record in catalogue:
-        accumulator = usage.get(record.id)
-        if accumulator:
-            contexts = tuple(sorted(accumulator.contexts))
-            classification = classify_usage_contexts(contexts)
-            rows.append(
-                ItemUsageRow(
-                    item_id=record.id,
-                    name=record.name,
-                    slot=record.slot,
-                    status=ItemUsageStatus.USED,
-                    classification=classification,
-                    usage_contexts=contexts,
-                    variant_ids=tuple(sorted(accumulator.variant_ids)),
-                )
-            )
-        else:
-            rows.append(
-                ItemUsageRow(
-                    item_id=record.id,
-                    name=record.name,
-                    slot=record.slot,
-                    status=ItemUsageStatus.SALVAGE,
-                    classification=SalvageLabel.SALVAGE,
-                    usage_contexts=(),
-                    variant_ids=(),
-                )
-            )
-
-    # Include any usage entries not present in the catalogue for completeness.
     for item_id, accumulator in usage.items():
-        if item_id in catalogue_map:
-            continue
         contexts = tuple(sorted(accumulator.contexts))
         classification = classify_usage_contexts(contexts)
+        record = catalogue_map.get(item_id)
+        name = record.name if record else accumulator.name
+        slot = record.slot if record else accumulator.slot
         rows.append(
             ItemUsageRow(
                 item_id=item_id,
-                name=accumulator.name,
-                slot=accumulator.slot,
+                name=name,
+                slot=slot,
                 status=ItemUsageStatus.USED,
                 classification=classification,
                 usage_contexts=contexts,
@@ -305,9 +275,7 @@ def _merge_catalogue_with_usage(
             )
         )
 
-    rows.sort(
-        key=lambda row: (row.status.value, row.slot.casefold(), row.name.casefold())
-    )
+    rows.sort(key=lambda row: (row.slot.casefold(), row.name.casefold()))
     return rows
 
 

@@ -32,9 +32,9 @@ Phase 4 — Frontend: Item list population (US2)
 
 Phase 5 — Frontend: Search & Validation (US3)
 
-- [ ] T015 [US3] Hook up search box to `GET /items/lookup`; implement search result UI (exact highlight, fuzzy suggestions dropdown, salvageable state) — `frontend/src/components/search.js`, `frontend/templates/search.html`
-- [ ] T016 [US3] Add affordance buttons to add a suggested item to the current selection or mark as salvageable and persist to browser `localStorage` so selections persist across refreshes — `frontend/src/components/search.js`, `frontend/src/services/preferences.js`
-- [ ] T017 [US3] Add unit and integration tests for search behaviors (exact, fuzzy, none) — `frontend/tests/unit/test_search.py`, `tests/integration/test_search_integration.py`
+- [x] T015 [US3] Hook up search box to `GET /items/lookup`; implement search result UI (exact highlight, fuzzy suggestions dropdown, salvageable state) — `frontend/static/js/search.js`, `frontend/templates/search.html`
+- [x] T016 [US3] Add affordance buttons to add a suggested item to the current selection or mark as salvageable and persist to browser `localStorage` so selections persist across refreshes — `frontend/static/js/search.js`, `frontend/static/js/preferences.js`
+- [x] T017 [US3] Add unit and integration tests for search behaviors (exact, fuzzy, none) — `frontend/tests/unit/test_search.py`, `tests/integration/test_search_integration.py`
 
 Phase 6 — Frontend: Item Table & Filters (US4)
 
@@ -73,9 +73,9 @@ Phase 7 — Integration, QA & Accessibility
 - [ ] T012a [P] Write failing tests for de-duplication and ordering (T012); `tests/unit/test_de_duplication.py` (test-first)
 - [ ] T013a [P] Write failing tests for virtualization/pagination behavior (T013); `frontend/tests/unit/test_virtual_list.py` (test-first)
 - [ ] T014a [P] Write failing integration tests for union behavior (T014); `tests/integration/test_union_items.py` (test-first)
-- [ ] T015a [P] Write failing unit/integration tests for search UI & lookup integration (T015); `frontend/tests/unit/test_search_ui.py`, `tests/integration/test_search_integration.py` (test-first)
-- [ ] T016a [P] Write failing tests for add-to-selection and salvage flows (T016); `frontend/tests/unit/test_search_actions.py` (test-first)
-- [ ] T017a [P] Write failing tests for search behaviors (T017); `frontend/tests/unit/test_search_behavior.py` (test-first)
+- [x] T015a [P] Write failing unit/integration tests for search UI & lookup integration (T015); `frontend/tests/unit/test_search_ui.py`, `tests/integration/test_search_integration.py` (test-first)
+- [x] T016a [P] Write failing tests for add-to-selection and salvage flows (T016); `frontend/tests/unit/test_search_actions.py` (test-first)
+- [x] T017a [P] Write failing tests for search behaviors (T017); `frontend/tests/unit/test_search.py` (test-first)
 - [ ] T018a [P] Write failing unit tests for item row rendering and ARIA (T018); `frontend/tests/unit/test_item_row.py` (test-first)
 - [ ] T019a [P] Write failing accessibility/contrast tests for CSS utilities (T019); `frontend/tests/unit/test_css_contrast.py` (test-first)
 - [ ] T020a [P] Write failing tests for sorting and usage filters (T020); `frontend/tests/unit/test_table_sort_filter.py` (test-first)

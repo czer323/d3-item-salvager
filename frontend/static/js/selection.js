@@ -68,4 +68,15 @@
 
     document.addEventListener('click', handleEditClick);
     document.addEventListener('keydown', handleEnterKey);
+
+    // Listen for search actions and provide light integration points
+    window.addEventListener('search:add', (ev) => {
+        // Currently, selection actions are persisted to localStorage by the search component.
+        // This listener is a hook for enhancing the selection UI (e.g., visual feedback).
+        console.info('selection: item added from search', ev.detail);
+    });
+
+    window.addEventListener('search:salvage', (ev) => {
+        console.info('selection: item marked salvage from search', ev.detail);
+    });
 })();
