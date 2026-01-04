@@ -46,6 +46,7 @@ Phase 6 — Frontend: Item Table & Filters (US4)
 Phase 7 — Integration, QA & Accessibility
 
 - [ ] T022 [P] Add Playwright e2e tests covering primary flows end-to-end (US1-US4) — `frontend/tests/e2e/`
+- [x] T022a [P] Add Playwright e2e tests for selection UI (collapsed summary + Edit flow) — `frontend/tests/playwright/test_selection_ui.spec.ts` (test-first)
 - [ ] T023 Accessibility: Add axe checks and fix keyboard/ARIA issues; add automated accessibility tests — `frontend/tests/accessibility/test_accessibility.py`
 - [ ] T024 Performance & scale: Add test that verifies responsiveness for large lists; ensure virtualization/pagination behavior — `frontend/tests/performance/test_large_list.py`
 
