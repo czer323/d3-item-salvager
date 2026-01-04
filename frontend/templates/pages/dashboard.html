@@ -22,8 +22,12 @@
     </div>
 
     {% with prefetch_items=False %}
-    {% include "selection/controls.html" %}
+    {% include "selection_panel.html" %}
     {% endwith %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/selection.js') }}" defer></script>
+{% endblock %}
 
     <div class="space-y-3">
         <div id="item-summary-indicator" class="htmx-indicator">

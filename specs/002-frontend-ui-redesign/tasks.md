@@ -19,9 +19,9 @@ Phase 2 — Foundational / Backend (blocking)
 
 Phase 3 — Frontend: Selection UI (US1)
 
-- [ ] T008 [US1] Create the inline collapsible selection panel template and HTMX partial: `frontend/templates/selection_panel.html` and `frontend/src/components/selection.js` — `frontend/templates/selection_panel.html`, `frontend/src/components/selection.js`
-- [ ] T009 [US1] Implement selection summary bar (collapsed state) with an Edit affordance and keyboard accessible controls — `frontend/templates/selection_summary.html`, `frontend/src/components/selection.js`
-- [ ] T010 [US1] Add unit tests for selection UI flows (open/collapse, keyboard navigation) — `frontend/tests/unit/test_selection.py`
+- [x] T008 [US1] Create the inline collapsible selection panel template and HTMX partial: `frontend/templates/selection_panel.html` and `frontend/src/components/selection.js` — `frontend/templates/selection_panel.html`, `frontend/src/components/selection.js`
+- [x] T009 [US1] Implement selection summary bar (collapsed state) with an Edit affordance and keyboard accessible controls — `frontend/templates/selection_summary.html`, `frontend/src/components/selection.js`
+- [x] T010 [US1] Add unit tests for selection UI flows (open/collapse, keyboard navigation) — `frontend/tests/unit/test_selection.py`
 
 Phase 4 — Frontend: Item list population (US2)
 
@@ -65,9 +65,9 @@ Phase 7 — Integration, QA & Accessibility
 - [x] T004a [P] Write failing unit tests for the backend fuzzy util (T004); `tests/unit/filtering/test_search_util.py` (test-first)
 - [x] T005a [P] Write failing integration tests for `/items/lookup` (T005); `tests/integration/test_items_lookup.py` (test-first)
 - [x] T006a [P] Write failing integration tests for `/builds/items` (T006); `tests/integration/test_builds_items.py` (test-first)
-- [ ] T008a [P] Write failing unit/integration tests for selection panel behaviors (T008); `frontend/tests/unit/test_selection_panel.py` (test-first)
-- [ ] T009a [P] Write failing tests for selection summary and collapse (T009); `frontend/tests/unit/test_selection_summary.py` (test-first)
-- [ ] T010a [P] Write failing keyboard/accessibility tests for selection flows (T010); `frontend/tests/unit/test_selection_keyboard.py` (test-first)
+- [x] T008a [P] Write failing unit/integration tests for selection panel behaviors (T008); `frontend/tests/unit/test_selection_panel.py` (test-first)
+- [x] T009a [P] Write failing tests for selection summary and collapse (T009); `frontend/tests/unit/test_selection_summary.py` (test-first)
+- [x] T010a [P] Write failing keyboard/accessibility tests for selection flows (T010); `frontend/tests/unit/test_selection_keyboard.py` (test-first)
 - [ ] T011a [P] Write failing integration tests for builds/items client fetch (T011); `tests/integration/test_fetch_build_items.py` (test-first)
 - [ ] T012a [P] Write failing tests for de-duplication and ordering (T012); `tests/unit/test_de_duplication.py` (test-first)
 - [ ] T013a [P] Write failing tests for virtualization/pagination behavior (T013); `frontend/tests/unit/test_virtual_list.py` (test-first)

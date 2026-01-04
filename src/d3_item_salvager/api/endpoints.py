@@ -211,6 +211,7 @@ async def list_variants(
     )
 
 
+# TODO: Review how querying the database for all items on each request impacts performance.  Consider simplifying the query to less fields, and then storing them as a cache in memory with periodic refresh.  If this can be stored in the frontend simply for text matching on search, we could avoid a round-trip to the backend entirely.
 @router.get("/items/lookup", response_model=SearchResult, tags=["items"])
 async def items_lookup(
     session: SessionDep,

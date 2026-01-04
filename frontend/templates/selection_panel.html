@@ -1,0 +1,17 @@
+{% set has_selection = selection_view and (selection_view.selected_build_ids | length) > 0 %}
+
+<div id="selection-panel">
+    {% if has_selection %}
+    <div id="selection-summary" class="card bg-base-200/40 p-3 flex items-center justify-between" role="region" aria-label="Selection summary">
+        <div>
+            <strong>Selected builds:</strong>
+            <span class="ml-2">{{ selection_view.selected_build_ids | join(', ') }}</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button class="btn btn-ghost" data-testid="selection-edit-button" aria-controls="selection-panel" tabindex="0">Edit</button>
+        </div>
+    </div>
+    {% else %}
+    {% include "selection/controls.html" %}
+    {% endif %}
+</div>
