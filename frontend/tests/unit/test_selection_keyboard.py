@@ -20,7 +20,7 @@ def test_edit_affordance_is_keyboard_focusable(frontend_app: Flask) -> None:
 
     with frontend_app.test_request_context("/?build_ids=1"):
         html = frontend_app.jinja_env.get_template("selection_panel.html").render(
-            selection_view=_StubView()
+            selection_view=_StubView(), selection_collapsed=True
         )
     soup = BeautifulSoup(html, "html.parser")
 

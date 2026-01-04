@@ -78,16 +78,29 @@ test.describe('Selection UI - collapsed summary and edit affordance', () => {
             await page.locator('select[name="build_ids"]').selectOption(firstVal);
         }
 
-        // Click Apply and wait for the POST which triggers collapse
-        const applyRequest = page.waitForResponse((resp) =>
+        // Click Apply and wait for the selection controls POST which triggers collapse
+        const applyControlsRequest = page.waitForResponse((resp) =>
             resp.url().includes('/frontend/selection/controls') && resp.request().method() === 'POST'
+        );
+        // Wait for the items summary POST which should update the item table
+        const itemsSummaryRequest = page.waitForResponse((resp) =>
+            resp.url().includes('/frontend/items/summary') && resp.request().method() === 'POST'
         );
 
         await page.getByTestId('apply-filter-button').click();
-        await applyRequest;
+        await applyControlsRequest;
+        await itemsSummaryRequest;
 
         // Summary should be visible and controls hidden
         await expect(page.locator('#selection-summary')).toBeVisible();
         await expect(page.getByTestId('selection-controls')).toBeHidden();
+
+        // Items summary should be visible and contain rows
+        const itemSummary = page.getByTestId('item-summary');
+        await expect(itemSummary).toBeVisible();
+        const rows = itemSummary.locator('table tbody tr');
+        const rowsCount = await rows.count();
+        expect(rowsCount).toBeGreaterThan(0);
+
     });
 });

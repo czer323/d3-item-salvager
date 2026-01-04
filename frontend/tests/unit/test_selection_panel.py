@@ -42,7 +42,7 @@ def test_dashboard_shows_summary_when_builds_selected(frontend_app: Flask) -> No
     # Render the selection_panel template directly with a stubbed view to avoid backend wiring
     with frontend_app.test_request_context("/?build_ids=1"):
         html = frontend_app.jinja_env.get_template("selection_panel.html").render(
-            selection_view=_StubView()
+            selection_view=_StubView(), selection_collapsed=True
         )
     soup = BeautifulSoup(html, "html.parser")
 

@@ -36,18 +36,34 @@
         // Prevent default and programmatically submit with action=apply_items
         event.preventDefault();
 
-        // Ensure an action input exists and set its value to 'apply_items'
-        let actionInput = form.querySelector('input[name="action"][type="hidden"]');
-        if (!actionInput) {
-            actionInput = document.createElement('input');
-            actionInput.type = 'hidden';
-            actionInput.name = 'action';
-            form.appendChild(actionInput);
+        // Prefer programmatic submit with a temporary submitter to avoid leaving a persistent hidden input
+        if (typeof form.requestSubmit === 'function') {
+            const tempBtn = document.createElement('button');
+            tempBtn.type = 'submit';
+            tempBtn.name = 'action';
+            tempBtn.value = 'apply_items';
+            tempBtn.style.display = 'none';
+            form.appendChild(tempBtn);
+            // Use requestSubmit to pass the temporary submitter value
+            try {
+                form.requestSubmit(tempBtn);
+            } finally {
+                // Remove temporary button after a short delay to allow submission lifecycle
+                setTimeout(() => tempBtn.remove(), 50);
+            }
+        } else {
+            // Fallback for older browsers: use a transient hidden input and remove it after submit
+            let actionInput = form.querySelector('input[name="action"][type="hidden"]');
+            if (!actionInput) {
+                actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                form.appendChild(actionInput);
+            }
+            actionInput.value = 'apply_items';
+            form.querySelector('[type="submit"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            setTimeout(() => actionInput.remove(), 50);
         }
-        actionInput.value = 'apply_items';
-
-        // Submit the form (HTMX will honor hx-post attributes)
-        form.querySelector('[type="submit"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     }
 
     document.addEventListener('click', handleEditClick);

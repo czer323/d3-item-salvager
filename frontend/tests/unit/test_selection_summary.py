@@ -22,7 +22,7 @@ def test_summary_displays_selected_builds_and_edit_button(frontend_app: Flask) -
 
     with frontend_app.test_request_context("/?build_ids=1&build_ids=3"):
         html = frontend_app.jinja_env.get_template("selection_panel.html").render(
-            selection_view=_StubView()
+            selection_view=_StubView(), selection_collapsed=True
         )
     soup = BeautifulSoup(html, "html.parser")
 

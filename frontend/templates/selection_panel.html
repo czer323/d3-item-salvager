@@ -14,6 +14,19 @@
                 tabindex="0">Edit</button>
         </div>
     </div>
+
+    {% if prefetch_items and selection_view %}
+    <form id="selection-summary-form" class="hidden" aria-hidden="true">
+        {% for cid in selection_view.selected_class_ids %}
+        <input type="hidden" name="class_ids" value="{{ cid }}" />
+        {% endfor %}
+        {% for bid in selection_view.selected_build_ids %}
+        <input type="hidden" name="build_ids" value="{{ bid }}" />
+        {% endfor %}
+    </form>
+    <div hx-post="{{ url_for('items.summary_partial') }}" hx-target="#item-summary-content" hx-trigger="load"
+        hx-indicator="#item-summary-indicator" hx-include="#selection-summary-form" aria-hidden="true"></div>
+    {% endif %}
     {% else %}
     {% include "selection/controls.html" %}
     {% endif %}
