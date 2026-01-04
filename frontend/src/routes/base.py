@@ -51,6 +51,9 @@ def dashboard() -> str:
     preferences_state = compose_preferences(selection_view)
     preferences_payload = to_payload(preferences_state)
 
+    # Collapse selection summary only when the request explicitly included build_ids
+    selection_collapsed = bool(requested_build_ids)
+
     return render_template(
         "pages/dashboard.html",
         page_title="D3 Item Salvager",
@@ -58,6 +61,7 @@ def dashboard() -> str:
         selection_view=selection_view,
         selection_error=selection_error,
         preferences_payload=preferences_payload,
+        selection_collapsed=selection_collapsed,
     )
 
 

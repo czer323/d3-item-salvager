@@ -1,7 +1,8 @@
-{% set has_selection = selection_view and (selection_view.selected_build_ids | length) > 0 %}
+{# Render collapsed summary only when caller passes `selection_collapsed` True; defaults to False #}
+{% set collapsed = selection_collapsed if selection_collapsed is defined else False %}
 
 <div id="selection-panel">
-    {% if has_selection %}
+    {% if collapsed %}
     <div id="selection-summary" class="card bg-base-200/40 p-3 flex items-center justify-between" role="region"
         aria-label="Selection summary">
         <div>
