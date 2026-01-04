@@ -3,18 +3,18 @@
 // expanded with virtualization logic as needed.
 
 export class VirtualList {
-  constructor(rootEl, options = {}) {
-    this.root = rootEl;
-    this.options = options;
-    this.items = [];
-  }
+    constructor(rootEl, options = {}) {
+        this.root = rootEl;
+        this.options = options;
+        this.items = [];
+    }
 
-  setItems(items) {
-    this.items = items;
-    this.render();
-  }
+    setItems(items) {
+        this.items = items;
+        this.render();
+    }
 
-  render() {
-    this.root.innerHTML = this.items.map(i => `<div class="virtual-item">${i.name}</div>`).join('');
-  }
+    render() {
+        this.root.innerHTML = this.items.map(i => `<div class="virtual-item">${i.name}</div>`).join('');
+    }
 }
