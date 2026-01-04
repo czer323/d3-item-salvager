@@ -25,10 +25,10 @@ Phase 3 — Frontend: Selection UI (US1)
 
 Phase 4 — Frontend: Item list population (US2)
 
-- [ ] T011 [US2] Implement client call to `GET /builds/items` to fetch the union list when selection changes; render results in `frontend/templates/item_list.html` — `frontend/src/services/builds.js`, `frontend/templates/item_list.html`
-- [ ] T012 [US2] Ensure de-duplication and alphabetical ordering (prefer server-side ordering; add client-side sanity check) — `frontend/src/services/builds.js`, `src/d3_item_salvager/data/queries.py`
-- [ ] T013 [US2] Add virtualization/pagination for the item list (use existing patterns or implement small virtual list) — `frontend/src/components/virtual_list.js`, `frontend/templates/item_list.html`
-- [ ] T014 [US2] Add integration tests to validate union behavior with multiple build selections — `tests/integration/test_union_items.py`, `frontend/tests/e2e/test_union_items.spec.ts`
+- [x] T011 [US2] Implement client call to `GET /builds/items` to fetch the union list when selection changes; render results in `frontend/templates/item_list.html` — `frontend/src/services/builds.js`, `frontend/templates/item_list.html`
+- [x] T012 [US2] Ensure de-duplication and alphabetical ordering (prefer server-side ordering; add client-side sanity check) — `frontend/src/services/builds.js`, `src/d3_item_salvager/data/queries.py`
+- [x] T013 [US2] Add virtualization/pagination for the item list (use existing patterns or implement small virtual list) — `frontend/src/components/virtual_list.js`, `frontend/templates/item_list.html`
+- [x] T014 [US2] Add integration tests to validate union behavior with multiple build selections — `tests/integration/test_union_items.py`, `frontend/tests/e2e/test_union_items.spec.ts`
 
 Phase 5 — Frontend: Search & Validation (US3)
 
