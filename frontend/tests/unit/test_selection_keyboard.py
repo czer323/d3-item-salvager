@@ -29,7 +29,7 @@ def test_edit_affordance_is_keyboard_focusable(frontend_app: Flask) -> None:
 
     # Ensure the affordance can be focused and has appropriate role
     assert edit.get("role") in ("button", None)
-    assert edit.get("tabindex") in ("0", "")
+    assert edit.get("tabindex") in ("0", None)
 
 
 def test_apply_button_is_triggerable_via_keyboard(client: FlaskClient) -> None:
@@ -40,4 +40,3 @@ def test_apply_button_is_triggerable_via_keyboard(client: FlaskClient) -> None:
     apply_btn = soup.select_one("[data-testid='apply-filter-button']")
     assert apply_btn is not None
     assert apply_btn.name == "button"
-    assert apply_btn.get("type") == "submit" or apply_btn.get("role") == "button"

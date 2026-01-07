@@ -12,6 +12,8 @@ from typing import TYPE_CHECKING
 from bs4 import BeautifulSoup
 
 if TYPE_CHECKING:
+    from types import SimpleNamespace
+
     from flask import Flask
     from flask.testing import FlaskClient
 
@@ -23,7 +25,9 @@ def test_search_script_included_on_dashboard(client: FlaskClient) -> None:
     assert "search.js" in html, "Expected search.js to be included on the dashboard"
 
 
-def test_lookup_status_present(frontend_app: Flask) -> None:
+def test_lookup_status_present(
+    frontend_app: Flask, frontend_config: SimpleNamespace
+) -> None:
     # Render the component directly to reliably locate the status indicator
     from types import SimpleNamespace
 
@@ -33,7 +37,7 @@ def test_lookup_status_present(frontend_app: Flask) -> None:
             "components/filter_controls.html"
         ).render(
             summary=summary,
-            frontend_config=frontend_app.config["FRONTEND_CONFIG"],
+            frontend_config=frontend_config,
         )
 
     soup = BeautifulSoup(html, "html.parser")

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
-from frontend.src.services.item_usage import ItemUsageStatus, build_item_usage_table
+from frontend.src.services.item_usage import build_item_usage_table
 
 if TYPE_CHECKING:  # pragma: no cover - typing aid for fake backend
     from frontend.src.services.backend_client import BackendClient
@@ -58,14 +58,13 @@ def test_build_item_usage_table_merges_catalogue_with_usage() -> None:
 
     assert table.total_items == 1
     assert table.used_total == 1
-    assert table.salvage_total == 0
     assert tuple(table.available_slots) == ("Weapon",)
 
     rows_by_id = {row.item_id: row for row in table.rows}
     assert set(rows_by_id) == {"item-1"}
 
     used_row = rows_by_id["item-1"]
-    assert used_row.status is ItemUsageStatus.USED
+    assert used_row.is_used
     assert used_row.usage_contexts == ("main",)
     assert used_row.variant_ids == ("variant-1",)
 

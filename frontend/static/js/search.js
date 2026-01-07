@@ -33,7 +33,15 @@
         if (!itemId) {
             return null;
         }
-        return document.querySelector(`[data-filter-item][data-item-id="${itemId}"]`);
+        // Avoid interpolating untrusted values into a selector to prevent
+        // attribute selector injection. Iterate rows and compare the
+        // attribute value directly (safe and robust).
+        const rows = document.querySelectorAll('[data-filter-item]');
+        const needle = String(itemId);
+        for (const row of rows) {
+            if (row.getAttribute('data-item-id') === needle) return row;
+        }
+        return null;
     }
 
     function hasMatchingRow(query) {
@@ -49,6 +57,11 @@
     }
 
     function initSearch(root) {
+        // Prevent double-initialization on the same element (htmx swaps may
+        // re-run init and we don't want to attach duplicate listeners).
+        if (root.dataset.searchInitialized === '1') return;
+        root.dataset.searchInitialized = '1';
+
         const input = root.querySelector("[data-filter-search]");
         const statusEl = root.querySelector("[data-testid=\"search-status\"]");
         const lookupUrl = root.getAttribute("data-lookup-url") || "/items/lookup";
@@ -137,11 +150,16 @@
     }
 
     if (window.htmx && typeof window.htmx.on === "function") {
-        window.htmx.on("htmx:afterSwap", (event) => {
-            const target = event.detail && event.detail.target;
-            if (target && target.querySelector && target.querySelector("[data-filter-controls]")) {
-                init();
-            }
-        });
+        // Attach this handler only once to avoid duplicate event listeners
+        // if this script is ever evaluated multiple times by an htmx swap.
+        if (!window.__d3_item_salvager_search_htmx_attached) {
+            window.htmx.on("htmx:afterSwap", (event) => {
+                const target = event.detail && event.detail.target;
+                if (target && target.querySelector && target.querySelector("[data-filter-controls]")) {
+                    init();
+                }
+            });
+            window.__d3_item_salvager_search_htmx_attached = true;
+        }
     }
 })();

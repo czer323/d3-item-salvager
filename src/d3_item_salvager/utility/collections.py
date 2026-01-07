@@ -9,20 +9,37 @@ def dedupe_and_sort(items: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     them sorted alphabetically by `name`.
 
     Args:
-        items: Iterable of dictionaries with at least `id` and `name` keys.
+        items: Iterable of dictionaries, each typically containing `id` and `name` keys.
+               If `id` is missing, `name` is used as the deduplication key.
 
     Returns:
         A list of de-duplicated items sorted by their `name` value.
     """
-    seen: set[str] = set()
+    # Use discriminated keys to avoid collisions between different id types
+    # (e.g., 1 vs "1"). If an id is unhashable, fall back to its string form.
+    seen: set[tuple[type, Any]] = set()
     unique: list[dict[str, Any]] = []
     for it in items:
         item_id = it.get("id")
         if item_id is None:
             # Fallback: use name as key if id missing
             item_id = it.get("name")
-        # Normalize to string to ensure stable membership checks
-        key = str(item_id)
+
+        # Prefer to use the raw object when hashable to preserve type identity
+        if item_id is None:
+            # Both id and name missing — use a stable placeholder
+            key: tuple[type, Any] = (type(None), "")
+        else:
+            # Predeclare a consistent key type to satisfy type checkers
+            key: tuple[type, Any]
+            try:
+                hash(item_id)
+                # Use actual object as key alongside its type to disambiguate types
+                key = (type(item_id), item_id)  # type: ignore[arg-type]
+            except TypeError:
+                # Unhashable (e.g., list/dict) — fall back to string form
+                key = (type(item_id), str(item_id))  # type: ignore[assignment]
+
         if key in seen:
             continue
         seen.add(key)

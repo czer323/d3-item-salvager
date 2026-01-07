@@ -4,6 +4,10 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {# Optional backend base URL for client-side code (injected from FRONTEND_CONFIG) #}
+    {% if frontend_config and frontend_config.backend_base_url %}
+    <meta name="backend-base" content="{{ frontend_config.backend_base_url }}" />
+    {% endif %}
     <title>{% block title %}{{ page_title or "D3 Item Salvager" }}{% endblock %}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" />
     <script src="https://cdn.tailwindcss.com"></script>

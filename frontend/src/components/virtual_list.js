@@ -10,11 +10,31 @@ export class VirtualList {
     }
 
     setItems(items) {
-        this.items = items;
+        // Validate input: accept arrays, iterables, or null/undefined; otherwise throw
+        if (Array.isArray(items)) {
+            this.items = items;
+        } else if (items == null) {
+            this.items = [];
+        } else if (typeof items[Symbol.iterator] === 'function') {
+            // Accept any iterable by coercing to an array
+            this.items = Array.from(items);
+        } else {
+            throw new TypeError('VirtualList.setItems expects an array or iterable');
+        }
         this.render();
     }
 
     render() {
-        this.root.innerHTML = this.items.map(i => `<div class="virtual-item">${i.name}</div>`).join('');
+        // Construct nodes directly to avoid injecting untrusted HTML (XSS-safe)
+        // Clear existing children
+        while (this.root.firstChild) {
+            this.root.removeChild(this.root.firstChild);
+        }
+        for (const i of this.items) {
+            const node = document.createElement('div');
+            node.className = 'virtual-item';
+            node.textContent = String(i && i.name != null ? i.name : '');
+            this.root.appendChild(node);
+        }
     }
 }

@@ -16,6 +16,7 @@ from frontend.src.services.item_usage import ItemUsageTable, build_item_usage_ta
 from frontend.src.services.preferences import PreferencesValidationError
 
 if TYPE_CHECKING:
+    from frontend.src.config import FrontendConfig
     from frontend.src.services.backend_client import BackendClient
 
 items_blueprint = Blueprint("items", __name__, url_prefix="/frontend/items")
@@ -96,10 +97,25 @@ def summary_partial() -> str:
         current_app.logger.exception("Unexpected error while building item usage table")
         table_error = "Internal server error"
 
+    # Ensure templates that include shared components receive the frontend config
+    # Be defensive: the config key may not be present in some test or runtime setups
+    # Retrieve FRONTEND_CONFIG defensively without relying on Mapping.get's overloaded return
+    try:
+        raw_cfg_any = cast(
+            "FrontendConfig | None", current_app.config["FRONTEND_CONFIG"]
+        )
+    except KeyError:
+        raw_cfg_any = None
+    config = raw_cfg_any
+    if config is None:
+        current_app.logger.warning(
+            "FRONTEND_CONFIG missing from app config; rendering without it"
+        )
     return render_template(
         "items/summary.html",
         table=table,
         table_error=table_error,
+        frontend_config=config,
     )
 
 

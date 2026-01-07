@@ -7,7 +7,11 @@
         aria-label="Selection summary">
         <div>
             <strong>Selected builds:</strong>
+            {% if selection_view is defined and selection_view.selected_build_ids is defined %}
             <span class="ml-2">{{ selection_view.selected_build_ids | join(', ') }}</span>
+            {% else %}
+            <span class="ml-2">&mdash;</span>
+            {% endif %}
         </div>
         <div class="flex items-center gap-2">
             <button class="btn btn-ghost" data-testid="selection-edit-button" aria-controls="selection-panel"

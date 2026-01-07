@@ -38,10 +38,10 @@ Phase 5 — Frontend: Search & Validation (US3)
 
 Phase 6 — Frontend: Item Table & Filters (US4)
 
-- [ ] T018 [US4] Implement item table row rendering with Name (color + icon + ARIA label), Class (single/multi), Usage chips (main, follower, kanai) — `frontend/templates/item_row.html`, `frontend/src/components/item_row.js`
-- [ ] T019 [US4] Add CSS styles and utility classes: set (green) and legendary (orange) with accessible contrast + icons — `frontend/static/css/components.css` or Tailwind utilities
-- [ ] T020 [US4] Implement sorting by Name (ascending/descending toggle) and client-side usage filters (show-only-main, hide-other-usages) — `frontend/src/components/table_sort_filter.js`
-- [ ] T021 [US4] Add unit tests for table rendering, sorting and usage filter behaviors — `frontend/tests/unit/test_table.py`
+- [x] T018 [US4] Implement item table row rendering with Name (color + icon + ARIA label), Class (single/multi), Usage chips (main, follower, kanai) — `frontend/templates/item_row.html`, `frontend/src/components/item_row.js`
+- [x] T019 [US4] Add CSS styles and utility classes: set (green) and legendary (orange) with accessible contrast + icons — `frontend/static/css/components.css` or Tailwind utilities
+- [x] T020 [US4] Implement sorting by Name (ascending/descending toggle) and client-side usage filters (show-only-main, hide-other-usages) — `frontend/src/components/table_sort_filter.js`
+- [x] T021 [US4] Add unit tests for table rendering, sorting and usage filter behaviors — `frontend/tests/unit/test_table.py`
 
 Phase 7 — Integration, QA & Accessibility
 
@@ -76,10 +76,10 @@ Phase 7 — Integration, QA & Accessibility
 - [x] T015a [P] Write failing unit/integration tests for search UI & lookup integration (T015); `frontend/tests/unit/test_search_ui.py`, `tests/integration/test_search_integration.py` (test-first)
 - [x] T016a [P] Write failing tests for add-to-selection and salvage flows (T016); `frontend/tests/unit/test_search_actions.py` (test-first)
 - [x] T017a [P] Write failing tests for search behaviors (T017); `frontend/tests/unit/test_search.py` (test-first)
-- [ ] T018a [P] Write failing unit tests for item row rendering and ARIA (T018); `frontend/tests/unit/test_item_row.py` (test-first)
-- [ ] T019a [P] Write failing accessibility/contrast tests for CSS utilities (T019); `frontend/tests/unit/test_css_contrast.py` (test-first)
-- [ ] T020a [P] Write failing tests for sorting and usage filters (T020); `frontend/tests/unit/test_table_sort_filter.py` (test-first)
-- [ ] T021a [P] Write failing tests for table rendering and integration (T021); `frontend/tests/unit/test_table_render.py` (test-first)
+- [x] T018a [P] Write failing unit tests for item row rendering and ARIA (T018); `frontend/tests/unit/test_item_row.py` (test-first)
+- [x] T019a [P] Write failing accessibility/contrast tests for CSS utilities (T019); `frontend/tests/unit/test_css_contrast.py` (test-first)
+- [x] T020a [P] Write failing tests for sorting and usage filters (T020); `frontend/tests/unit/test_table_sort_filter.py` (test-first)
+- [x] T021a [P] Write failing tests for table rendering and integration (T021); `frontend/tests/unit/test_table_render.py` (test-first)
 - [ ] T032a [P] Verify test-first subtasks exist and are failing on baseline; `scripts/ci/check_test_first.py` (chore)
 
 <!-- INSERT: NEW TEST & PERSISTENCE TASKS - END -->

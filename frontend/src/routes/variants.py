@@ -77,7 +77,6 @@ def _build_summary(client: BackendClient, variant_id: str) -> VariantSummary:
     search_term = request.args.get("search", "")
     slot_filter = request.args.get("slot")
     used_page = parse_page(request.args.get("used_page"), default=1)
-    salvage_page = parse_page(request.args.get("salvage_page"), default=1)
     page_size = parse_page_size(request.args.get("page_size"))
     try:
         return build_variant_summary(
@@ -86,7 +85,6 @@ def _build_summary(client: BackendClient, variant_id: str) -> VariantSummary:
             search=search_term,
             slot=slot_filter,
             used_page=used_page,
-            salvage_page=salvage_page,
             page_size=page_size,
         )
     except BackendClientError as exc:
@@ -106,19 +104,12 @@ def _build_summary(client: BackendClient, variant_id: str) -> VariantSummary:
         fallback = VariantSummary(
             variants=variants,
             used_items=[],
-            salvage_items=[],
+            all_items=[],
             filters=filters,
             available_slots=(),
             used_total=0,
-            salvage_total=0,
             filtered_used_total=0,
-            filtered_salvage_total=0,
             used_pagination=PaginationState(page=1, page_size=page_size, total_items=0),
-            salvage_pagination=PaginationState(
-                page=1,
-                page_size=page_size,
-                total_items=0,
-            ),
         )
         g.summary_error = str(exc)
         return fallback

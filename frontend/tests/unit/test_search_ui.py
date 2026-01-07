@@ -6,6 +6,7 @@ frontend component can be implemented test-first.
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
 from bs4 import BeautifulSoup
@@ -14,17 +15,17 @@ if TYPE_CHECKING:
     from flask import Flask
 
 
-def test_search_partial_present_on_dashboard(frontend_app: Flask) -> None:
+def test_search_partial_present_on_dashboard(
+    frontend_app: Flask, frontend_config: SimpleNamespace
+) -> None:
     """Dashboard should include the search partial with expected hooks."""
-    from types import SimpleNamespace
-
     summary = SimpleNamespace(filters=SimpleNamespace(search=""), available_slots=[])
     with frontend_app.test_request_context("/"):
         html = frontend_app.jinja_env.get_template(
             "components/filter_controls.html"
         ).render(
             summary=summary,
-            frontend_config=frontend_app.config["FRONTEND_CONFIG"],
+            frontend_config=frontend_config,
         )
 
     soup = BeautifulSoup(html, "html.parser")
@@ -38,18 +39,18 @@ def test_search_partial_present_on_dashboard(frontend_app: Flask) -> None:
     assert status_el is not None, "Expected a status element for lookup feedback"
 
 
-def test_search_partial_points_to_lookup_endpoint(frontend_app: Flask) -> None:
+def test_search_partial_points_to_lookup_endpoint(
+    frontend_app: Flask, frontend_config: SimpleNamespace
+) -> None:
     """The search partial should include a data attribute with the lookup URL."""
     # Render the filter controls component directly with a minimal context so it is always present
-    from types import SimpleNamespace
-
     summary = SimpleNamespace(filters=SimpleNamespace(search=""), available_slots=[])
     with frontend_app.test_request_context("/"):
         html = frontend_app.jinja_env.get_template(
             "components/filter_controls.html"
         ).render(
             summary=summary,
-            frontend_config=frontend_app.config["FRONTEND_CONFIG"],
+            frontend_config=frontend_config,
         )
 
     soup = BeautifulSoup(html, "html.parser")

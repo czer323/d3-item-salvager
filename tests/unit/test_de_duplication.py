@@ -31,5 +31,6 @@ def test_dedupe_and_sort_preserves_quality_and_slot() -> None:
     ]
 
     result = dedupe_and_sort(items)
-    # When duplicate names exist, prefer the first-seen (stable behavior) and include quality
-    assert result[0]["quality"] in {"legendary", "set"}
+    # When duplicate names exist, prefer the first-seen (stable behavior) and preserve slot/quality
+    assert result[0]["quality"] == "legendary"
+    assert result[0]["slot"] == "helm"

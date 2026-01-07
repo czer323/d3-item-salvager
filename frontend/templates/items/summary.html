@@ -13,15 +13,11 @@
         <div class="space-y-1">
             <h2 class="text-2xl font-semibold">Item Usage Overview</h2>
             <p class="text-sm opacity-80">
-                {{ table.total_items }} items tracked · {{ table.used_total }} used · {{ table.salvage_total }} salvage
-                candidates.
+                {{ table.total_items }} items tracked · {{ table.used_total }} used.
             </p>
         </div>
         <div class="flex flex-wrap gap-2 text-xs">
             <span class="badge badge-success badge-outline">Used ({{ table.used_total }})</span>
-            {% if table.salvage_total %}
-            <span class="badge badge-error badge-outline">Salvage ({{ table.salvage_total }})</span>
-            {% endif %}
         </div>
     </header>
 
@@ -42,7 +38,7 @@
                 <tbody>
                     {% for row in table.rows %}
                     <tr data-filter-item data-item-id="{{ row.item_id }}" data-item-name="{{ row.name }}"
-                        data-item-slot="{{ row.slot|lower }}">
+                        data-item-slot="{{ (row.slot or 'Unknown')|lower }}">
                         <td class="align-top">
                             <div class="flex flex-col">
                                 <span class="font-medium">{{ row.name }}</span>
@@ -54,9 +50,7 @@
                         </td>
                         <td class="align-top">
                             <div class="flex flex-col gap-1">
-                                <span class="badge {{ row.badge_class }} badge-sm w-fit">
-                                    {{ "Used" if row.is_used else "Salvage" }}
-                                </span>
+                                <span class="badge {{ row.badge_class }} badge-sm w-fit">Used</span>
                                 <span class="text-xs text-base-content/70">{{ row.usage_label }}</span>
                             </div>
                         </td>
