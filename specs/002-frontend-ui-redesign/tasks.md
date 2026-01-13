@@ -61,7 +61,7 @@ Phase 7 — Integration, QA & Accessibility
 
 - [ ] T032 [P] Add per-task test-first subtasks: Create failing test placeholders for each implementation task (T004-T021) and track them as T004a..T021a. Example: T004a write failing tests for T004 in `tests/unit/...` (test-first).
 
-### Phase 2–6 — Test-first subtasks (explicit placeholders)
+## Phase 2–6 — Test-first subtasks (explicit placeholders)
 
 - [x] T004a [P] Write failing unit tests for the backend fuzzy util (T004); `tests/unit/filtering/test_search_util.py` (test-first)
 - [x] T005a [P] Write failing integration tests for `/items/lookup` (T005); `tests/integration/test_items_lookup.py` (test-first)
@@ -93,6 +93,7 @@ Phase 8 — Release Prep
 ---
 
 Notes:
+
 - Mark tasks completed in this file as you complete them and create PRs for each completed task.
 - If a task is parallelizable without conflicting files, mark it with `[P]`.
 - Tasks that correspond to specific user stories include `[US1]`–`[US4]` labels.
