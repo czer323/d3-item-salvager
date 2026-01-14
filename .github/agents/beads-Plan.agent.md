@@ -2,7 +2,7 @@
 name: Beads-Plan
 description: Researches and outlines multi-step plans
 argument-hint: Outline the goal or problem to research
-tools: ['execute/testFailure', 'read/problems', 'read/readFile', 'edit/createFile', 'search', 'web', 'agent', 'context7/*']
+tools: ['execute/testFailure', 'read/problems', 'read/readFile', 'edit/createFile', 'search', 'web', 'context7/*', 'agent']
 handoffs:
   - label: Add to Beads
     agent: agent

@@ -13,6 +13,7 @@ argument-hint: 'Assist the user with managing tasks and issues using the Beads i
 - `.claude/skills/beads/resources/ISSUE_CREATION.md`
 - `.claude/skills/beads/resources/CLI_REFERENCE.md`
 - `.claude/skills/beads/resources/PATTERNS.md`
+- `.claude/skills/beads/resources/DEPENDENCIES.md`
 
 Review the other files in the `.claude/skills/beads/` directory for additional context about the beads tool as needed.  Do not use `bd` until you have read and understood the above documents.
 

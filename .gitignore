@@ -25,3 +25,5 @@ Thumbs.db
 **/playwright-report
 **/test-results
 **/playwright-debug
+backups/d3_items.db.bak
+backups/d3_items.db.sql
