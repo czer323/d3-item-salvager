@@ -45,7 +45,7 @@ def find_pids_on_port_unix(port: int) -> set[int]:
             pids: set[int] = set()
             # lines like: LISTEN 0 128 127.0.0.1:8000 *:* users:("python3",pid=12345,fd=3)
             for line in out.splitlines():
-                if f":{port} " in line or f":{port}\n" in line:
+                if re.search(rf":{port}(?:\\s|$)", line):
                     m = re.search(r"pid=(\d+)", line)
                     if m:
                         pids.add(int(m.group(1)))

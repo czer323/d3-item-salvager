@@ -252,7 +252,7 @@ def _merge_catalogue_with_usage(
         quality = (
             record.quality
             if record and record.quality is not None
-            else accumulator.quality
+            else getattr(accumulator, "quality", None)
         )
         rows.append(
             ItemUsageRow(

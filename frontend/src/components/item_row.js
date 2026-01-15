@@ -18,9 +18,11 @@ export function createItemRow(item) {
         .replace(/_/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
-    const visibleName = sanitizeName(item.name);
-    name.setAttribute('aria-label', `Item: ${visibleName}, ${item.quality}`);
-    name.textContent = visibleName;
+    const visibleNameRaw = sanitizeName(item.name);
+    const fallbackName = visibleNameRaw || String(item.name || 'Unnamed Item');
+    const qualityLabel = String(item.quality || '');
+    name.setAttribute('aria-label', `Item: ${fallbackName}, ${qualityLabel}`);
+    name.textContent = fallbackName;
 
     const slot = document.createElement('div');
     slot.className = 'item-slot';
