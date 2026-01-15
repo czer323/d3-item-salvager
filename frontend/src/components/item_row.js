@@ -11,8 +11,16 @@ export function createItemRow(item) {
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9-]/g, '') || 'unknown';
     name.className = `item-name quality-${qualityCls}`;
-    name.setAttribute('aria-label', `Item: ${item.name}, ${item.quality}`);
-    name.textContent = item.name;
+    // Sanitize visible name to remove internal tokens like P4_ or Unique_ and convert underscores
+    const sanitizeName = (s) => String(s || '')
+        .replace(/\bP\d+_/g, '')
+        .replace(/\bUnique_/gi, '')
+        .replace(/_/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const visibleName = sanitizeName(item.name);
+    name.setAttribute('aria-label', `Item: ${visibleName}, ${item.quality}`);
+    name.textContent = visibleName;
 
     const slot = document.createElement('div');
     slot.className = 'item-slot';

@@ -23,9 +23,13 @@ Review the other files in the `.claude/skills/beads/` directory for additional c
 
 ## bd ready
 
-Use `bd ready --json` to get a summary of the current state of tasks and issues. This command provides an overview of what needs attention.  If the user has specified an item to research, use `bd show [id] --json` to acquire details about it.  If the user does not specify an issue, pick the first item from the bd ready result and being being to research if we have all of the information we need to work the issue.  Review the existing codebase and documentation to gather context.  Once we have confirmed we have enough information, we can proceed to discuss the solution withe the user and validate the approach before implementation.
+Use `bd ready --json` to get a summary of the current state of tasks and issues. This command provides an overview of what needs attention.  If the user has specified an item to research, use `bd update <id> --status in_progress --json` to acquire details about it.  If the user does not specify an issue, pick the first item from the bd ready result and being being to research if we have all of the information we need to work the issue.  Review the existing codebase and documentation to gather context.  Once we have confirmed we have enough information, we can proceed to discuss the solution withe the user and validate the approach before implementation.
 
+**IMPORTANT**: Do not begin implementation until the user has reviewed and approved the plan.
 
+After approval has been received, use `bd start [id] --json` to mark the issue as in progress.
+Ensure that the task remains updated throughout the implementation process.
+Do not perform a commit until the user has reviewed and approved the changes, unless the user has explicitly instructed you to do so.
 
 <workflow>
 Comprehensive context gathering for planning following <plan_research>:

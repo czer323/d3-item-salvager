@@ -71,6 +71,15 @@
             }
         },
         {
+            "label": "Stop Servers",
+            "type": "shell",
+            "command": "python scripts/stop_servers.py --yes",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
             "type": "shell",
             "label": "Run pytest with uv",
             "command": "uv run --frozen pytest",

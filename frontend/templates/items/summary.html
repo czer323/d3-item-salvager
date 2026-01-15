@@ -37,12 +37,15 @@
                 </thead>
                 <tbody>
                     {% for row in table.rows %}
-                    <tr data-filter-item data-item-id="{{ row.item_id }}" data-item-name="{{ row.name }}"
+                    <tr data-filter-item data-item-id="{{ row.item_id }}"
+                        data-item-name="{{ row.name | sanitize_item_name }}"
                         data-item-slot="{{ (row.slot or 'Unknown')|lower }}">
                         <td class="align-top">
                             <div class="flex flex-col">
-                                <span class="font-medium">{{ row.name }}</span>
-                                <span class="text-xs text-base-content/60">{{ row.item_id }}</span>
+                                <span class="font-medium quality-{{ (row.quality or '')|lower }}">{{ row.name |
+                                    sanitize_item_name }}</span>
+                                {# Internal ID intentionally hidden from visible label to avoid exposing tokens like
+                                P4_Unique_* #}
                             </div>
                         </td>
                         <td class="align-top text-sm">

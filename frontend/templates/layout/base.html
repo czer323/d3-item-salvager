@@ -10,6 +10,7 @@
     {% endif %}
     <title>{% block title %}{{ page_title or "D3 Item Salvager" }}{% endblock %}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>

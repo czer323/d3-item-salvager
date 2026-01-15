@@ -95,6 +95,9 @@ class ItemReferenceSchema(BaseModel):
     id: str
     name: str
     slot: str
+    quality: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ItemUsageWithItemSchema(ItemUsageSchema):

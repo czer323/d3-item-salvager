@@ -65,5 +65,23 @@ def create_app() -> Flask:
     app.before_request(_inject_client)
     app.teardown_request(_teardown_client)
 
+    # Template filter: sanitize item names to hide internal ids like P4_Unique_*
+    def sanitize_item_name(value: object | None) -> str:
+        import re
+
+        if value is None:
+            return ""
+        s = str(value).strip()
+        # Remove leading internal tokens like P4_ or P66_
+        s = re.sub(r"\bP\d+_", "", s)
+        # Remove 'Unique_' tokens
+        s = re.sub(r"\bUnique_", "", s, flags=re.IGNORECASE)
+        # Replace underscores with spaces and collapse whitespace
+        s = s.replace("_", " ")
+        s = " ".join(s.split())
+        return s or str(value)
+
+    app.jinja_env.filters["sanitize_item_name"] = sanitize_item_name
+
     register_blueprints(app)
     return app

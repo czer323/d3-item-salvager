@@ -40,6 +40,7 @@ class ItemRecord:
     id: str
     name: str
     slot: str
+    quality: str | None = None
 
 
 def normalize_class_name(raw: object | None) -> str:
@@ -149,7 +150,11 @@ def load_item_catalogue(client: BackendClient) -> list[ItemRecord]:
             name = str(name_raw).strip() or item_id
             slot_raw = row.get("slot") or "Unknown"
             slot = str(slot_raw).strip() or "Unknown"
-            records.append(ItemRecord(id=item_id, name=name, slot=slot))
+            quality_raw = row.get("quality")
+            quality = str(quality_raw).strip() if quality_raw is not None else None
+            records.append(
+                ItemRecord(id=item_id, name=name, slot=slot, quality=quality)
+            )
         if records:
             records.sort(key=lambda record: record.name.casefold())
             return records

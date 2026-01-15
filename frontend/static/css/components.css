@@ -15,19 +15,19 @@
     font-weight: 600;
 }
 
-/* Quality colors: accessible contrast */
+/* Quality colors: use text color only (refer to gametips reference colors) */
 .quality-set {
-    background-color: #1f7a1f;
-    color: #fff;
-    padding: 0.15rem 0.4rem;
-    border-radius: 0.25rem;
+    /* Maxroll/gametips reference: bright green */
+    color: #00ff00 !important;
+    background: none;
+    padding: 0;
 }
 
 .quality-legendary {
-    background-color: #d97706;
-    color: #fff;
-    padding: 0.15rem 0.4rem;
-    border-radius: 0.25rem;
+    /* Maxroll/gametips reference: warm orange */
+    color: #bf642f !important;
+    background: none;
+    padding: 0;
 }
 
 /* Usage chips */
