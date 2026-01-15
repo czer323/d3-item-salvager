@@ -4,6 +4,7 @@
 {% include "components/error_state.html" %}
 {% endif %}
 
+
 {% if table %}
 {% set summary = table %}
 <div class="space-y-6" data-testid="item-summary" data-filter-root data-current-search="{{ table.filters.search }}"
@@ -12,17 +13,16 @@
         <div class="space-y-1">
             <h2 class="text-2xl font-semibold">Item Usage Overview</h2>
             <p class="text-sm opacity-80">
-                {{ table.total_items }} items tracked · {{ table.used_total }} used · {{ table.salvage_total }} salvage
-                candidates.
+                {{ table.total_items }} items tracked · {{ table.used_total }} used.
             </p>
         </div>
         <div class="flex flex-wrap gap-2 text-xs">
             <span class="badge badge-success badge-outline">Used ({{ table.used_total }})</span>
-            <span class="badge badge-error badge-outline">Salvage ({{ table.salvage_total }})</span>
         </div>
     </header>
 
     {% include "components/filter_controls.html" %}
+
 
     <section class="space-y-3" data-filter-section>
         <div class="overflow-x-auto rounded-lg border border-base-300/80" data-filter-list>
@@ -37,7 +37,8 @@
                 </thead>
                 <tbody>
                     {% for row in table.rows %}
-                    <tr data-filter-item data-item-name="{{ row.name }}" data-item-slot="{{ row.slot|lower }}">
+                    <tr data-filter-item data-item-id="{{ row.item_id }}" data-item-name="{{ row.name }}"
+                        data-item-slot="{{ (row.slot or 'Unknown')|lower }}">
                         <td class="align-top">
                             <div class="flex flex-col">
                                 <span class="font-medium">{{ row.name }}</span>
@@ -49,9 +50,7 @@
                         </td>
                         <td class="align-top">
                             <div class="flex flex-col gap-1">
-                                <span class="badge {{ row.badge_class }} badge-sm w-fit">
-                                    {{ "Used" if row.is_used else "Salvage" }}
-                                </span>
+                                <span class="badge {{ row.badge_class }} badge-sm w-fit">Used</span>
                                 <span class="text-xs text-base-content/70">{{ row.usage_label }}</span>
                             </div>
                         </td>

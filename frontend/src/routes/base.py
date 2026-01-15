@@ -2,25 +2,37 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from types import SimpleNamespace
+from typing import cast
 
 from flask import Blueprint, current_app, g, render_template, request
 
-from frontend.src.services.backend_client import BackendClientError
+from frontend.src.config import FrontendConfig
+from frontend.src.services.backend_client import BackendClient, BackendClientError
 from frontend.src.services.preferences import compose_preferences, to_payload
 from frontend.src.services.selection import build_selection_view
 
-if TYPE_CHECKING:
-    from frontend.src.config import FrontendConfig
-    from frontend.src.services.backend_client import BackendClient
-
 base_blueprint = Blueprint("pages", __name__)
+
+
+FrontendConfigLike = FrontendConfig | SimpleNamespace
+
+
+def _load_frontend_config() -> FrontendConfigLike | None:
+    if "FRONTEND_CONFIG" not in current_app.config:
+        return None
+    return cast("FrontendConfigLike", current_app.config["FRONTEND_CONFIG"])
 
 
 @base_blueprint.get("/")
 def dashboard() -> str:
     """Render the dashboard placeholder view."""
-    config = cast("FrontendConfig", current_app.config["FRONTEND_CONFIG"])
+    # Be defensive in case FRONTEND_CONFIG is missing (tests or runtime)
+    config = _load_frontend_config()
+    if config is None:
+        current_app.logger.warning(
+            "FRONTEND_CONFIG missing from app config; rendering without it"
+        )
     selection_view = None
     selection_error: str | None = None
 
@@ -51,6 +63,9 @@ def dashboard() -> str:
     preferences_state = compose_preferences(selection_view)
     preferences_payload = to_payload(preferences_state)
 
+    # Collapse selection summary only when the request explicitly included build_ids
+    selection_collapsed = bool(requested_build_ids)
+
     return render_template(
         "pages/dashboard.html",
         page_title="D3 Item Salvager",
@@ -58,6 +73,7 @@ def dashboard() -> str:
         selection_view=selection_view,
         selection_error=selection_error,
         preferences_payload=preferences_payload,
+        selection_collapsed=selection_collapsed,
     )
 
 

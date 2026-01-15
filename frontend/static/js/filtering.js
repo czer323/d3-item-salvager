@@ -217,7 +217,10 @@
                 if (applyBtn) {
                     applyBtn.click();
                 } else if (window.htmx) {
-                    const selectionForm = document.querySelector('#selection-form');
+                    // Prefer the full controls form; if the UI is collapsed use the
+                    // selection summary form so actions like "clear" still trigger
+                    // a server refresh when needed.
+                    const selectionForm = document.querySelector('#selection-form') || document.querySelector('#selection-summary-form');
                     if (selectionForm) {
                         htmx.trigger(selectionForm, 'submit');
                     }

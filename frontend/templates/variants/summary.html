@@ -53,18 +53,7 @@
     filters_active,
     ) }}
 
-    {{ render_item_section(
-    "Not used / Salvage candidates",
-    summary.salvage_items,
-    "salvage",
-    "variant-summary-salvage",
-    "No salvage recommendations were generated for this selection.",
-    "No salvage candidates match your filters. Adjust your search or choose a different slot.",
-    summary.salvage_total,
-    summary.filtered_salvage_total,
-    summary.salvage_pagination,
-    filters_active,
-    ) }}
+
 </div>
 {% else %}
 {% set testid = "variant-summary-empty" %}

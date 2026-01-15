@@ -101,12 +101,12 @@ def test_resolver_merges_profiles(mocker: MockerFixture) -> None:
     names = [cast("dict[str, Any]", profile).get("name") for profile in profiles_raw]
     assert names == ["A", "B"]
 
-    session.get.assert_any_call(  # type: ignore[no-untyped-call]
+    session.get.assert_any_call(
         "https://maxroll.gg/d3/guides/sample-guide",
         headers=ANY,
         timeout=ANY,
     )
-    session.get.assert_any_call(  # type: ignore[no-untyped-call]
+    session.get.assert_any_call(
         "https://planners.maxroll.gg/profiles/load/d3/123",
         headers=ANY,
         timeout=ANY,

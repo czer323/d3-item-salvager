@@ -1,11 +1,22 @@
+from __future__ import annotations
+
 """API route definitions for the FastAPI application."""
+
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, HTTPException, Query
 
-from d3_item_salvager.api.dependencies import SessionDep
+from d3_item_salvager.api.dependencies import SessionDep  # noqa: TC001
+
+if TYPE_CHECKING:
+    from d3_item_salvager.data.models import Item as ItemModel
+
+import d3_item_salvager.api.dependencies as dependencies  # noqa: TC001
 from d3_item_salvager.api.schemas import (
     BuildGuideListResponse,
     BuildGuideSchema,
+    BuildItemSchema,
+    BuildItemsResponse,
     BuildListResponse,
     BuildSchema,
     ItemListResponse,
@@ -16,6 +27,8 @@ from d3_item_salvager.api.schemas import (
     ItemUsageWithItemSchema,
     ProfileListResponse,
     ProfileSchema,
+    SearchResult,
+    SuggestionSchema,
     VariantListResponse,
     VariantSchema,
     build_pagination,
@@ -30,7 +43,7 @@ _MAX_LIMIT = 500
 
 @router.get("/items", response_model=ItemListResponse, tags=["items"])
 async def list_items(
-    session: SessionDep,
+    session: dependencies.SessionDep,
     *,
     class_name: str | None = Query(None, description="Filter items by character class"),
     slot: str | None = Query(None, description="Filter items by equipment slot"),
@@ -196,6 +209,95 @@ async def list_variants(
     return VariantListResponse(
         data=payload, meta=build_pagination(len(payload), 0, len(payload))
     )
+
+
+# TODO: Review how querying the database for all items on each request impacts performance.  Consider simplifying the query to less fields, and then storing them as a cache in memory with periodic refresh.  If this can be stored in the frontend simply for text matching on search, we could avoid a round-trip to the backend entirely.
+@router.get("/items/lookup", response_model=SearchResult, tags=["items"])
+async def items_lookup(
+    session: SessionDep,
+    *,
+    query: str = Query(..., description="Search query"),
+    limit: int = Query(
+        3, ge=1, le=10, description="Maximum number of suggestions to return"
+    ),
+) -> SearchResult:
+    """Lookup an item by query. Returns exact match, fuzzy suggestions, or none."""
+    from d3_item_salvager.utility.search import fuzzy_score, normalise_token
+
+    items = queries.get_all_items(session)
+    norm_query = normalise_token(query)
+
+    # Exact match: token-equality with normalized names
+    for item in items:
+        if normalise_token(item.name) == norm_query:
+            return SearchResult(
+                match_type="exact",
+                item=ItemReferenceSchema(id=item.id, name=item.name, slot=item.type),
+                suggestions=[],
+                salvageable=False,
+            )
+
+    # Fuzzy suggestions
+    scored: list[tuple[int, ItemModel]] = []
+    for item in items:
+        score = fuzzy_score(item.name, query)
+        if score > 0:
+            scored.append((score, item))
+    if scored:
+        # Sort by score desc then name asc
+        scored.sort(key=lambda s: (-s[0], s[1].name))
+        suggestions = [
+            SuggestionSchema(id=item.id, name=item.name) for _, item in scored[:limit]
+        ]
+        return SearchResult(
+            match_type="fuzzy",
+            item=None,
+            suggestions=suggestions,
+            salvageable=False,
+        )
+
+    # No matches — salvageable
+    return SearchResult(match_type="none", item=None, suggestions=[], salvageable=True)
+
+
+@router.get("/builds/items", response_model=BuildItemsResponse, tags=["builds"])
+async def builds_items(
+    session: SessionDep,
+    *,
+    build_ids: str = Query(..., description="Comma-separated build ids e.g., 1,2"),
+    limit: int = Query(
+        _DEFAULT_LIMIT,
+        ge=1,
+        le=_MAX_LIMIT,
+        description="Maximum number of records to return",
+    ),
+    offset: int = Query(0, ge=0, description="Number of records to skip"),
+) -> BuildItemsResponse:
+    """Return the union of items for the provided build ids (de-duplicated, alphabetical, paginated)."""
+    try:
+        ids = [int(part) for part in build_ids.split(",") if part.strip()]
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid build_ids parameter")
+
+    # Aggregate items for each build
+    items_map: dict[str, ItemModel] = {}
+    for build_id in ids:
+        rows = queries.get_items_by_build(session, build_id)
+        for item in rows:
+            # rows are sequences of ItemModel
+            items_map[item.id] = item
+
+    items: list[ItemModel] = sorted(items_map.values(), key=lambda i: i.name)
+    total = len(items)
+    active = items[offset : offset + limit]
+    payload = [
+        BuildItemSchema(
+            id=item.id, name=item.name, slot=item.type, quality=item.quality
+        )
+        for item in active
+    ]
+
+    return BuildItemsResponse(data=payload, meta=build_pagination(limit, offset, total))
 
 
 @router.get(

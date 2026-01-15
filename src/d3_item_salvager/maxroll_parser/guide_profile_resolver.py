@@ -68,7 +68,14 @@ class GuideProfileResolver:
         }
 
     def resolve(self, guide_url: str) -> dict[str, Any]:
-        """Return a combined build profile payload for the given guide URL."""
+        """Return a combined build profile payload for the given guide URL.
+
+        NOTE: some guide pages embed multiple planner payloads. Historically the
+        resolver combined profiles from all planner payloads into a single
+        payload; that behaviour is preserved for compatibility. Downstream
+        callers are encouraged to call `get_planner_ids()` and fetch planner
+        payloads individually when separate builds are desired.
+        """
         planner_ids = self._extract_planner_ids(guide_url)
         if not planner_ids:
             msg = "Guide did not embed any planner IDs."
@@ -104,6 +111,16 @@ class GuideProfileResolver:
 
         return self._combine_payloads(bundles)
 
+    def get_planner_ids(self, guide_url: str) -> list[str]:
+        """Return planner IDs embedded in the guide page.
+
+        This is a public wrapper around the extraction logic used internally by
+        :meth:`resolve`. Callers may use this to split multi-planner guides into
+        separate processing units (one per planner ID) instead of combining
+        profiles into a single build.
+        """
+        return self._extract_planner_ids(guide_url)
+
     # ------------------------------------------------------------------
     def _extract_planner_ids(self, guide_url: str) -> list[str]:
         self._respect_request_interval()
@@ -115,14 +132,35 @@ class GuideProfileResolver:
         candidates: list[str] = []
         seen: set[str] = set()
 
-        attr_matches = re.findall(r"data-d3planner-id=\"(\d+)\"", html)
-        attr_matches.extend(re.findall(r"data-d3planner-id='(\d+)'", html))
-        url_matches = re.findall(r"/d3planner/(\d+)", html)
+        # Prefer explicit data-d3planner-id attributes but exclude ids that are
+        # clearly associated with 'non-profile' elements like altars.
+        # Example: <div ... data-d3planner-id="315680726" data-d3planner-type="altar" ...>
+        blacklist_types = {"altar"}
+        # Find tags that contain data-d3planner-id and inspect for type inside tag
+        tag_pattern = re.compile(
+            r"<[^>]*\bdata-d3planner-id=[\'\"](\d+)[\'\"][^>]*>",
+            re.IGNORECASE | re.DOTALL,
+        )
+        for m in tag_pattern.finditer(html):
+            pid = m.group(1)
+            tag = m.group(0)
+            type_m = re.search(
+                r"\bdata-d3planner-type=[\'\"]([^\'\"]+)[\'\"]", tag, re.IGNORECASE
+            )
+            if type_m and type_m.group(1).lower() in blacklist_types:
+                # skip altar/planner types that are not actual build profiles
+                continue
+            if pid not in seen:
+                candidates.append(pid)
+                seen.add(pid)
 
-        for value in attr_matches + url_matches:
+        # Fallback: URLs that reference planner ids (e.g., /d3planner/123) - only
+        # include if not seen already.
+        for value in re.findall(r"/d3planner/(\d+)", html):
             if value not in seen:
                 candidates.append(value)
                 seen.add(value)
+
         return candidates
 
     def _fetch_planner_payload(self, planner_id: str) -> dict[str, Any]:
@@ -134,9 +172,19 @@ class GuideProfileResolver:
         attempt = 1
         while True:
             self._respect_request_interval()
-            response = self._session.get(
-                url, headers=self._json_headers, timeout=self._timeout
-            )
+            try:
+                # Use a short connect timeout to avoid long SSL/connect hangs and a
+                # longer read timeout for payload download.
+                timeout_val = (3.0, self._timeout)
+                response = self._session.get(
+                    url, headers=self._json_headers, timeout=timeout_val
+                )
+            except Exception as exc:
+                msg = f"Failed to fetch planner payload (network error): {exc}"
+                raise BuildProfileError(
+                    msg, file_path=url, context={"planner_id": planner_id}
+                ) from exc
+
             if response.status_code < 400:
                 data = response.json()
                 if not isinstance(data, dict):

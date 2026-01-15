@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
-from frontend.src.services.item_usage import ItemUsageStatus, build_item_usage_table
+from frontend.src.services.item_usage import build_item_usage_table
 
 if TYPE_CHECKING:  # pragma: no cover - typing aid for fake backend
     from frontend.src.services.backend_client import BackendClient
@@ -34,7 +34,7 @@ class FakeBackendClient:
 
 
 def test_build_item_usage_table_merges_catalogue_with_usage() -> None:
-    """Used items retain usage metadata and unused catalogue entries become salvage."""
+    """Only catalogue items used in the selected builds are returned."""
     responses: dict[str, object] = {
         "/items": [
             {"id": "item-1", "name": "Mighty Weapon", "slot": "Weapon"},
@@ -56,23 +56,17 @@ def test_build_item_usage_table_merges_catalogue_with_usage() -> None:
         build_ids=("build-1",),
     )
 
-    assert table.total_items == 2
+    assert table.total_items == 1
     assert table.used_total == 1
-    assert table.salvage_total == 1
-    assert tuple(table.available_slots) == ("Amulet", "Weapon")
+    assert tuple(table.available_slots) == ("Weapon",)
 
     rows_by_id = {row.item_id: row for row in table.rows}
-    assert set(rows_by_id) == {"item-1", "item-2"}
+    assert set(rows_by_id) == {"item-1"}
 
     used_row = rows_by_id["item-1"]
-    assert used_row.status is ItemUsageStatus.USED
+    assert used_row.is_used
     assert used_row.usage_contexts == ("main",)
     assert used_row.variant_ids == ("variant-1",)
-
-    salvage_row = rows_by_id["item-2"]
-    assert salvage_row.status is ItemUsageStatus.SALVAGE
-    assert salvage_row.usage_contexts == ()
-    assert salvage_row.variant_ids == ()
 
     assert table.selected_build_ids == ("build-1",)
 

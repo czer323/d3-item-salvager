@@ -57,6 +57,16 @@ def controls_partial() -> str:
     except BackendClientError as exc:
         selection_error = str(exc)
 
+    # If the user applied the selection, return the panel in collapsed state (summary view)
+    if action == "apply_items":
+        return render_template(
+            "selection_panel.html",
+            selection_view=selection_view,
+            selection_error=selection_error,
+            prefetch_items=prefetch_items,
+            selection_collapsed=True,
+        )
+
     return render_template(
         "selection/controls.html",
         selection_view=selection_view,

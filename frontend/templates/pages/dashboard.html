@@ -22,7 +22,7 @@
     </div>
 
     {% with prefetch_items=False %}
-    {% include "selection/controls.html" %}
+    {% include "selection_panel.html" %}
     {% endwith %}
 
     <div class="space-y-3">
@@ -31,10 +31,16 @@
         </div>
         <div id="item-summary-content">
             {% set table = item_table if item_table is defined else None %}
-            {% set table_error = item_table_error if item_table_error is defined else None %}
+            {% set table_error = item_table_error if table_error is defined else None %}
             {% include "items/summary.html" %}
         </div>
     </div>
 </section>
 {% include "selection/preferences_modal.html" %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/selection.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/item_list.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/search.js') }}" defer></script>
 {% endblock %}

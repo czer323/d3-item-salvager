@@ -1,0 +1,37 @@
+{# Render collapsed summary only when caller passes `selection_collapsed` True; defaults to False #}
+{% set collapsed = selection_collapsed if selection_collapsed is defined else False %}
+
+<div id="selection-panel">
+    {% if collapsed %}
+    <div id="selection-summary" class="card bg-base-200/40 p-3 flex items-center justify-between" role="region"
+        aria-label="Selection summary">
+        <div>
+            <strong>Selected builds:</strong>
+            {% if selection_view is defined and selection_view.selected_build_ids is defined %}
+            <span class="ml-2">{{ selection_view.selected_build_ids | join(', ') }}</span>
+            {% else %}
+            <span class="ml-2">&mdash;</span>
+            {% endif %}
+        </div>
+        <div class="flex items-center gap-2">
+            <button class="btn btn-ghost" data-testid="selection-edit-button" aria-controls="selection-panel"
+                tabindex="0">Edit</button>
+        </div>
+    </div>
+
+    {% if prefetch_items and selection_view %}
+    <form id="selection-summary-form" class="hidden" aria-hidden="true">
+        {% for cid in selection_view.selected_class_ids %}
+        <input type="hidden" name="class_ids" value="{{ cid }}" />
+        {% endfor %}
+        {% for bid in selection_view.selected_build_ids %}
+        <input type="hidden" name="build_ids" value="{{ bid }}" />
+        {% endfor %}
+    </form>
+    <div hx-post="{{ url_for('items.summary_partial') }}" hx-target="#item-summary-content" hx-trigger="load"
+        hx-indicator="#item-summary-indicator" hx-include="#selection-summary-form" aria-hidden="true"></div>
+    {% endif %}
+    {% else %}
+    {% include "selection/controls.html" %}
+    {% endif %}
+</div>

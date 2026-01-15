@@ -8,7 +8,6 @@ wheels/
 .pytest_cache/
 # Virtual environments
 .venv
-.github
 .mypy_cache
 .env
 .coverage
@@ -26,3 +25,5 @@ Thumbs.db
 **/playwright-report
 **/test-results
 **/playwright-debug
+backups/d3_items.db.bak
+backups/d3_items.db.sql

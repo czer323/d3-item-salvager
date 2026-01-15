@@ -75,19 +75,16 @@ class ItemSummary:
 
 @dataclass(slots=True)
 class VariantSummary:
-    """Aggregate of used and salvageable items for a variant."""
+    """Aggregate of used items for a variant."""
 
     variants: tuple[VariantDetails, ...]
     used_items: list[ItemSummary]
-    salvage_items: list[ItemSummary]
+    all_items: list[ItemSummary]
     filters: FilterCriteria
     available_slots: tuple[str, ...]
     used_total: int
-    salvage_total: int
     filtered_used_total: int
-    filtered_salvage_total: int
     used_pagination: PaginationState
-    salvage_pagination: PaginationState
 
     def to_contract_payload(self) -> dict[str, Any]:
         """Return JSON payload adhering to the documented contract."""
@@ -98,10 +95,7 @@ class VariantSummary:
         )
         return {
             "variant": variant_payload,
-            "items": [
-                *[item.to_contract_entry() for item in self.used_items],
-                *[item.to_contract_entry() for item in self.salvage_items],
-            ],
+            "items": [item.to_contract_entry() for item in self.all_items],
         }
 
     @property
@@ -122,7 +116,6 @@ def build_variant_summary(
     search: str = "",
     slot: str | None = None,
     used_page: int = 1,
-    salvage_page: int = 1,
     page_size: int = 60,
 ) -> VariantSummary:
     """Fetch backend data and compose a variant summary."""
@@ -182,7 +175,7 @@ def build_variant_summary(
                 accumulator.variant_ids.add(variant_id)
 
     used_items: list[ItemSummary] = []
-    salvage_items: list[ItemSummary] = []
+    all_items: list[ItemSummary] = []
     for item_id, accumulator in deduped.items():
         contexts = tuple(sorted(accumulator.contexts))
         classification = classify_usage_contexts(contexts)
@@ -194,43 +187,38 @@ def build_variant_summary(
             classification=classification,
             variant_ids=tuple(sorted(accumulator.variant_ids)),
         )
-        if classification is SalvageLabel.SALVAGE:
-            salvage_items.append(summary)
-        else:
+        all_items.append(summary)
+        # Exclude 'salvage' classification from the visible lists
+        if classification is not SalvageLabel.SALVAGE:
             used_items.append(summary)
 
     available_slots = tuple(
-        sorted(
-            {item.slot for item in (*used_items, *salvage_items) if item.slot},
-            key=str.casefold,
-        )
+        sorted({item.slot for item in used_items if item.slot}, key=str.casefold)
     )
     criteria = FilterCriteria(search=search, slot=slot)
     filtered_used = apply_filters(used_items, criteria)
-    filtered_salvage = apply_filters(salvage_items, criteria)
     used_page_items, used_pagination = paginate_items(
         filtered_used,
         page=used_page,
         page_size=page_size,
     )
-    salvage_page_items, salvage_pagination = paginate_items(
-        filtered_salvage,
-        page=salvage_page,
-        page_size=page_size,
+
+    current_app.logger.warning(
+        "build_variant_summary: used_items=%d, deduped=%d, variants=%s",
+        len(used_items),
+        len(deduped),
+        list(usage_rows_by_variant.keys()),
     )
 
     return VariantSummary(
         variants=tuple(variants),
         used_items=used_page_items,
-        salvage_items=salvage_page_items,
+        all_items=all_items,
         filters=criteria,
         available_slots=available_slots,
         used_total=len(used_items),
-        salvage_total=len(salvage_items),
         filtered_used_total=len(filtered_used),
-        filtered_salvage_total=len(filtered_salvage),
         used_pagination=used_pagination,
-        salvage_pagination=salvage_pagination,
     )
 
 

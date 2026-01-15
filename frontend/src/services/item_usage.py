@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections import OrderedDict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from enum import Enum
 from typing import TYPE_CHECKING, Any, cast
 
 from flask import current_app
@@ -35,13 +34,6 @@ if TYPE_CHECKING:
     from frontend.src.services.backend_client import BackendClient
 
 
-class ItemUsageStatus(str, Enum):
-    """Disposition of an item relative to the selected builds."""
-
-    USED = "used"
-    SALVAGE = "salvage"
-
-
 @dataclass(slots=True)
 class ItemUsageRow:
     """Representation of a catalogue item with usage metadata."""
@@ -49,7 +41,7 @@ class ItemUsageRow:
     item_id: str
     name: str
     slot: str
-    status: ItemUsageStatus
+    is_used: bool
     classification: SalvageLabel
     usage_contexts: tuple[str, ...]
     variant_ids: tuple[str, ...]
@@ -60,15 +52,10 @@ class ItemUsageRow:
         return _BADGE_CLASS_MAP[self.classification]
 
     @property
-    def is_used(self) -> bool:
-        """Return True when the item is required for the selected builds."""
-        return self.status is ItemUsageStatus.USED
-
-    @property
     def usage_label(self) -> str:
         """Readable label describing where the item is used."""
         if not self.usage_contexts:
-            return "Salvage"
+            return ""
         return ", ".join(context.title() for context in self.usage_contexts)
 
 
@@ -83,9 +70,7 @@ class ItemUsageTable:
     total_items: int
     filtered_items: int
     used_total: int
-    salvage_total: int
     filtered_used_total: int
-    filtered_salvage_total: int
     selected_class_ids: tuple[str, ...]
     selected_build_ids: tuple[str, ...]
 
@@ -111,15 +96,13 @@ class ItemUsageTable:
                 "filtered_items": self.filtered_items,
                 "used_total": self.used_total,
                 "filtered_used": self.filtered_used_total,
-                "salvage_total": self.salvage_total,
-                "filtered_salvage": self.filtered_salvage_total,
             },
             "rows": [
                 {
                     "item_id": row.item_id,
                     "name": row.name,
                     "slot": row.slot,
-                    "status": row.status.value,
+                    "status": "used",
                     "classification": row.classification.value,
                     "usage_contexts": list(row.usage_contexts),
                     "variant_ids": list(row.variant_ids),
@@ -165,12 +148,8 @@ def build_item_usage_table(
         sorted({row.slot for row in rows if row.slot}, key=str.casefold)
     )
 
-    used_total = sum(1 for row in rows if row.status is ItemUsageStatus.USED)
-    salvage_total = len(rows) - used_total
-    filtered_used_total = sum(
-        1 for row in filtered_rows if row.status is ItemUsageStatus.USED
-    )
-    filtered_salvage_total = len(filtered_rows) - filtered_used_total
+    used_total = len(rows)
+    filtered_used_total = len(filtered_rows)
 
     return ItemUsageTable(
         rows=visible_rows,
@@ -180,9 +159,7 @@ def build_item_usage_table(
         total_items=len(rows),
         filtered_items=len(filtered_rows),
         used_total=used_total,
-        salvage_total=salvage_total,
         filtered_used_total=filtered_used_total,
-        filtered_salvage_total=filtered_salvage_total,
         selected_class_ids=tuple(sorted(resolved_class_ids)),
         selected_build_ids=tuple(resolved_build_ids),
     )
@@ -258,56 +235,27 @@ def _merge_catalogue_with_usage(
     rows: list[ItemUsageRow] = []
     catalogue_map = {record.id: record for record in catalogue}
 
-    for record in catalogue:
-        accumulator = usage.get(record.id)
-        if accumulator:
-            contexts = tuple(sorted(accumulator.contexts))
-            classification = classify_usage_contexts(contexts)
-            rows.append(
-                ItemUsageRow(
-                    item_id=record.id,
-                    name=record.name,
-                    slot=record.slot,
-                    status=ItemUsageStatus.USED,
-                    classification=classification,
-                    usage_contexts=contexts,
-                    variant_ids=tuple(sorted(accumulator.variant_ids)),
-                )
-            )
-        else:
-            rows.append(
-                ItemUsageRow(
-                    item_id=record.id,
-                    name=record.name,
-                    slot=record.slot,
-                    status=ItemUsageStatus.SALVAGE,
-                    classification=SalvageLabel.SALVAGE,
-                    usage_contexts=(),
-                    variant_ids=(),
-                )
-            )
-
-    # Include any usage entries not present in the catalogue for completeness.
     for item_id, accumulator in usage.items():
-        if item_id in catalogue_map:
-            continue
         contexts = tuple(sorted(accumulator.contexts))
         classification = classify_usage_contexts(contexts)
+        record = catalogue_map.get(item_id)
+        name = record.name if record else accumulator.name
+        slot = record.slot if record else accumulator.slot
         rows.append(
             ItemUsageRow(
                 item_id=item_id,
-                name=accumulator.name,
-                slot=accumulator.slot,
-                status=ItemUsageStatus.USED,
+                name=name,
+                slot=slot,
+                is_used=True,
                 classification=classification,
                 usage_contexts=contexts,
                 variant_ids=tuple(sorted(accumulator.variant_ids)),
             )
         )
 
-    rows.sort(
-        key=lambda row: (row.status.value, row.slot.casefold(), row.name.casefold())
-    )
+    # Sort primarily by item name (case-insensitive) and fall back to item_id
+    # to guarantee a deterministic order when names are identical.
+    rows.sort(key=lambda row: (row.name.casefold(), row.item_id))
     return rows
 
 
@@ -341,3 +289,11 @@ class _UsageAccumulator:
     slot: str
     contexts: set[str]
     variant_ids: set[str]
+
+
+# Public aliases for testability: prefer the public names in tests to avoid
+# importing private members (leading underscore) across module boundaries.
+# These refer to the same underlying implementations and are intentionally
+# exported for use in unit tests.
+merge_catalogue_with_usage = _merge_catalogue_with_usage
+UsageAccumulator = _UsageAccumulator

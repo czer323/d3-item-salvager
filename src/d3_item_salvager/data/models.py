@@ -2,7 +2,7 @@
 
 # TODO: Remove once sqlmodel types are fixed
 from sqlmodel import Relationship, SQLModel  # noqa: I001
-from sqlmodel import Field  # type: ignore[attr-defined]
+from sqlmodel import Field
 
 
 class Build(SQLModel, table=True):

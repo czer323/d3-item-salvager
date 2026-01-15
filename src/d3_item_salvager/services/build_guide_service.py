@@ -137,6 +137,86 @@ class BuildGuideService:
         bundles: list[ParsedGuideBundle] = []
         skipped = 0
         for guide in guides:
+            # If we have a resolver available and it reports more than one planner
+            # id on the guide page, treat each planner payload as a separate
+            # 'sub-guide' and parse them individually. This prevents combining
+            # distinct planners (often different classes) into a single Build.
+            planner_ids: list[str] | None = None
+            if self._resolver is not None:
+                try:
+                    planner_ids = self._resolver.get_planner_ids(guide.url)
+                except Exception:
+                    planner_ids = None
+
+            if planner_ids and len(planner_ids) > 1:
+                # Expand into per-planner parsing
+                for pid in planner_ids:
+                    planner_url = (
+                        self._config.maxroll_parser.planner_profile_url.format(
+                            planner_id=pid
+                        )
+                    )
+                    try:
+                        parser = self._parser_factory(planner_url)
+                    except (FileNotFoundError, BuildProfileError, ValueError) as exc:
+                        extra: dict[str, object] = {
+                            "error": repr(exc),
+                            "planner_url": planner_url,
+                        }
+                        if isinstance(exc, BuildProfileError):
+                            if exc.file_path:
+                                extra["planner_resource"] = exc.file_path
+                            if exc.context:
+                                extra.update(exc.context)
+                        self._logger.exception(
+                            "Failed to instantiate parser for planner %s",
+                            planner_url,
+                            extra=extra,
+                        )
+                        skipped += 1
+                        continue
+                    try:
+                        profiles = parser.profiles
+                        usages = parser.extract_usages()
+                    except (BuildProfileError, ValueError, TypeError) as exc:
+                        extra: dict[str, object] = {
+                            "planner_url": planner_url,
+                            "error": str(exc),
+                        }
+                        if isinstance(exc, BuildProfileError):
+                            if exc.file_path:
+                                extra["planner_resource"] = exc.file_path
+                            if exc.context:
+                                extra.update(exc.context)
+                        self._logger.exception(
+                            "Failed to parse build profile for planner",
+                            extra=extra,
+                        )
+                        skipped += 1
+                        continue
+                    if not profiles:
+                        self._logger.warning(
+                            "Skipping planner %s because no profiles were extracted.",
+                            planner_url,
+                        )
+                        skipped += 1
+                        continue
+                    # Construct a synthetic GuideInfo to keep track of this planner
+                    from d3_item_salvager.maxroll_parser.types import GuideInfo
+
+                    subguide = GuideInfo(
+                        name=f"{guide.name} (planner {pid})", url=planner_url
+                    )
+                    bundles.append(
+                        ParsedGuideBundle(
+                            guide=subguide,
+                            profiles=tuple(profiles),
+                            usages=tuple(usages),
+                        )
+                    )
+                continue
+
+            # Fallback: single planner or no resolver available — existing behaviour
             try:
                 parser = self._parser_factory(guide.url)
             except (FileNotFoundError, BuildProfileError, ValueError) as exc:
