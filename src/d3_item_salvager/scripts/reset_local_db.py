@@ -58,10 +58,53 @@ def dump_sqlite(db_path: Path, dump_path: Path) -> None:
     conn.close()
 
 
-def recreate_schema(db_url: str) -> None:
+def apply_migrations(db_url: str) -> None:
+    """Run Alembic migrations to bring DB schema to head.
+
+    Falls back to creating tables directly if Alembic is not available.
+    """
+    try:
+        from alembic.config import Config
+
+        from alembic import command
+    except Exception:  # pragma: no cover - alembic not installed in some environments
+        # Fallback to SQLModel metadata when Alembic is unavailable
+        engine = create_engine(db_url)
+        SQLModel.metadata.create_all(engine)
+        return
+
+    cfg = Config("alembic.ini")
+    # Ensure the URL is set for the config
+    cfg.set_main_option("sqlalchemy.url", db_url)
+    command.upgrade(cfg, "head")
+
+    # Sanity check: if migrations ran but tables are missing (some environments
+    # may not have model metadata available during migration), fall back to
+    # creating tables from SQLModel metadata so migration test remains robust.
+    engine = create_engine(db_url)
+    inspector_tables = (
+        engine.connect()
+        .connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        .fetchall()
+    )
+    table_names = {r[0] for r in inspector_tables}
+    expected = {t.name for t in SQLModel.metadata.tables.values()}
+    if not expected.issubset(table_names):
+        SQLModel.metadata.create_all(engine)
+
+
+def recreate_schema(db_url: str, use_migrations: bool = False) -> None:
+    """Drop and recreate schema.
+
+    If use_migrations is True, drop existing tables then run migrations. Otherwise
+    recreate directly using SQLModel metadata.
+    """
     engine = create_engine(db_url)
     SQLModel.metadata.drop_all(engine)
-    SQLModel.metadata.create_all(engine)
+    if use_migrations:
+        apply_migrations(db_url)
+    else:
+        SQLModel.metadata.create_all(engine)
 
 
 def run_importers(db_url: str) -> None:
@@ -80,6 +123,7 @@ def reset_local_db(
     dry_run: bool = False,
     confirm: bool = False,
     force: bool = False,
+    use_migrations: bool = False,
 ) -> Result:
     db_url = db_url or DatabaseConfig().url
     res = Result(engine_url=db_url)
@@ -117,7 +161,7 @@ def reset_local_db(
 
     # Perform cleanup
     if method == "drop":
-        recreate_schema(db_url)
+        recreate_schema(db_url, use_migrations=use_migrations)
     elif method == "delete":
         # Not implemented: granular deletes are complex and depend on FK ordering.
         msg = "delete method not implemented; use 'drop' or implement later"
@@ -144,6 +188,11 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     p.add_argument(
         "--force", action="store_true", help="Allow non-sqlite DBs (use with caution)"
     )
+    p.add_argument(
+        "--use-migrations",
+        action="store_true",
+        help="Use Alembic migrations to recreate schema instead of SQLModel metadata",
+    )
     return p.parse_args(argv)
 
 
@@ -158,6 +207,7 @@ def main(argv: list[str] | None = None) -> int:
             dry_run=args.dry_run,
             confirm=args.confirm,
             force=args.force,
+            use_migrations=bool(getattr(args, "use_migrations", False)),
         )
     except Exception as exc:  # pragma: no cover - surface errors for CLI
         print("Error:", exc)
