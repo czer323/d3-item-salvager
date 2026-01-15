@@ -57,7 +57,7 @@ class FileGuideCache(GuideCacheProtocol):
             guides_raw = cache_data.get("guides", [])
             guides: list[GuideInfo] = []
             if isinstance(guides_raw, Iterable):
-                entries = cast("Iterable[object]", guides_raw)
+                entries = cast("Iterable[object]", guides_raw)  # ty:ignore[redundant-cast]
                 for entry in entries:
                     if not isinstance(entry, Mapping):
                         continue

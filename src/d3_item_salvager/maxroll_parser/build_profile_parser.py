@@ -137,7 +137,7 @@ class BuildProfileParser(BuildProfileParserProtocol):
                 if not m:
                     raise
                 planner_id = m.group(1)
-                asset_url = f"https://assets-ng.maxroll.gg/d3planner/{planner_id}.json"
+                asset_url = f"https://planners.maxroll.gg/profiles/d3/{planner_id}.json"
                 try:
                     resp2 = requests.get(asset_url, timeout=10)
                     resp2.raise_for_status()
