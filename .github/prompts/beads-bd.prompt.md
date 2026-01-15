@@ -22,19 +22,33 @@ Review the other files in the `.claude/skills/beads/` directory for additional c
 ## Full Create Example
 
 ```bash
-bd create "Add default mod settings & options framework - TEST" \
+bd create "feat(config): add environment variable loading" \
   --type epic \
   --priority 2 \
-  --description "Framework for namespaced mod settings and options integration" \
-  --design "datamap $mod_<slug>, macros mod-setting-get/set" \
-  --acceptance "Templates + example mod converted" \
+  --description "Description of work" \
+  --design "Example data design" \
+  --acceptance "Templates + example" \
   --notes "See REFERENCE/MODS/mod-settings-framework" \
   --estimate 480 \
-  --labels "tooling,mod:tools" \
+  --labels "tooling,researc" \
   --json
 ```
 
-"Use $(...) notation instead of legacy backticks `...`."
+"Use $(...) notation instead of legacy backticks `...`."  We use POSIX-compliant shells that require careful attention when using backticks.
+
+### Title Description
+
+**Title types:** `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+
+**Examples:**
+
+```text
+feat(config): add environment variable loading
+fix(exceptions): correct error code inheritance
+docs(readme): update setup instructions
+test(services): add integration test coverage
+chore(deps): update development dependencies
+```
 
 ---
 
@@ -70,16 +84,17 @@ bd create -f epic-desc.md --json
 
 # Duplicate Issue Detection
 - Search for duplicates before creating a new issue. If one exists, do not create a new issue—notify the user and merge or link details into the canonical ticket.
-- If multiple existing issues cover the same topic, consolidate into the canonical issue, mark duplicates as priority `p4`, add the `duplicate` label and close the duplicate.
-- Do not close a ticket unless you are confident it is a true duplicate; if unsure, leave it open and discuss with the user.
+- If multiple existing issues cover the same topic, consider if this is really a duplicate issue, or if it s a new aspect that warrants its own ticket.
 - If an issue is related but not duplicate, link using `--related-to` when creating or updating the issue.
+- Use `bd duplicate <id> --of <canonical> --sjon` to mark duplicates.
+
 
 ## Label usage (LLM guidance)
 Use the `label` field sparingly. Prefer at most 2–3 labels: one `mod:<slug>` when applicable plus one area or workflow flag.
 
 ```yaml
 label_usage:
-  summary: "Prefer at most 1-2 labels: one 'mod:<slug>' and an optional area or workflow flag. Do not duplicate the issue type; use bd's -t field."
+  summary: "Prefer at most 1-2 labels.  Do not duplicate the issue type; use bd's -t field."
   formatting:
     - "Apply at most one label from each category"
     - "Use lowercase and hyphens for multiword labels"
@@ -102,15 +117,8 @@ label_usage:
           desc: "Spikes, feasibility research, and discovery work"
         - name: refactor
           desc: "Code cleanup or reorganization that preserves behavior"
-        - name: gameplay
-          desc: "Core mechanics, balancing, and player-facing systems"
         - name: testing
           desc: "Test creation, maintenance, and test infrastructure"
-    scope:
-      desc: "Single 'mod:<slug>' label for mod-specific issues"
-      examples:
-        - mod:futa
-        - mod:kokopelli
     workflow_meta:
       desc: "Workflow flags for process signals; use sparingly — do not replace bd statuses."
       items:

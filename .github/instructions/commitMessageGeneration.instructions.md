@@ -1,9 +1,5 @@
 # Git Commit Standards
 
-Always add humor into your commit messages, but keep it professional. Remember, your code is serious business, but that doesn't mean your commit messages can't have a little fun!
-
-Always write in capital letters to emphasize the importance of your changes, but keep it concise. Your commit messages should be like a good joke: short, punchy, and to the point.
-
 Follow conventional commit format for consistency:
 
 **Format:**
