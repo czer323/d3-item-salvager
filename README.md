@@ -68,6 +68,9 @@ uv run python src/utility/export_profile_data.py --profile <profile_id>
 uv run python src/data/init_db.py
 ```
 
+**Reset & safety runbook:** For destructive reset and repopulation workflows (backup → drop → migrate/import), see `docs/reset_local_db.md`. This runbook documents safe usage, the `--use-migrations` option, and cautions about running against production databases.
+
+
 ### Custom Parsing
 
 Extend `maxroll_parser/` with your own logic for new guide formats or sources.
