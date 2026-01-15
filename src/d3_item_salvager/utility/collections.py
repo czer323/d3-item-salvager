@@ -35,10 +35,10 @@ def dedupe_and_sort(items: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
             try:
                 hash(item_id)
                 # Use actual object as key alongside its type to disambiguate types
-                key = (type(item_id), item_id)  # type: ignore[arg-type]
+                key = (type(item_id), item_id)
             except TypeError:
                 # Unhashable (e.g., list/dict) — fall back to string form
-                key = (type(item_id), str(item_id))  # type: ignore[assignment]
+                key = (type(item_id), str(item_id))
 
         if key in seen:
             continue

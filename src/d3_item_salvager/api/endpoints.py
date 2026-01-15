@@ -285,7 +285,7 @@ async def builds_items(
         rows = queries.get_items_by_build(session, build_id)
         for item in rows:
             # rows are sequences of ItemModel
-            items_map[item.id] = item  # type: ignore[index]
+            items_map[item.id] = item
 
     items: list[ItemModel] = sorted(items_map.values(), key=lambda i: i.name)
     total = len(items)

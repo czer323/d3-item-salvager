@@ -18,7 +18,7 @@ from tests.fakes.test_db_utils import seed_salvage_dataset
 if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
 else:  # pragma: no cover - typing fallbacks for runtime
-    Engine = Any  # type: ignore[assignment]
+    Engine = Any
 
 
 @pytest.mark.usefixtures("sqlite_test_engine")

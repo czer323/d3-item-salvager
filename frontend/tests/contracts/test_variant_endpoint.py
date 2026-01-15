@@ -96,7 +96,7 @@ def _assert_variant_contract(payload: dict[str, Any], schema: dict[str, Any]) ->
 if TYPE_CHECKING:
     from flask.testing import FlaskClient
 else:  # pragma: no cover - runtime fallback for type checking only import
-    FlaskClient = Any  # type: ignore[assignment]
+    FlaskClient = Any
 
 
 @pytest.mark.usefixtures("frontend_app")
