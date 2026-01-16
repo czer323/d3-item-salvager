@@ -134,6 +134,43 @@ def list_items(
     return items, total
 
 
+def get_item_usage_classes(session: Session, item_id: str) -> list[str]:
+    """Return distinct class names that use the given item (filter out nulls)."""
+    statement = (
+        select(Profile.class_name)
+        .join(ItemUsage)
+        .where(ItemUsage.profile_id == Profile.id)
+        .where(ItemUsage.item_id == item_id)
+        .distinct()
+    )
+    # Return distinct class names; DB adapters will normally return strings here
+    return [str(r) for r in session.exec(statement).all()]
+
+
+def get_usage_classes_for_items(
+    session: Session, item_ids: Sequence[str]
+) -> dict[str, list[str]]:
+    """Return a mapping of item_id -> list[class_name] for all provided item ids in one query."""
+    if not item_ids:
+        return {}
+    statement = (
+        select(ItemUsage.item_id, Profile.class_name)
+        .join(Profile)
+        .where(ItemUsage.profile_id == Profile.id)
+        .distinct()
+    )
+    rows = session.exec(statement).all()
+    # Filter rows in Python to avoid SQLAlchemy attribute type issues in static analysis
+    rows = [r for r in rows if r[0] in set(item_ids)]
+    mapping: dict[str, list[str]] = {}
+    for item_id, class_name in rows:
+        mapping.setdefault(item_id, []).append(str(class_name))
+    # Deduplicate and sort class lists for deterministic order
+    for k, v in mapping.items():
+        mapping[k] = sorted(set(v))
+    return mapping
+
+
 def list_builds(
     session: Session,
     *,

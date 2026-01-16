@@ -71,8 +71,16 @@ async def list_items(
         limit=limit,
         offset=offset,
     )
-    payload = [ItemSchema.model_validate(item) for item in items]
-    return ItemListResponse(data=payload, meta=build_pagination(limit, offset, total))
+    # Batch-load usage classes for all items to avoid N+1 queries
+    item_ids = [item.id for item in items]
+    usage_map = queries.get_usage_classes_for_items(session, item_ids)
+
+    enriched: list[ItemSchema] = []
+    for item in items:
+        model = ItemSchema.model_validate(item)
+        model.usage_classes = usage_map.get(item.id, [])
+        enriched.append(model)
+    return ItemListResponse(data=enriched, meta=build_pagination(limit, offset, total))
 
 
 @router.get("/builds", response_model=BuildListResponse, tags=["builds"])
@@ -281,7 +289,7 @@ async def builds_items(
 
     # Aggregate items for each build
     items_map: dict[str, ItemModel] = {}
-    # Track usage contexts and contributing variant/profile ids per item
+    # Track usage contexts, contributing variant/profile ids, and classes per item
     usage_map: dict[str, dict[str, set[str]]] = {}
 
     for build_id in ids:
@@ -299,10 +307,17 @@ async def builds_items(
             for u in usages:
                 item_id = u.item_id
                 ctx = (u.usage_context or "").lower()
+                cls = (profile.class_name or "").strip()
                 if item_id not in usage_map:
-                    usage_map[item_id] = {"contexts": set(), "variant_ids": set()}
+                    usage_map[item_id] = {
+                        "contexts": set(),
+                        "variant_ids": set(),
+                        "classes": set(),
+                    }
                 if ctx:
                     usage_map[item_id]["contexts"].add(ctx)
+                if cls:
+                    usage_map[item_id]["classes"].add(cls)
                 usage_map[item_id]["variant_ids"].add(str(profile.id))
 
     items: list[ItemModel] = sorted(items_map.values(), key=lambda i: i.name)
@@ -317,8 +332,14 @@ async def builds_items(
         others: list[str] = sorted([c for c in contexts if c not in preferred])
         return ordered + others
 
+    def _order_classes_for_payload(classes: set[str]) -> list[str]:
+        # Present classes in stable alphabetical order for deterministic payloads
+        return sorted(classes)
+
     for item in active:
-        usages = usage_map.get(item.id, {"contexts": set(), "variant_ids": set()})
+        usages = usage_map.get(
+            item.id, {"contexts": set(), "variant_ids": set(), "classes": set()}
+        )
         payload.append(
             BuildItemSchema(
                 id=item.id,
@@ -326,6 +347,7 @@ async def builds_items(
                 slot=item.type,
                 quality=item.quality,
                 usage_contexts=_order_contexts_for_payload(usages["contexts"]),
+                usage_classes=_order_classes_for_payload(usages.get("classes", set())),
                 variant_ids=sorted(usages["variant_ids"]),
             )
         )

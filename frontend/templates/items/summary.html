@@ -38,7 +38,9 @@
                     {% for row in table.rows %}
                     <tr data-filter-item data-item-id="{{ row.item_id }}"
                         data-item-name="{{ row.name | sanitize_item_name }}"
-                        data-item-slot="{{ (row.slot or 'Unknown')|lower }}">
+                        data-item-slot="{{ (row.slot or 'Unknown')|lower }}"
+                        data-item-usage-contexts="{{ (row.usage_contexts or []) | join(',') }}"
+                        data-item-usage-classes="{{ (row.usage_classes or []) | join(',') }}">
                         <td class="align-top">
                             <div class="flex flex-col">
                                 <span class="font-medium quality-{{ (row.quality or '')|lower }}">{{ row.name |

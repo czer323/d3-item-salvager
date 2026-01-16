@@ -26,6 +26,8 @@ class FilterCriteria:
 
     search: str = ""
     slot: str | None = None
+    usage_types: set[str] | None = None
+    usage_classes: set[str] | None = None
 
     @property
     def search_term(self) -> str:
@@ -41,8 +43,15 @@ class FilterCriteria:
         return value.casefold() or None
 
     def is_empty(self) -> bool:
-        """Return True when no search or slot criteria are set."""
-        return not self.search_term and self.slot_value is None
+        """Return True when no search, slot, usage type or class criteria are set."""
+        no_usage_types = not (self.usage_types and len(self.usage_types))
+        no_usage_classes = not (self.usage_classes and len(self.usage_classes))
+        return (
+            not self.search_term
+            and self.slot_value is None
+            and no_usage_types
+            and no_usage_classes
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,11 +129,28 @@ def apply_filters[TFiltered: SupportsFiltering](
 
     slot_value = criteria.slot_value
     search_term = criteria.search_term
+    usage_types = {u.casefold() for u in (criteria.usage_types or set())}
+    usage_classes = {c.casefold() for c in (criteria.usage_classes or set())}
 
     filtered: list[TFiltered] = []
     for item in items:
         if slot_value is not None and item.slot.casefold() != slot_value:
             continue
+
+        # Usage types filter: if provided, at least one usage context must match
+        if usage_types:
+            item_usage = getattr(item, "usage_contexts", ()) or ()
+            item_usage_lc = {str(u).casefold() for u in item_usage}
+            if not item_usage_lc.intersection(usage_types):
+                continue
+
+        # Usage classes filter: if provided, at least one class must match
+        if usage_classes:
+            item_classes = getattr(item, "usage_classes", ()) or ()
+            item_classes_lc = {str(c).casefold() for c in item_classes}
+            if not item_classes_lc.intersection(usage_classes):
+                continue
+
         if not search_term:
             filtered.append(item)
             continue

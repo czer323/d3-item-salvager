@@ -59,6 +59,9 @@ def test_list_items_filters_by_class_and_usage(
     assert payload["meta"] == {"limit": 5, "offset": 0, "total": 1}
     ids = [item["id"] for item in payload["data"]]
     assert ids == [data["items"]["wand"]]
+    # Ensure usage_classes is included and contains the expected class from the dataset
+    assert "usage_classes" in payload["data"][0]
+    assert payload["data"][0]["usage_classes"] == ["Wizard"]
 
 
 def test_list_builds_respects_pagination(
