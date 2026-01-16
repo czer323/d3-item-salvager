@@ -153,15 +153,21 @@ def get_usage_classes_for_items(
     """Return a mapping of item_id -> list[class_name] for all provided item ids in one query."""
     if not item_ids:
         return {}
+    # Precompute set for faster membership tests and pass it to the SQL IN clause
+    item_ids_set = set(item_ids)
+
+    # Use a casted InstrumentedAttribute to satisfy static analysis and call .in_()
+    item_id_col = cast("InstrumentedAttribute[str]", ItemUsage.item_id)
+
     statement = (
         select(ItemUsage.item_id, Profile.class_name)
         .join(Profile)
         .where(ItemUsage.profile_id == Profile.id)
+        .where(item_id_col.in_(item_ids_set))
         .distinct()
     )
+
     rows = session.exec(statement).all()
-    # Filter rows in Python to avoid SQLAlchemy attribute type issues in static analysis
-    rows = [r for r in rows if r[0] in set(item_ids)]
     mapping: dict[str, list[str]] = {}
     for item_id, class_name in rows:
         mapping.setdefault(item_id, []).append(str(class_name))
