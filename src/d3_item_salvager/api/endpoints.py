@@ -71,12 +71,14 @@ async def list_items(
         limit=limit,
         offset=offset,
     )
-    # Enrich returned items with aggregated usage_classes so the frontend has structured data
+    # Batch-load usage classes for all items to avoid N+1 queries
+    item_ids = [item.id for item in items]
+    usage_map = queries.get_usage_classes_for_items(session, item_ids)
+
     enriched: list[ItemSchema] = []
     for item in items:
-        classes = queries.get_item_usage_classes(session, item.id)
         model = ItemSchema.model_validate(item)
-        model.usage_classes = classes
+        model.usage_classes = usage_map.get(item.id, [])
         enriched.append(model)
     return ItemListResponse(data=enriched, meta=build_pagination(limit, offset, total))
 

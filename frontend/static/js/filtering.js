@@ -409,6 +409,12 @@
                 } else {
                     params.delete('class_ids');
                 }
+                // slot - keep slot in URL to persist filter state
+                if (this.state.slot && String(this.state.slot).trim()) {
+                    params.set('slot', String(this.state.slot));
+                } else {
+                    params.delete('slot');
+                }
                 url.search = params.toString();
                 window.history.replaceState(null, '', url.toString());
             } catch (e) {

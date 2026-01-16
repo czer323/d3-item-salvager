@@ -141,13 +141,22 @@ test.describe('Item summary filtering', () => {
 
         // Interact with usage checkbox (client-side only)
         const usageCheckbox = page.locator('[data-filter-usage][value="kanai"]');
-        if ((await usageCheckbox.count()) > 0) {
-            await usageCheckbox.click();
-        }
+        const usageCount = await usageCheckbox.count();
 
         // Interact with class select (client-side only)
         const classSelect = page.getByTestId('item-class-filter');
-        if ((await classSelect.locator('option').count()) > 0) {
+        const classOptionsCount = await classSelect.locator('option').count();
+
+        // Ensure the test actually has controls to interact with — fail if none present
+        if (usageCount === 0 && classOptionsCount === 0) {
+            test.fail('No usage checkboxes or class selector present; cannot execute client-side filter test');
+        }
+
+        if (usageCount > 0) {
+            await usageCheckbox.click();
+        }
+
+        if (classOptionsCount > 0) {
             const opt = classSelect.locator('option').first();
             const val = await opt.getAttribute('value');
             if (val) {
