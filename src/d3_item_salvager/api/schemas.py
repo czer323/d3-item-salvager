@@ -141,6 +141,10 @@ class BuildItemSchema(BaseModel):
     name: str
     slot: str
     quality: str
+    # Per-item usage contexts aggregated across requested builds (e.g., main, follower, kanai)
+    usage_contexts: list[str] = []
+    # Variant/profile ids that contributed to this item (for possible expand/caching)
+    variant_ids: list[str] = []
 
 
 class BuildItemsResponse(BaseModel):

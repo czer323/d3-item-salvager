@@ -30,7 +30,6 @@
                 <thead>
                     <tr class="text-sm uppercase tracking-wide text-base-content/70">
                         <th class="w-1/3">Item</th>
-                        <th class="w-1/5">Slot</th>
                         <th class="w-1/3">Usage</th>
                         <th class="w-1/6 text-right">Variants</th>
                     </tr>
@@ -48,13 +47,17 @@
                                 P4_Unique_* #}
                             </div>
                         </td>
-                        <td class="align-top text-sm">
-                            {{ row.slot or "Unknown" }}
-                        </td>
                         <td class="align-top">
                             <div class="flex flex-col gap-1">
-                                <span class="badge {{ row.badge_class }} badge-sm w-fit">Used</span>
-                                <span class="text-xs text-base-content/70">{{ row.usage_label }}</span>
+                                <div class="text-xs text-base-content/70">
+                                    {% if row.usage_contexts %}
+                                    {% for usage in row.usage_contexts %}
+                                    <span class="usage-chip usage-{{ usage }}">{{ usage|title }}</span>
+                                    {% endfor %}
+                                    {% else %}
+                                    <span><span class="sr-only">No usages</span>&mdash;</span>
+                                    {% endif %}
+                                </div>
                             </div>
                         </td>
                         <td class="align-top text-right text-sm">

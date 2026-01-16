@@ -243,8 +243,24 @@ def _merge_catalogue_with_usage(
     rows: list[ItemUsageRow] = []
     catalogue_map = {record.id: record for record in catalogue}
 
+    def _order_usage_contexts(contexts: set[str]) -> tuple[str, ...]:
+        """Order usage contexts using canonical ordering: main, follower, kanai, then others alphabetically."""
+        preferred: list[str] = ["main", "follower", "kanai"]
+        ordered: list[str] = []
+        others: list[str] = []
+        for c in contexts:
+            lc = (c or "").lower()
+            if lc in preferred:
+                ordered.append(lc)
+            else:
+                others.append(lc)
+        # Keep the canonical order for the known contexts
+        final: list[str] = [c for c in preferred if c in ordered]
+        final.extend(sorted(set(others)))
+        return tuple(final)
+
     for item_id, accumulator in usage.items():
-        contexts = tuple(sorted(accumulator.contexts))
+        contexts = _order_usage_contexts(accumulator.contexts)
         classification = classify_usage_contexts(contexts)
         record = catalogue_map.get(item_id)
         name = record.name if record else accumulator.name

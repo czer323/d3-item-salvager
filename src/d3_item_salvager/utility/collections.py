@@ -16,8 +16,9 @@ def dedupe_and_sort(items: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
         A list of de-duplicated items sorted by their `name` value.
     """
     # Use discriminated keys to avoid collisions between different id types
-    # (e.g., 1 vs "1"). If an id is unhashable, fall back to its string form.
-    seen: set[tuple[type, Any]] = set()
+    # (e.g., 1 vs "1"). We represent types by their name to keep types concrete
+    # for static analysis and fall back to string representations when needed.
+    seen: set[tuple[str, str]] = set()
     unique: list[dict[str, Any]] = []
     for it in items:
         item_id = it.get("id")
@@ -25,20 +26,17 @@ def dedupe_and_sort(items: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
             # Fallback: use name as key if id missing
             item_id = it.get("name")
 
-        # Prefer to use the raw object when hashable to preserve type identity
         if item_id is None:
             # Both id and name missing — use a stable placeholder
-            key: tuple[type, Any] = (type(None), "")
+            key: tuple[str, str] = ("NoneType", "")
         else:
-            # Predeclare a consistent key type to satisfy type checkers
-            key: tuple[type, Any]
+            # Represent the type by its name and the value by its string form to
+            # ensure keys are hashable and statically-typed.
             try:
                 hash(item_id)
-                # Use actual object as key alongside its type to disambiguate types
-                key = (type(item_id), item_id)
+                key = (type(item_id).__name__, str(item_id))
             except TypeError:
-                # Unhashable (e.g., list/dict) — fall back to string form
-                key = (type(item_id), str(item_id))
+                key = (type(item_id).__name__, str(item_id))
 
         if key in seen:
             continue

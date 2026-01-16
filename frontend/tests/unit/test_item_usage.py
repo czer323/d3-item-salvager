@@ -42,11 +42,18 @@ def test_build_item_usage_table_merges_catalogue_with_usage() -> None:
         ],
         "/build-guides/build-1/variants": [
             {"id": "variant-1", "name": "Primary", "build_guide_id": "build-1"},
+            {"id": "variant-2", "name": "Support", "build_guide_id": "build-1"},
         ],
         "/item-usage/variant-1": [
             {
                 "item": {"id": "item-1", "name": "Mighty Weapon", "slot": "Weapon"},
                 "usage_context": "main",
+            }
+        ],
+        "/item-usage/variant-2": [
+            {
+                "item": {"id": "item-1", "name": "Mighty Weapon", "slot": "Weapon"},
+                "usage_context": "follower",
             }
         ],
     }
@@ -65,8 +72,10 @@ def test_build_item_usage_table_merges_catalogue_with_usage() -> None:
 
     used_row = rows_by_id["item-1"]
     assert used_row.is_used
-    assert used_row.usage_contexts == ("main",)
-    assert used_row.variant_ids == ("variant-1",)
+    assert used_row.usage_contexts == ("main", "follower"), (
+        "Expected contexts ordered as main, follower"
+    )
+    assert used_row.variant_ids == ("variant-1", "variant-2")
 
     assert table.selected_build_ids == ("build-1",)
 
@@ -76,4 +85,5 @@ def test_build_item_usage_table_merges_catalogue_with_usage() -> None:
         "/items",
         "/build-guides/build-1/variants",
         "/item-usage/variant-1",
+        "/item-usage/variant-2",
     }

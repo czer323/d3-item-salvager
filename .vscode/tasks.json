@@ -112,6 +112,20 @@
                 "reveal": "always",
                 "panel": "shared"
             }
+        },
+        {
+            "label": "coderabbit: review (Ubuntu)",
+            "type": "shell",
+            "command": "wsl -d Ubuntu --cd \"C:\\Users\\czer3\\PycharmProjects\\d3-item-salvager\" -- //home/czer323/.local/bin/coderabbit review --plain",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            }
         }
     ]
 }
