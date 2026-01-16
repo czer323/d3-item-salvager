@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import ANY
 
@@ -15,7 +16,6 @@ from d3_item_salvager.maxroll_parser.maxroll_exceptions import BuildProfileError
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
     from collections.abc import Mapping
-    from pathlib import Path
 
     from pytest_mock import MockerFixture
 else:
@@ -176,3 +176,22 @@ def test_resolver_uses_cached_payload(tmp_path: Path, mocker: MockerFixture) -> 
 
     assert result == cached_payload
     assert session.get.call_count == 1
+
+
+def test_extract_ids_from_real_variants_file(mocker: MockerFixture) -> None:
+    """Use the reference HTML fixture to validate Variants-based extraction."""
+    file_path = (
+        Path(__file__).parents[2] / "reference" / "build_guide-010162026_swk.html"
+    )
+    html = file_path.read_text(encoding="utf-8")
+    session = mocker.create_autospec(requests.Session, instance=True)
+
+    session.get.return_value = _FakeResponse(text=html)
+
+    resolver = GuideProfileResolver(_resolver_config(), session=session)
+    ids = resolver.get_planner_ids("https://maxroll.gg/d3/guides/sample-guide")
+
+    # Known planner ids present in the Variants section
+    assert "342944608" in ids
+    assert "179435990" in ids
+    assert len(ids) >= 2
