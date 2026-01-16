@@ -110,7 +110,7 @@ class MaxrollGuideFetcher(
                 TypeError,
                 KeyError,
             ) as e:  # pragma: no cover - defensive (cache impl bug)
-                logger.warning("Guide cache load failed: %s", e)
+                logger.warning("Guide cache load failed: {}", e)
         if guides is None:  # need fresh data
             hits = (
                 self._fetch_from_file(self._api_url)
@@ -128,7 +128,7 @@ class MaxrollGuideFetcher(
                 TypeError,
                 KeyError,
             ) as e:  # pragma: no cover - defensive
-                logger.warning("Guide cache save failed: %s", e)
+                logger.warning("Guide cache save failed: {}", e)
 
         if search:
             s = search.lower()

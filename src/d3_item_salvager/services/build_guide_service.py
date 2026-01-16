@@ -126,7 +126,7 @@ class BuildGuideService:
             self._logger.exception("Failed to fetch guides from Maxroll")
             msg = f"Failed to fetch guides: {exc}"
             raise ScrapingError(msg, code=1001) from exc
-        self._logger.info("Fetched %d guides from Maxroll.", len(guides))
+        self._logger.info("Fetched {} guides from Maxroll.", len(guides))
         return guides
 
     def build_profiles_from_guides(
@@ -169,7 +169,7 @@ class BuildGuideService:
                             if exc.context:
                                 extra.update(exc.context)
                         self._logger.exception(
-                            "Failed to instantiate parser for planner %s",
+                            "Failed to instantiate parser for planner {}",
                             planner_url,
                             extra=extra,
                         )
@@ -196,7 +196,7 @@ class BuildGuideService:
                         continue
                     if not profiles:
                         self._logger.warning(
-                            "Skipping planner %s because no profiles were extracted.",
+                            "Skipping planner {} because no profiles were extracted.",
                             planner_url,
                         )
                         skipped += 1
@@ -230,7 +230,7 @@ class BuildGuideService:
                 if isinstance(exc, BuildProfileError) and exc.file_path:
                     planner_hint = f" ({exc.file_path})"
                 self._logger.exception(
-                    "Failed to instantiate parser for guide %s%s",
+                    "Failed to instantiate parser for guide {}{}",
                     guide.url,
                     planner_hint,
                     extra=extra,
@@ -255,7 +255,7 @@ class BuildGuideService:
                 continue
             if not profiles:
                 self._logger.warning(
-                    "Skipping guide %s because no profiles were extracted.", guide.url
+                    "Skipping guide {} because no profiles were extracted.", guide.url
                 )
                 skipped += 1
                 continue
@@ -442,7 +442,7 @@ class BuildGuideService:
             profile = profile_map.get(usage.profile_name.lower())
             if profile is None or profile.id is None:
                 self._logger.warning(
-                    "Skipping item usage for unknown profile '%s'.", usage.profile_name
+                    "Skipping item usage for unknown profile '{}' .", usage.profile_name
                 )
                 continue
             prepared.append(
@@ -477,7 +477,7 @@ class BuildGuideService:
             meta: ItemMeta | None = self._item_data.get_item(item_id)
             if meta is None or not (meta.name and meta.type and meta.quality):
                 self._logger.warning(
-                    "Skipping item '%s' due to incomplete metadata", item_id
+                    "Skipping item '{}' due to incomplete metadata", item_id
                 )
                 continue
             item_payload[item_id] = {
@@ -518,7 +518,7 @@ class BuildGuideService:
             key = (usage.profile_id, usage.item_id, usage.slot, usage.usage_context)
             if usage.item_id not in available_items:
                 self._logger.warning(
-                    "Omitting usage for unavailable item '%s'.", usage.item_id
+                    "Omitting usage for unavailable item '{}'.", usage.item_id
                 )
                 continue
             if key in existing_keys:

@@ -8,7 +8,7 @@ argument-hint: 'Assist the user with managing tasks and issues using the Beads i
 
 # Beads Skill Prompt
 
-> Your purpose is to assist the user in managing tasks and issues using the Beads issue tracker via the `bd` CLI.  Before continuing you must read the following documents in their entirety to understand how to use the `bd` tool effectively:
+> Your purpose is to assist the user in managing tasks and issues using the Beads issue tracker via the `bd` CLI.  Before continuing you must read the following documents in their entirety to understand how to use the `bd` tool effectively.  Do not limit the number of lines you use to read these documents:
 
 - `.claude/skills/beads/SKILL.md`
 - `.claude/skills/beads/resources/WORKFLOWS.md`

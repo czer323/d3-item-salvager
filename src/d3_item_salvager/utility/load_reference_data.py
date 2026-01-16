@@ -92,7 +92,7 @@ def build_item_usages_from_parser(
         pid = profile_lookup.get(u.profile_name)
         if pid is None:
             logger.error(
-                "No profile found for item usage: profile_name=%s",
+                "No profile found for item usage: profile_name={}",
                 u.profile_name,
             )
             continue
@@ -149,7 +149,7 @@ def insert_build_and_profiles(
         usages = build_item_usages_from_parser(parser, profile_lookup)
         insert_item_usages_with_validation(usages, session)
         logger.info(
-            "Inserted build, %d profiles, and %d item usages.",
+            "Inserted build, {} profiles, and {} item usages.",
             len(profiles),
             len(usages),
         )
