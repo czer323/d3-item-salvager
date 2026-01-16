@@ -1,7 +1,7 @@
 ---
 name: 'bd-ready'
 agent: 'agent'
-tools: ['execute/testFailure', 'execute/getTerminalOutput', 'execute/runTask', 'execute/runInTerminal', 'execute/runTests', 'read/problems', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit/createFile', 'edit/editFiles', 'search', 'web', 'agent', 'context7/*']
+tools: ['execute/getTerminalOutput', 'execute/runTask', 'execute/runTests', 'execute/testFailure', 'execute/runInTerminal', 'read/terminalSelection', 'read/terminalLastCommand', 'read/problems', 'read/readFile', 'agent', 'edit/createFile', 'edit/editFiles', 'search', 'web', 'context7/*']
 description: 'Use Beads (bd CLI) for persistent task memory and issue tracking as per .claude/skills/beads/SKILL.md.'
 argument-hint: 'Assist the user with managing tasks and issues using the Beads issue tracker via the bd CLI, following the guidelines in .claude/skills/beads/SKILL.md.'
 ---
