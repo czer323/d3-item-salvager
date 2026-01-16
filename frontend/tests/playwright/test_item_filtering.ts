@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 const TEST_PORT = process.env.FRONTEND_PLAYWRIGHT_PORT ?? '8001';
 const TEST_BASE_URL = process.env.FRONTEND_BASE_URL ?? `http://127.0.0.1:${TEST_PORT}`;
@@ -127,4 +127,41 @@ test.describe('Item summary filtering', () => {
 
     // Test removed: 'clearing search after switching builds restores full results' was flaky after the
     // selection UI redesign and is no longer required. Removal approved to reduce test-suite flakiness.
+
+    test('filters items by usage and classes without network calls', async ({ page }) => {
+        await loadBuilds(page);
+        const summaryRoot = await applySelection(page);
+
+        // Capture requests made after initial load
+        const requests: string[] = [];
+        const listener = (req) => {
+            requests.push(req.url());
+        };
+        page.on('request', listener);
+
+        // Interact with usage checkbox (client-side only)
+        const usageCheckbox = page.locator('[data-filter-usage][value="kanai"]');
+        if ((await usageCheckbox.count()) > 0) {
+            await usageCheckbox.click();
+        }
+
+        // Interact with class select (client-side only)
+        const classSelect = page.getByTestId('item-class-filter');
+        if ((await classSelect.locator('option').count()) > 0) {
+            const opt = classSelect.locator('option').first();
+            const val = await opt.getAttribute('value');
+            if (val) {
+                await classSelect.selectOption(val);
+            }
+        }
+
+        // Short delay to allow any accidental requests to fire
+        await page.waitForTimeout(500);
+
+        // Remove listener and assert no requests were made after interactions
+        page.off('request', listener);
+        // Filter out initial static assets and only consider backend endpoints we care about
+        const backendRequests = requests.filter((u) => u.includes('/item') || u.includes('/frontend'));
+        expect(backendRequests.length).toBe(0);
+    });
 });

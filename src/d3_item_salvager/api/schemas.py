@@ -20,6 +20,8 @@ class ItemSchema(BaseModel):
     name: str
     type: str
     quality: str
+    # Optional aggregated usage classes (e.g., Wizard, Barbarian) for UI purposes
+    usage_classes: list[str] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -143,6 +145,8 @@ class BuildItemSchema(BaseModel):
     quality: str
     # Per-item usage contexts aggregated across requested builds (e.g., main, follower, kanai)
     usage_contexts: list[str] = []
+    # Classes (human-readable) that contributed usages for this item
+    usage_classes: list[str] = []
     # Variant/profile ids that contributed to this item (for possible expand/caching)
     variant_ids: list[str] = []
 

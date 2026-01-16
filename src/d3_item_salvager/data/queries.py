@@ -134,6 +134,19 @@ def list_items(
     return items, total
 
 
+def get_item_usage_classes(session: Session, item_id: str) -> list[str]:
+    """Return distinct class names that use the given item."""
+    statement = (
+        select(Profile.class_name)
+        .join(ItemUsage)
+        .where(ItemUsage.profile_id == Profile.id)
+        .where(ItemUsage.item_id == item_id)
+        .distinct()
+    )
+    rows = session.exec(statement).all()
+    return [str(r) for r in rows]
+
+
 def list_builds(
     session: Session,
     *,

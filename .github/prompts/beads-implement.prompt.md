@@ -8,7 +8,7 @@ argument-hint: 'Assist the user with managing tasks and issues using the Beads i
 
 # Beads Skill Prompt
 
-> Your purpose is to assist the user in managing tasks and issues using the Beads issue tracker via the `bd` CLI.  Before continuing you must read the following documents:
+> Your purpose is to assist the user in managing tasks and issues using the Beads issue tracker via the `bd` CLI.  Before continuing you must read the following documents in their entirety to understand how to use the `bd` tool effectively:
 
 - `.claude/skills/beads/SKILL.md`
 - `.claude/skills/beads/resources/WORKFLOWS.md`
@@ -23,7 +23,9 @@ Review the other files in the `.claude/skills/beads/` directory for additional c
 
 ## bd ready
 
-Use `bd ready --json` to get a summary of the current state of tasks and issues. This command provides an overview of what needs attention.  If the user has specified an item to research, use `bd update <id> --status in_progress --json` to acquire details about it.  If the user does not specify an issue, pick the first item from the bd ready result and being being to research if we have all of the information we need to work the issue.  Review the existing codebase and documentation to gather context.  Once we have confirmed we have enough information, we can proceed to discuss the solution withe the user and validate the approach before implementation.
+Use `bd ready --json` to get a summary of the current state of tasks and issues. This command provides an overview of what needs attention.  If the user has specified an item to research, use `bd update <id> --status in_progress --json` to acquire details about it.  If the user does not specify an issue, pick the first item from the bd ready result, notify the user the issue id and then immediately begin to research if we have all of the information we need to work the issue.  Review the existing codebase and documentation to gather context.  Once we have confirmed we have enough information, we can proceed to discuss the solution withe the user and validate the approach before implementation.
+
+If bd ready doesn't return data, or appears to be missing - try again and then inform the user if it continues to fail.
 
 **IMPORTANT**: Do not begin implementation until the user has reviewed and approved the plan.
 

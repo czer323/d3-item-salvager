@@ -56,3 +56,52 @@ def test_apply_filters_returns_all_items_when_criteria_empty() -> None:
     filtered = apply_filters(items, FilterCriteria())
 
     assert filtered == items
+
+
+def test_apply_filters_with_usage_and_classes() -> None:
+    """Usage and class filters should be applied correctly."""
+
+    @dataclass(slots=True)
+    class _UsedItem:
+        name: str
+        slot: str
+        usage_contexts: tuple[str, ...]
+        usage_classes: tuple[str, ...]
+
+    items = [
+        _UsedItem(
+            name="Mighty Weapon",
+            slot="mainhand",
+            usage_contexts=("main",),
+            usage_classes=("Barbarian",),
+        ),
+        _UsedItem(
+            name="Chantodo's Will",
+            slot="mainhand",
+            usage_contexts=("kanai",),
+            usage_classes=("Wizard",),
+        ),
+        _UsedItem(
+            name="Follower Talisman",
+            slot="offhand",
+            usage_contexts=("follower",),
+            usage_classes=("Monk",),
+        ),
+    ]
+
+    # Filter by usage type
+    criteria = FilterCriteria(usage_types={"kanai"})
+    filtered = apply_filters(items, criteria)
+    assert len(filtered) == 1
+    assert filtered[0].name == "Chantodo's Will"
+
+    # Filter by class
+    criteria = FilterCriteria(usage_classes={"barbarian"})
+    filtered = apply_filters(items, criteria)
+    assert len(filtered) == 1
+    assert filtered[0].name == "Mighty Weapon"
+
+    # Filter by usage and class (no match)
+    criteria = FilterCriteria(usage_types={"main"}, usage_classes={"wizard"})
+    filtered = apply_filters(items, criteria)
+    assert len(filtered) == 0

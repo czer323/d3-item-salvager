@@ -21,6 +21,32 @@
             </select>
             <span class="label-text-alt text-xs">Select a slot to narrow results.</span>
         </label>
+
+        <label class="form-control w-full md:w-80">
+            <span class="label-text text-sm font-semibold">Usage</span>
+            <div class="flex gap-2 items-center" aria-label="Usage filters" role="group">
+                <label class="cursor-pointer"><input type="checkbox" data-filter-usage value="main"> <span
+                        class="ml-2">Main</span></label>
+                <label class="cursor-pointer"><input type="checkbox" data-filter-usage value="follower"> <span
+                        class="ml-2">Follower</span></label>
+                <label class="cursor-pointer"><input type="checkbox" data-filter-usage value="kanai"> <span
+                        class="ml-2">Kanai</span></label>
+            </div>
+            <span class="label-text-alt text-xs">Toggle usage contexts to filter the list client-side.</span>
+        </label>
+
+        <label class="form-control w-full md:w-64">
+            <span class="label-text text-sm font-semibold">Class filter</span>
+            <select class="select select-bordered" multiple name="class_ids" data-testid="item-class-filter"
+                data-filter-classes>
+                {% for cls in summary.available_classes %}
+                <option value="{{ cls }}" {% if cls in summary.selected_class_ids %}selected{% endif %}>{{ cls }}
+                </option>
+                {% endfor %}
+            </select>
+            <span class="label-text-alt text-xs">Select one or more classes to filter by class usage
+                (client-side).</span>
+        </label>
         <button type="button" class="btn btn-ghost md:w-auto" data-testid="item-filter-clear" data-filter-clear>
             Clear filters
         </button>

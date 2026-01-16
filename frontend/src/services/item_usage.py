@@ -45,6 +45,7 @@ class ItemUsageRow:
     is_used: bool
     classification: SalvageLabel
     usage_contexts: tuple[str, ...]
+    usage_classes: tuple[str, ...]
     variant_ids: tuple[str, ...]
 
     @property
@@ -58,6 +59,13 @@ class ItemUsageRow:
         if not self.usage_contexts:
             return ""
         return ", ".join(context.title() for context in self.usage_contexts)
+
+    @property
+    def classes_label(self) -> str:
+        """Readable label describing which classes use this item."""
+        if not self.usage_classes:
+            return ""
+        return ", ".join(cls for cls in self.usage_classes)
 
 
 @dataclass(slots=True)
@@ -74,6 +82,8 @@ class ItemUsageTable:
     filtered_used_total: int
     selected_class_ids: tuple[str, ...]
     selected_build_ids: tuple[str, ...]
+    # Classes aggregated across the current selection (for the class multi-select)
+    available_classes: tuple[str, ...]
 
     @property
     def has_results(self) -> bool:
@@ -88,6 +98,7 @@ class ItemUsageTable:
                 "slot": self.filters.slot,
             },
             "available_slots": list(self.available_slots),
+            "available_classes": list(self.available_classes),
             "context": {
                 "class_ids": list(self.selected_class_ids),
                 "build_ids": list(self.selected_build_ids),
@@ -107,8 +118,10 @@ class ItemUsageTable:
                     "status": "used",
                     "classification": row.classification.value,
                     "usage_contexts": list(row.usage_contexts),
+                    "usage_classes": list(row.usage_classes),
                     "variant_ids": list(row.variant_ids),
                     "usage_label": row.usage_label,
+                    "classes_label": row.classes_label,
                 }
                 for row in self.rows
             ],
@@ -153,6 +166,11 @@ def build_item_usage_table(
     used_total = len(rows)
     filtered_used_total = len(filtered_rows)
 
+    # Aggregate available classes across all rows for use in the class multi-select
+    available_classes = tuple(
+        sorted({c for r in rows for c in getattr(r, "usage_classes", ())})
+    )
+
     return ItemUsageTable(
         rows=visible_rows,
         filters=filters,
@@ -164,6 +182,7 @@ def build_item_usage_table(
         filtered_used_total=filtered_used_total,
         selected_class_ids=tuple(sorted(resolved_class_ids)),
         selected_build_ids=tuple(resolved_build_ids),
+        available_classes=available_classes,
     )
 
 
@@ -200,6 +219,7 @@ def _collect_usage_for_builds(
     build_ids: Sequence[str],
 ) -> OrderedDict[str, _UsageAccumulator]:
     usage: OrderedDict[str, _UsageAccumulator] = OrderedDict()
+
     for build_id in build_ids:
         variants = _safe_load_variants(client, build_id)
         for variant in variants:
@@ -217,6 +237,9 @@ def _collect_usage_for_builds(
                 quality = item_mapping.get("quality")
                 quality = str(quality).strip() if quality is not None else None
                 context = str(row.get("usage_context", "unknown")).lower()
+                # We do not attempt to fetch build metadata here to avoid extra
+                # backend calls during item aggregation; default to Unknown.
+                class_name = "Unknown"
                 accumulator = usage.get(item_id)
                 if accumulator is None:
                     accumulator = _UsageAccumulator(
@@ -225,11 +248,15 @@ def _collect_usage_for_builds(
                         contexts={context},
                         variant_ids={variant.id},
                         quality=quality,
+                        classes={class_name},
                     )
                     usage[item_id] = accumulator
                 else:
                     accumulator.contexts.add(context)
                     accumulator.variant_ids.add(variant.id)
+                    if accumulator.classes is None:
+                        accumulator.classes = set()
+                    accumulator.classes.add(class_name)
                     # If we didn't have quality yet, prefer the first seen
                     if accumulator.quality is None and quality is not None:
                         accumulator.quality = quality
@@ -279,6 +306,7 @@ def _merge_catalogue_with_usage(
                 is_used=True,
                 classification=classification,
                 usage_contexts=contexts,
+                usage_classes=tuple(sorted(getattr(accumulator, "classes", ()) or ())),
                 variant_ids=tuple(sorted(accumulator.variant_ids)),
             )
         )
@@ -319,6 +347,7 @@ class _UsageAccumulator:
     slot: str
     contexts: set[str]
     variant_ids: set[str]
+    classes: set[str] | None = None
     quality: str | None = None
 
 

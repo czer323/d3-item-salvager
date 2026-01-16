@@ -73,12 +73,15 @@
             this.searchInput = this.root.querySelector('[data-filter-controls] [data-filter-search]');
             this.slotSelect = this.root.querySelector('[data-filter-controls] [data-filter-slot]');
             this.clearButton = this.root.querySelector('[data-filter-controls] [data-filter-clear]');
+            this.usageControls = Array.from(this.root.querySelectorAll('[data-filter-usage]'));
+            this.classSelect = this.root.querySelector('[data-filter-controls] [data-filter-classes]');
             this.sectionNodes = Array.from(this.root.querySelectorAll('[data-filter-section]'));
 
             // Record the server-provided search/slot so we can detect when the user
             // clears/changes the search and needs a server refresh.
             this.state.serverSearch = this.root.getAttribute('data-current-search') ?? '';
             this.state.serverSlot = this.root.getAttribute('data-current-slot') ?? '';
+            this.state.serverClasses = (this.root.getAttribute('data-current-classes') ?? '').split(/,/).filter(Boolean);
             this.pendingServerRequest = false;
 
             // Wire up an HTMX completion handler to clear the pending flag when the
@@ -121,20 +124,73 @@
                 this.boundSlotHandler = (event) => {
                     this.state.slot = event.target.value ?? '';
                     this.applyFilters();
+                    this.updateUrlParams();
                 };
                 this.slotSelect.addEventListener('change', this.boundSlotHandler);
+            }
+
+            if (this.usageControls && this.usageControls.length) {
+                // Initialise usage checkboxes from URL params if present
+                const urlParams = new URLSearchParams(window.location.search);
+                const usageParam = (urlParams.get('usage') || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+                this.state.usage = usageParam;
+
+                this.boundUsageHandler = () => {
+                    const selected = this.usageControls.filter((c) => c.checked).map((c) => c.value.toLowerCase());
+                    this.state.usage = selected;
+                    this.applyFilters();
+                    this.updateUrlParams();
+                };
+                for (const cb of this.usageControls) {
+                    // Prefill checkbox if URL param requested it
+                    if (this.state.usage.includes(cb.value.toLowerCase())) {
+                        cb.checked = true;
+                    }
+                    cb.addEventListener('change', this.boundUsageHandler);
+                }
+            }
+
+            if (this.classSelect) {
+                // Prefill selected classes from either URL params or server-provided list
+                const urlParams = new URLSearchParams(window.location.search);
+                const classesParam = (urlParams.get('class_ids') || this.state.serverClasses.join(',')).split(',').map(s => s.trim()).filter(Boolean);
+                for (const option of this.classSelect.options) {
+                    if (classesParam.includes(option.value)) {
+                        option.selected = true;
+                    }
+                }
+                this.state.classes = Array.from(this.classSelect.selectedOptions).map(o => o.value);
+
+                this.boundClassHandler = () => {
+                    this.state.classes = Array.from(this.classSelect.selectedOptions).map(o => o.value);
+                    this.applyFilters();
+                    this.updateUrlParams();
+                };
+                this.classSelect.addEventListener('change', this.boundClassHandler);
             }
 
             if (this.clearButton) {
                 this.boundClearHandler = () => {
                     this.state.search = '';
                     this.state.slot = '';
+                    this.state.usage = [];
+                    this.state.classes = [];
                     if (this.searchInput) {
                         this.searchInput.value = '';
                         this.searchInput.focus();
                     }
                     if (this.slotSelect) {
                         this.slotSelect.value = '';
+                    }
+                    if (this.usageControls) {
+                        for (const cb of this.usageControls) {
+                            cb.checked = false;
+                        }
+                    }
+                    if (this.classSelect) {
+                        for (const option of this.classSelect.options) {
+                            option.selected = false;
+                        }
                     }
                     this.applyFilters();
 
@@ -154,6 +210,16 @@
             }
             if (this.slotSelect && this.boundSlotHandler) {
                 this.slotSelect.removeEventListener('change', this.boundSlotHandler);
+            }
+            if (this.usageControls && this.boundUsageHandler) {
+                for (const cb of this.usageControls) {
+                    cb.removeEventListener('change', this.boundUsageHandler);
+                }
+                this.boundUsageHandler = null;
+            }
+            if (this.classSelect && this.boundClassHandler) {
+                this.classSelect.removeEventListener('change', this.boundClassHandler);
+                this.boundClassHandler = null;
             }
             if (this.clearButton && this.boundClearHandler) {
                 this.clearButton.removeEventListener('click', this.boundClearHandler);
@@ -255,15 +321,39 @@
             let visibleCount = 0;
             const slotValue = (this.state.slot ?? '').toLowerCase();
             const searchValue = (this.state.search ?? '').trim();
+            const selectedUsage = (this.state.usage || []).map((s) => s.toLowerCase());
+            const selectedClasses = (this.state.classes || []).map((s) => s.toLowerCase());
 
             for (const item of items) {
                 const itemSlot = (item.getAttribute('data-item-slot') ?? '').toLowerCase();
                 const itemName = item.getAttribute('data-item-name') ?? '';
+                const itemUsages = (item.getAttribute('data-item-usage-contexts') ?? '')
+                    .split(',')
+                    .map((s) => s.trim().toLowerCase())
+                    .filter(Boolean);
+                const itemClasses = (item.getAttribute('data-item-usage-classes') ?? '')
+                    .split(',')
+                    .map((s) => s.trim().toLowerCase())
+                    .filter(Boolean);
+
                 const slotMatches = !slotValue || itemSlot === slotValue;
                 let matches = slotMatches;
+
+                // Search term
                 if (matches && searchValue) {
                     matches = fuzzyScore(itemName, searchValue) > 0;
                 }
+
+                // Usage contexts: item must match at least one selected usage if any are selected
+                if (matches && selectedUsage.length > 0) {
+                    matches = itemUsages.some((u) => selectedUsage.includes(u));
+                }
+
+                // Class filtering: item must match at least one selected class if any are selected
+                if (matches && selectedClasses.length > 0) {
+                    matches = itemClasses.some((c) => selectedClasses.includes(c));
+                }
+
                 if (matches) {
                     visibleCount += 1;
                     item.hidden = false;
@@ -301,6 +391,29 @@
 
             section.dataset.filteredCount = String(visibleCount);
             section.dataset.filtersActive = filtersActive ? 'true' : 'false';
+        }
+
+        updateUrlParams() {
+            try {
+                const url = new URL(window.location.href);
+                const params = url.searchParams;
+                // usage (comma-separated)
+                if (this.state.usage && this.state.usage.length) {
+                    params.set('usage', this.state.usage.join(','));
+                } else {
+                    params.delete('usage');
+                }
+                // classes (class_ids param used by server selection)
+                if (this.state.classes && this.state.classes.length) {
+                    params.set('class_ids', this.state.classes.join(','));
+                } else {
+                    params.delete('class_ids');
+                }
+                url.search = params.toString();
+                window.history.replaceState(null, '', url.toString());
+            } catch (e) {
+                // ignore errors
+            }
         }
     }
 

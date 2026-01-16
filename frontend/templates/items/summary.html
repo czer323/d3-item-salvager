@@ -8,7 +8,8 @@
 {% if table %}
 {% set summary = table %}
 <div class="space-y-6" data-testid="item-summary" data-filter-root data-current-search="{{ table.filters.search }}"
-    data-current-slot="{{ table.filters.slot or '' }}" data-page-size="{{ table.pagination.page_size }}">
+    data-current-slot="{{ table.filters.slot or '' }}" data-current-classes="{{ table.selected_class_ids | join(',') }}"
+    data-page-size="{{ table.pagination.page_size }}">
     <header class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div class="space-y-1">
             <h2 class="text-2xl font-semibold">Item Usage Overview</h2>
@@ -38,7 +39,9 @@
                     {% for row in table.rows %}
                     <tr data-filter-item data-item-id="{{ row.item_id }}"
                         data-item-name="{{ row.name | sanitize_item_name }}"
-                        data-item-slot="{{ (row.slot or 'Unknown')|lower }}">
+                        data-item-slot="{{ (row.slot or 'Unknown')|lower }}"
+                        data-item-usage-contexts="{{ row.usage_contexts | join(',') }}"
+                        data-item-usage-classes="{{ row.usage_classes | join(',') }}">
                         <td class="align-top">
                             <div class="flex flex-col">
                                 <span class="font-medium quality-{{ (row.quality or '')|lower }}">{{ row.name |
