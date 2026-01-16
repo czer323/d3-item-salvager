@@ -1,7 +1,7 @@
 """API endpoint tests covering list endpoints and filtering."""
 
 from collections.abc import Generator
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from fastapi.testclient import TestClient
@@ -10,6 +10,7 @@ from sqlmodel import Session, SQLModel
 
 from d3_item_salvager.api.dependencies import get_db_session
 from d3_item_salvager.api.factory import create_app
+from d3_item_salvager.data import queries
 from tests.fakes.test_db_utils import seed_salvage_dataset
 
 
@@ -151,17 +152,41 @@ def test_variant_detail_endpoint_returns_single_profile(
 
 def test_item_usage_variant_endpoint_returns_nested_items(
     api_client: tuple[TestClient, dict[str, Any]],
+    sqlite_test_engine: Engine,
 ) -> None:
     """Item usage endpoint returns nested item metadata for a variant."""
     client, data = api_client
     profile_id = data["profiles"]["leapquake"]
+
+    # Sanity-check the DB row contains the expected quality value
+    with Session(sqlite_test_engine) as session:
+        rows = queries.list_item_usage_with_items(session, profile_id)
+        assert rows, "expected ORM rows for profile"
+        _, item_obj = rows[0]
+        assert getattr(item_obj, "quality", None) == "set", (
+            "Expected DB item to have quality 'set'"
+        )
+
     response = client.get(f"/item-usage/{profile_id}")
     assert response.status_code == 200
     payload = response.json()
     assert isinstance(payload, list)
     assert payload, "expected non-empty payload list"
-    assert payload[0]["item"]["name"] == "Mighty Weapon"
-    assert payload[0]["item"]["slot"] == "mainhand"
+    # Find the entry for the expected item and assert its metadata
+    entry: dict[str, Any] | None = None
+    from typing import cast as _cast
+
+    for p in cast("list[dict[str, Any]]", payload):
+        item_raw = p.get("item")
+        if isinstance(item_raw, dict):
+            item = _cast("dict[str, Any]", item_raw)
+            if item.get("name") == "Mighty Weapon":
+                entry = p
+                break
+
+    assert entry is not None, "Expected an item usage entry for 'Mighty Weapon'"
+    assert entry["item"]["slot"] == "mainhand"
+    assert entry["item"].get("quality") == "set"
 
 
 def test_variant_detail_endpoint_returns_404_when_missing(

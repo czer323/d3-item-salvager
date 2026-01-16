@@ -336,17 +336,20 @@ async def list_item_usage_for_variant(
         if usage.id is None:
             continue
         payload.append(
-            ItemUsageWithItemSchema(
-                id=usage.id,
-                profile_id=usage.profile_id,
-                item_id=usage.item_id,
-                slot=usage.slot,
-                usage_context=usage.usage_context,
-                item=ItemReferenceSchema(
-                    id=item.id,
-                    name=item.name,
-                    slot=item.type or usage.slot,
-                ),
+            ItemUsageWithItemSchema.model_validate(
+                {
+                    "id": usage.id,
+                    "profile_id": usage.profile_id,
+                    "item_id": usage.item_id,
+                    "slot": usage.slot,
+                    "usage_context": usage.usage_context,
+                    "item": {
+                        "id": item.id,
+                        "name": item.name,
+                        "slot": item.type or usage.slot,
+                        "quality": item.quality,
+                    },
+                }
             )
         )
     return payload

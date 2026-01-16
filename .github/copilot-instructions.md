@@ -1187,14 +1187,6 @@ __all__ = ['UserService', 'OrderService', 'User', 'Order', 'd3_item_salvager.Err
 
 For **complex, multi-step changes** (simple changes don't need this process), follow this structured approach:
 
-### 1. Create TODO.md Planning Document
-
-For significant changes, create a `TODO.md` file with:
-
-**Required Sections:** Title, Goal, High-Level Plan, API Changes, Testing Plan, Implementation Steps
-
-*See Appendix A4 for complete TODO.md template*
-
 ### 3. Implementation Rules
 
 **Once approved:**
@@ -1209,7 +1201,7 @@ For significant changes, create a `TODO.md` file with:
 **If you discover needed changes during implementation:**
 
 1. **Stop implementation** immediately
-2. **Record in "Deviations" section** of TODO.md:
+2. **Record in "Working Notes" section** of the bd issue:
 
    ```markdown
    ## Deviations
@@ -1221,7 +1213,7 @@ For significant changes, create a `TODO.md` file with:
 
 3. **Present to user** with justification
 4. **Get explicit approval** before implementing the deviation
-5. **Update relevant sections** of TODO.md after approval
+5. **Update relevant sections** of the bd issue after approval
 
 ### 5. Completion Verification
 
@@ -1232,8 +1224,7 @@ For significant changes, create a `TODO.md` file with:
 - [ ] Code matches original design (plus approved deviations)
 - [ ] Testing plan executed successfully
 - [ ] Documentation updated as planned
-- [ ] **Delete TODO.md as the final step** before creating the PR
-- [ ] TODO.md should be removed in the last commit of the topic branch
+- [ ] **Update and/or close the BD Issue as the final step** before creating the PR
 
 ### 6. Always Include
 
@@ -1434,37 +1425,4 @@ def test_service_with_multiple_dependencies():
 
 **Recommendation**: [Your choice with reasoning]
 **Impact**: [Size, performance, maintenance implications]
-```
-
-### TODO.md Template
-
-```markdown
-# [Change Title]
-
-**Related Issue**: #123 - Issue description
-
-## Goal
-Brief description of what this change accomplishes.
-
-## High-Level Plan
-Overall approach and strategy.
-
-## Public API Changes
-- New functions/classes to be added
-- Existing APIs to be modified
-- Breaking changes (if any)
-
-## Testing Plan
-- Unit tests to be added/modified
-- Integration tests needed
-- Manual testing steps
-
-## Implementation Steps
-- [ ] Step 1: Specific task
-- [ ] Step 2: Another specific task
-- [ ] Step 3: Documentation updates
-- [ ] Step 4: Test implementation
-
-## Deviations
-(Added during implementation if needed)
 ```

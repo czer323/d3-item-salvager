@@ -3,7 +3,7 @@ language: "en-US"
 reviews:
   profile: "chill"
   path_filters:
-    - "scripts"
-    - "frontend"
-    - "src"
-    - "tests"
+    - "scripts/**"
+    - "frontend/**"
+    - "src/**"
+    - "tests/**"

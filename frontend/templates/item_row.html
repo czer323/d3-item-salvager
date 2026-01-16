@@ -1,8 +1,9 @@
 {# Item row partial for item list (T018) #}
 <div class="item-row" role="row" data-item-id="{{ item.id }}">
     <div class="col name">
-        <span class="item-name quality-{{ item.quality|lower }}"
-            aria-label="Item: {{ item.name }}, {{ item.quality }}">{{ item.name }}</span>
+        <span class="item-name quality-{{ (item.quality or '')|lower }}"
+            aria-label="Item: {{ item.name | sanitize_item_name }}, {{ item.quality }}">{{ item.name |
+            sanitize_item_name }}</span>
     </div>
     <div class="col slot item-slot">{{ item.slot }}</div>
     <div class="col usages">

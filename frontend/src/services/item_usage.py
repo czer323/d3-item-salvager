@@ -41,6 +41,7 @@ class ItemUsageRow:
     item_id: str
     name: str
     slot: str
+    quality: str | None
     is_used: bool
     classification: SalvageLabel
     usage_contexts: tuple[str, ...]
@@ -102,6 +103,7 @@ class ItemUsageTable:
                     "item_id": row.item_id,
                     "name": row.name,
                     "slot": row.slot,
+                    "quality": row.quality,
                     "status": "used",
                     "classification": row.classification.value,
                     "usage_contexts": list(row.usage_contexts),
@@ -212,6 +214,8 @@ def _collect_usage_for_builds(
                     continue
                 name = str(item_mapping.get("name", "Unknown Item"))
                 slot = str(item_mapping.get("slot", "Unknown"))
+                quality = item_mapping.get("quality")
+                quality = str(quality).strip() if quality is not None else None
                 context = str(row.get("usage_context", "unknown")).lower()
                 accumulator = usage.get(item_id)
                 if accumulator is None:
@@ -220,11 +224,15 @@ def _collect_usage_for_builds(
                         slot=slot,
                         contexts={context},
                         variant_ids={variant.id},
+                        quality=quality,
                     )
                     usage[item_id] = accumulator
                 else:
                     accumulator.contexts.add(context)
                     accumulator.variant_ids.add(variant.id)
+                    # If we didn't have quality yet, prefer the first seen
+                    if accumulator.quality is None and quality is not None:
+                        accumulator.quality = quality
     return usage
 
 
@@ -241,11 +249,17 @@ def _merge_catalogue_with_usage(
         record = catalogue_map.get(item_id)
         name = record.name if record else accumulator.name
         slot = record.slot if record else accumulator.slot
+        quality = (
+            record.quality
+            if record and record.quality is not None
+            else getattr(accumulator, "quality", None)
+        )
         rows.append(
             ItemUsageRow(
                 item_id=item_id,
                 name=name,
                 slot=slot,
+                quality=quality,
                 is_used=True,
                 classification=classification,
                 usage_contexts=contexts,
@@ -289,6 +303,7 @@ class _UsageAccumulator:
     slot: str
     contexts: set[str]
     variant_ids: set[str]
+    quality: str | None = None
 
 
 # Public aliases for testability: prefer the public names in tests to avoid

@@ -55,7 +55,7 @@ def create_app() -> FastAPI:
     """
     app = FastAPI(title="Diablo 3 Item Salvager API")
     app.add_middleware(
-        CORSMiddleware,
+        CORSMiddleware,  # ty:ignore[invalid-argument-type]
         allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
