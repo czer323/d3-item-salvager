@@ -74,14 +74,12 @@
             this.slotSelect = this.root.querySelector('[data-filter-controls] [data-filter-slot]');
             this.clearButton = this.root.querySelector('[data-filter-controls] [data-filter-clear]');
             this.usageControls = Array.from(this.root.querySelectorAll('[data-filter-usage]'));
-            this.classSelect = this.root.querySelector('[data-filter-controls] [data-filter-classes]');
             this.sectionNodes = Array.from(this.root.querySelectorAll('[data-filter-section]'));
 
             // Record the server-provided search/slot so we can detect when the user
             // clears/changes the search and needs a server refresh.
             this.state.serverSearch = this.root.getAttribute('data-current-search') ?? '';
             this.state.serverSlot = this.root.getAttribute('data-current-slot') ?? '';
-            this.state.serverClasses = (this.root.getAttribute('data-current-classes') ?? '').split(/,/).filter(Boolean);
             this.pendingServerRequest = false;
 
             // Wire up an HTMX completion handler to clear the pending flag when the
@@ -150,31 +148,13 @@
                 }
             }
 
-            if (this.classSelect) {
-                // Prefill selected classes from either URL params or server-provided list
-                const urlParams = new URLSearchParams(window.location.search);
-                const classesParam = (urlParams.get('class_ids') || this.state.serverClasses.join(',')).split(',').map(s => s.trim()).filter(Boolean);
-                for (const option of this.classSelect.options) {
-                    if (classesParam.includes(option.value)) {
-                        option.selected = true;
-                    }
-                }
-                this.state.classes = Array.from(this.classSelect.selectedOptions).map(o => o.value);
 
-                this.boundClassHandler = () => {
-                    this.state.classes = Array.from(this.classSelect.selectedOptions).map(o => o.value);
-                    this.applyFilters();
-                    this.updateUrlParams();
-                };
-                this.classSelect.addEventListener('change', this.boundClassHandler);
-            }
 
             if (this.clearButton) {
                 this.boundClearHandler = () => {
                     this.state.search = '';
                     this.state.slot = '';
                     this.state.usage = [];
-                    this.state.classes = [];
                     if (this.searchInput) {
                         this.searchInput.value = '';
                         this.searchInput.focus();
@@ -185,11 +165,6 @@
                     if (this.usageControls) {
                         for (const cb of this.usageControls) {
                             cb.checked = false;
-                        }
-                    }
-                    if (this.classSelect) {
-                        for (const option of this.classSelect.options) {
-                            option.selected = false;
                         }
                     }
                     this.applyFilters();
@@ -217,10 +192,7 @@
                 }
                 this.boundUsageHandler = null;
             }
-            if (this.classSelect && this.boundClassHandler) {
-                this.classSelect.removeEventListener('change', this.boundClassHandler);
-                this.boundClassHandler = null;
-            }
+
             if (this.clearButton && this.boundClearHandler) {
                 this.clearButton.removeEventListener('click', this.boundClearHandler);
             }
@@ -322,16 +294,11 @@
             const slotValue = (this.state.slot ?? '').toLowerCase();
             const searchValue = (this.state.search ?? '').trim();
             const selectedUsage = (this.state.usage || []).map((s) => s.toLowerCase());
-            const selectedClasses = (this.state.classes || []).map((s) => s.toLowerCase());
 
             for (const item of items) {
                 const itemSlot = (item.getAttribute('data-item-slot') ?? '').toLowerCase();
                 const itemName = item.getAttribute('data-item-name') ?? '';
                 const itemUsages = (item.getAttribute('data-item-usage-contexts') ?? '')
-                    .split(',')
-                    .map((s) => s.trim().toLowerCase())
-                    .filter(Boolean);
-                const itemClasses = (item.getAttribute('data-item-usage-classes') ?? '')
                     .split(',')
                     .map((s) => s.trim().toLowerCase())
                     .filter(Boolean);
@@ -347,11 +314,6 @@
                 // Usage contexts: item must match at least one selected usage if any are selected
                 if (matches && selectedUsage.length > 0) {
                     matches = itemUsages.some((u) => selectedUsage.includes(u));
-                }
-
-                // Class filtering: item must match at least one selected class if any are selected
-                if (matches && selectedClasses.length > 0) {
-                    matches = itemClasses.some((c) => selectedClasses.includes(c));
                 }
 
                 if (matches) {
@@ -403,12 +365,7 @@
                 } else {
                     params.delete('usage');
                 }
-                // classes (class_ids param used by server selection)
-                if (this.state.classes && this.state.classes.length) {
-                    params.set('class_ids', this.state.classes.join(','));
-                } else {
-                    params.delete('class_ids');
-                }
+
                 // slot - keep slot in URL to persist filter state
                 if (this.state.slot && String(this.state.slot).trim()) {
                     params.set('slot', String(this.state.slot));

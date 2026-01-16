@@ -8,9 +8,7 @@
 {% if table %}
 {% set summary = table %}
 <div class="space-y-6" data-testid="item-summary" data-filter-root data-current-search="{{ table.filters.search }}"
-    data-current-slot="{{ table.filters.slot or '' }}"
-    data-current-classes="{{ (table.selected_class_ids or []) | join(',') }}"
-    data-page-size="{{ table.pagination.page_size }}">
+    data-current-slot="{{ table.filters.slot or '' }}" data-page-size="{{ table.pagination.page_size }}">
     <header class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div class="space-y-1">
             <h2 class="text-2xl font-semibold">Item Usage Overview</h2>
