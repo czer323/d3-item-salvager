@@ -281,21 +281,54 @@ async def builds_items(
 
     # Aggregate items for each build
     items_map: dict[str, ItemModel] = {}
+    # Track usage contexts and contributing variant/profile ids per item
+    usage_map: dict[str, dict[str, set[str]]] = {}
+
     for build_id in ids:
         rows = queries.get_items_by_build(session, build_id)
         for item in rows:
             # rows are sequences of ItemModel
             items_map[item.id] = item
 
+        # Also collect usages from profiles belonging to this build
+        profiles = queries.get_profiles_for_build(session, build_id)
+        for profile in profiles:
+            if profile.id is None:
+                continue
+            usages = queries.get_item_usages_for_profile(session, profile.id)
+            for u in usages:
+                item_id = u.item_id
+                ctx = (u.usage_context or "").lower()
+                if item_id not in usage_map:
+                    usage_map[item_id] = {"contexts": set(), "variant_ids": set()}
+                if ctx:
+                    usage_map[item_id]["contexts"].add(ctx)
+                usage_map[item_id]["variant_ids"].add(str(profile.id))
+
     items: list[ItemModel] = sorted(items_map.values(), key=lambda i: i.name)
     total = len(items)
     active = items[offset : offset + limit]
-    payload = [
-        BuildItemSchema(
-            id=item.id, name=item.name, slot=item.type, quality=item.quality
+
+    payload = []
+
+    def _order_contexts_for_payload(contexts: set[str]) -> list[str]:
+        preferred = ["main", "follower", "kanai"]
+        ordered = [c for c in preferred if c in contexts]
+        others = sorted([c for c in contexts if c not in preferred])
+        return ordered + others
+
+    for item in active:
+        usages = usage_map.get(item.id, {"contexts": set(), "variant_ids": set()})
+        payload.append(
+            BuildItemSchema(
+                id=item.id,
+                name=item.name,
+                slot=item.type,
+                quality=item.quality,
+                usage_contexts=_order_contexts_for_payload(usages["contexts"]),
+                variant_ids=sorted(usages["variant_ids"]),
+            )
         )
-        for item in active
-    ]
 
     return BuildItemsResponse(data=payload, meta=build_pagination(limit, offset, total))
 

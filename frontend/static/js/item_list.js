@@ -112,7 +112,6 @@ function renderItems(items) {
     thead.innerHTML = `
         <tr class="text-sm uppercase tracking-wide text-base-content/70">
             <th class="w-1/3">Item</th>
-            <th class="w-1/5">Slot</th>
             <th class="w-1/3">Usage</th>
             <th class="w-1/6 text-right">Variants</th>
         </tr>
@@ -143,24 +142,33 @@ function renderItems(items) {
         nameDiv.appendChild(idSpan);
         tdItem.appendChild(nameDiv);
 
-        // Slot cell
-        const tdSlot = document.createElement('td');
-        tdSlot.className = 'align-top text-sm';
-        tdSlot.textContent = i.slot || 'Unknown';
-
         // Usage cell
         const tdUsage = document.createElement('td');
         tdUsage.className = 'align-top';
         const usageDiv = document.createElement('div');
         usageDiv.className = 'flex flex-col gap-1';
-        const badge = document.createElement('span');
-        badge.className = 'badge badge-success badge-sm w-fit';
-        badge.textContent = 'Used';
-        const label = document.createElement('span');
-        label.className = 'text-xs text-base-content/70';
-        label.textContent = i.usage_label || '';
-        usageDiv.appendChild(badge);
-        usageDiv.appendChild(label);
+        const chipsDiv = document.createElement('div');
+        chipsDiv.className = 'text-xs text-base-content/70';
+        // Render per-context usage chips (i.usage_contexts expected as array of strings)
+        if (Array.isArray(i.usage_contexts) && i.usage_contexts.length) {
+            const preferred = ['main', 'follower', 'kanai'];
+            // Sort contexts to ensure canonical display order: main, follower, kanai, others alphabetically
+            const others = i.usage_contexts.filter(c => !preferred.includes(c)).sort();
+            const ordered = [...preferred.filter(p => i.usage_contexts.includes(p)), ...others];
+            for (const ctx of ordered) {
+                const chip = document.createElement('span');
+                chip.className = `usage-chip usage-${ctx}`;
+                // Accessible: visible chip text should be announced by screen readers
+                chip.textContent = ctx ? ctx.charAt(0).toUpperCase() + ctx.slice(1) : '';
+                chipsDiv.appendChild(chip);
+            }
+        } else if (i.usage_label) {
+            const label = document.createElement('span');
+            label.className = 'text-xs text-base-content/70';
+            label.textContent = i.usage_label || '';
+            chipsDiv.appendChild(label);
+        }
+        usageDiv.appendChild(chipsDiv);
         tdUsage.appendChild(usageDiv);
 
         // Variants cell
@@ -169,7 +177,6 @@ function renderItems(items) {
         tdVariants.textContent = i.variant_ids && i.variant_ids.length ? String(i.variant_ids.length) : '—';
 
         tr.appendChild(tdItem);
-        tr.appendChild(tdSlot);
         tr.appendChild(tdUsage);
         tr.appendChild(tdVariants);
 

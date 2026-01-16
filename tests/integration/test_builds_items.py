@@ -57,6 +57,12 @@ def test_builds_items_union_and_ordering(
     names = [item["name"] for item in payload["data"]]
     assert names == ["Aquila Cuirass", "Chantodo's Will", "Mighty Weapon"]
 
+    # Each item may include aggregated usage contexts across the requested builds
+    by_name = {it["name"]: it for it in payload["data"]}
+    assert by_name["Mighty Weapon"]["usage_contexts"] == ["main"]
+    assert by_name["Aquila Cuirass"]["usage_contexts"] == ["follower"]
+    assert by_name["Chantodo's Will"]["usage_contexts"] == ["kanai"]
+
 
 def test_builds_items_pagination(api_client: tuple[TestClient, dict[str, Any]]) -> None:
     client, data = api_client

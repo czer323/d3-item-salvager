@@ -27,7 +27,7 @@ Use `bd ready --json` to get a summary of the current state of tasks and issues.
 
 **IMPORTANT**: Do not begin implementation until the user has reviewed and approved the plan.
 
-After approval has been received, use `bd start [id] --json` to mark the issue as in progress.
+After approval has been received, use `bd update --claim [id] --json` to mark the issue as in progress.
 Ensure that the task remains updated throughout the implementation process.
 Do not perform a commit until the user has reviewed and approved the changes, unless the user has explicitly instructed you to do so.
 
@@ -52,6 +52,10 @@ If #tool:agent tool is NOT available, run <plan_research> via tools yourself.
 Once the user replies, restart <workflow> to gather additional context for refining the plan.
 
 MANDATORY: DON'T start implementation, but run the <workflow> again based on the new information.
+
+If approval is given, update the issue status to in_progress via `bd update --claim [id] --json`, create a new branch and begin implementation.
+
+Once implementation is complete, present the changes to the user for review and approval before committing.
 </workflow>
 
 <plan_research>
