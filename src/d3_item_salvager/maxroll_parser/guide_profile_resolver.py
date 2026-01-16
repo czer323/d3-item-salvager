@@ -123,20 +123,87 @@ class GuideProfileResolver:
 
     # ------------------------------------------------------------------
     def _extract_planner_ids(self, guide_url: str) -> list[str]:
+        """Extract planner ids, preferring the Variants area when present.
+
+        Strategy:
+        1. Fetch guide HTML.
+        2. Try to extract ids from the Variants subtree (robust container from
+           the Variants heading to the next Hx/section). If any ids found,
+           return them.
+        3. Otherwise fall back to the global extraction logic (same heuristics
+           as before: data attributes and /d3planner/ URLs).
+        """
         self._respect_request_interval()
         response = self._session.get(
             guide_url, headers=self._html_headers, timeout=self._timeout
         )
         response.raise_for_status()
         html = response.text
+
+        # Try Variants subtree first
+        subtree = self._find_variants_subtree(html)
+        if subtree is not None:
+            ids = self._extract_ids_from_html_subtree(subtree)
+            if ids:
+                return ids
+
+        # Fallback to global extraction
+        return self._extract_ids_from_html_subtree(html)
+
+    def _find_variants_subtree(self, html: str) -> str | None:
+        """Return the HTML substring that corresponds to the Variants section.
+
+        Looks for headings with id 'variants' or 'variants-header' or headings
+        whose text contains 'Variants' (case-insensitive). The subtree returned
+        starts after the closing heading tag and ends at the next H1-H6 or
+        <section> tag, or EOF if none found.
+        """
+        # First try id-based heading
+        id_match = re.search(
+            r"<h[1-6][^>]*\bid=[\'\"]?(variants|variants-header)[\'\"]?[^>]*>.*?</h[1-6]>",
+            html,
+            re.IGNORECASE | re.DOTALL,
+        )
+        if id_match:
+            # content after the heading close
+            end_pos = id_match.end()
+            # find next heading or section to mark the end of subtree
+            next_match = re.search(
+                r"<h[1-6]\b|<section\b", html[end_pos:], re.IGNORECASE
+            )
+            end_pos = end_pos + (
+                next_match.start() if next_match else len(html[end_pos:])
+            )
+            return html[id_match.end() : end_pos]
+
+        # Fallback: heading by text content
+        text_match = re.search(
+            r"<h[1-6][^>]*>.*?\bVariants\b.*?</h[1-6]>", html, re.IGNORECASE | re.DOTALL
+        )
+        if text_match:
+            end_pos = text_match.end()
+            next_match = re.search(
+                r"<h[1-6]\b|<section\b", html[end_pos:], re.IGNORECASE
+            )
+            end_pos = end_pos + (
+                next_match.start() if next_match else len(html[end_pos:])
+            )
+            return html[text_match.end() : end_pos]
+
+        return None
+
+    def _extract_ids_from_html_subtree(self, html: str) -> list[str]:
+        r"""Extract planner ids from arbitrary HTML using existing heuristics.
+
+        - Prefer explicit data-d3planner-id attributes (skip blacklisted types)
+        - Fallback to /d3planner/(\d+) URLs
+        Results are deduplicated preserving first-seen order.
+        """
         candidates: list[str] = []
         seen: set[str] = set()
-
-        # Prefer explicit data-d3planner-id attributes but exclude ids that are
-        # clearly associated with 'non-profile' elements like altars.
-        # Example: <div ... data-d3planner-id="315680726" data-d3planner-type="altar" ...>
         blacklist_types = {"altar"}
-        # Find tags that contain data-d3planner-id and inspect for type inside tag
+
+        # data-d3planner-id attributes
         tag_pattern = re.compile(
             r"<[^>]*\bdata-d3planner-id=[\'\"](\d+)[\'\"][^>]*>",
             re.IGNORECASE | re.DOTALL,
@@ -148,14 +215,12 @@ class GuideProfileResolver:
                 r"\bdata-d3planner-type=[\'\"]([^\'\"]+)[\'\"]", tag, re.IGNORECASE
             )
             if type_m and type_m.group(1).lower() in blacklist_types:
-                # skip altar/planner types that are not actual build profiles
                 continue
             if pid not in seen:
                 candidates.append(pid)
                 seen.add(pid)
 
-        # Fallback: URLs that reference planner ids (e.g., /d3planner/123) - only
-        # include if not seen already.
+        # URLs referencing planner ids
         for value in re.findall(r"/d3planner/(\d+)", html):
             if value not in seen:
                 candidates.append(value)
