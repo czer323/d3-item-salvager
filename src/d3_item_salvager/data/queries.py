@@ -1,5 +1,6 @@
 """Query and filter logic for Diablo 3 Item Salvager database."""
 
+import re
 from collections import Counter
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, cast
@@ -138,12 +139,56 @@ def list_builds(
     limit: int = 100,
     offset: int = 0,
 ) -> tuple[Sequence[Build], int]:
-    """Return builds with pagination metadata."""
+    """Return builds with pagination metadata.
+
+    Aggregation behavior: When multiple Build rows represent the same logical
+    guide (e.g., per-planner expanded builds with titles like
+    "Guide Name (planner 123)"), present a single representative Build per
+    logical guide. The representative Build's title is normalized by stripping
+    a trailing "(planner ...)" suffix and the representative URL prefers a
+    non-planner URL when available.
+    """
+    # Fetch all builds ordered by title so grouping preserves stable ordering
     statement = select(Build).order_by(Build.title)
-    count_statement = select(func.count()).select_from(statement.subquery())
-    total = session.exec(count_statement).one()
-    builds = session.exec(statement.offset(offset).limit(limit)).all()
-    return builds, total
+    rows = session.exec(statement).all()
+
+    from typing import Any
+
+    groups: list[dict[str, Any]] = []
+    seen: dict[str, dict[str, Any]] = {}
+
+    def _base_title(title: str) -> str:
+        # Remove " (planner XXX)" suffix if present
+        return re.sub(r"\s*\(planner.*\)$", "", title).strip()
+
+    for build in rows:
+        key = _base_title(build.title).lower()
+        if key not in seen:
+            seen[key] = {"title": _base_title(build.title), "representative": build}
+            groups.append(seen[key])
+            continue
+        # If we already have a representative that looks like a planner URL,
+        # prefer a non-planner URL if we encounter one in the same group.
+        rep = seen[key]["representative"]
+        rep_url = getattr(rep, "url", "") or ""
+        cur_url = getattr(build, "url", "") or ""
+        if ("planners." in rep_url or "/profiles/load/" in rep_url) and (
+            "planners." not in cur_url and "/profiles/load/" not in cur_url
+        ):
+            seen[key]["representative"] = build
+
+    total = len(groups)
+    selected = groups[offset : offset + limit]
+
+    # Construct lightweight Build objects for the API payload with normalized
+    # titles and representative URLs. We create transient Build instances here
+    # rather than mutating persisted objects.
+    result_builds: list[Build] = []
+    for g in selected:
+        rep: Build = g["representative"]
+        result_builds.append(Build(id=rep.id, title=g["title"], url=rep.url))
+
+    return result_builds, total
 
 
 def list_profiles(
@@ -252,9 +297,36 @@ def list_build_guides_with_classes(
 
 
 def list_variants_for_build(session: Session, build_id: int) -> Sequence[Profile]:
-    """Return profile variants associated with a build."""
+    """Return profile variants associated with a build.
+
+    Aggregation behavior: If a build appears to be a planner-derived sub-build
+    (e.g., title contains "(planner ...)") or there exist other builds with the
+    same base title, include profiles from all builds that share the same
+    normalized base title so that the UI can present a single unified set of
+    variants for a logical guide.
+    """
+    # First, fetch the build to determine its normalized base title
+    build_obj = session.exec(select(Build).where(Build.id == build_id)).one_or_none()
+    if build_obj is None:
+        return []
+
+    base_title = re.sub(r"\s*\(planner.*\)$", "", build_obj.title).strip()
+
+    # Find all builds whose normalized title equals the base_title
+    all_builds = session.exec(select(Build)).all()
+    build_ids = [
+        b.id
+        for b in all_builds
+        if re.sub(r"\s*\(planner.*\)$", "", b.title).strip() == base_title
+    ]
+
+    if not build_ids:
+        return []
+
+    # Use the ORM InstrumentedAttribute for build_id to satisfy static typing
+    profile_build_id = cast("InstrumentedAttribute[int]", Profile.build_id)
     statement = (
-        select(Profile).where(Profile.build_id == build_id).order_by(Profile.name)
+        select(Profile).where(profile_build_id.in_(build_ids)).order_by(Profile.name)
     )
     return session.exec(statement).all()
 

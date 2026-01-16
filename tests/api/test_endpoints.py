@@ -11,6 +11,7 @@ from sqlmodel import Session, SQLModel
 from d3_item_salvager.api.dependencies import get_db_session
 from d3_item_salvager.api.factory import create_app
 from d3_item_salvager.data import queries
+from d3_item_salvager.data.models import Build, Profile
 from tests.fakes.test_db_utils import seed_salvage_dataset
 
 
@@ -135,6 +136,44 @@ def test_build_variants_endpoint_returns_profiles(
     variants = payload["data"]
     assert {variant["name"] for variant in variants} == {"Leapquake", "Support"}
     assert all(variant["build_guide_id"] == build_id for variant in variants)
+
+
+def test_variants_endpoint_aggregates_profiles_across_planner_builds(
+    api_client: tuple[TestClient, dict[str, Any]], sqlite_test_engine: Engine
+) -> None:
+    """When multiple planner builds exist for the same guide, variants are aggregated."""
+    client, _ = api_client
+
+    # Insert two planner-derived builds for the same logical guide and profiles for each
+    with Session(sqlite_test_engine) as session:
+        b1 = Build(
+            title="Sample Guide (planner 123)",
+            url="https://planners.maxroll.gg/profiles/load/d3/123",
+        )
+        b2 = Build(
+            title="Sample Guide (planner 456)",
+            url="https://planners.maxroll.gg/profiles/load/d3/456",
+        )
+        session.add_all([b1, b2])
+        session.commit()
+        session.refresh(b1)
+        session.refresh(b2)
+        b1_id = b1.id
+        assert b1_id is not None
+        b2_id = b2.id
+        assert b2_id is not None
+
+        p1 = Profile(build_id=b1_id, name="P1", class_name="Monk")
+        p2 = Profile(build_id=b2_id, name="P2", class_name="Wizard")
+        session.add_all([p1, p2])
+        session.commit()
+
+    # Call the variants endpoint using one of the planner build ids and expect both profiles
+    response = client.get(f"/build-guides/{b1_id}/variants")
+    assert response.status_code == 200
+    payload = response.json()
+    names = {v["name"] for v in payload["data"]}
+    assert names == {"P1", "P2"}
 
 
 def test_variant_detail_endpoint_returns_single_profile(
