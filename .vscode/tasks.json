@@ -111,7 +111,7 @@
             "presentation": {
                 "reveal": "always",
                 "panel": "shared"
-            },
+            }
         },
         {
             "label": "coderabbit: review (Ubuntu)",

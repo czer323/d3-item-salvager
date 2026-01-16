@@ -245,9 +245,9 @@ def _merge_catalogue_with_usage(
 
     def _order_usage_contexts(contexts: set[str]) -> tuple[str, ...]:
         """Order usage contexts using canonical ordering: main, follower, kanai, then others alphabetically."""
-        preferred = ["main", "follower", "kanai"]
-        ordered = []
-        others = []
+        preferred: list[str] = ["main", "follower", "kanai"]
+        ordered: list[str] = []
+        others: list[str] = []
         for c in contexts:
             lc = (c or "").lower()
             if lc in preferred:
@@ -255,7 +255,7 @@ def _merge_catalogue_with_usage(
             else:
                 others.append(lc)
         # Keep the canonical order for the known contexts
-        final = [c for c in preferred if c in ordered]
+        final: list[str] = [c for c in preferred if c in ordered]
         final.extend(sorted(set(others)))
         return tuple(final)
 

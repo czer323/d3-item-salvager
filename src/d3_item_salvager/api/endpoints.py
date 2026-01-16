@@ -309,12 +309,12 @@ async def builds_items(
     total = len(items)
     active = items[offset : offset + limit]
 
-    payload = []
+    payload: list[BuildItemSchema] = []
 
     def _order_contexts_for_payload(contexts: set[str]) -> list[str]:
-        preferred = ["main", "follower", "kanai"]
-        ordered = [c for c in preferred if c in contexts]
-        others = sorted([c for c in contexts if c not in preferred])
+        preferred: list[str] = ["main", "follower", "kanai"]
+        ordered: list[str] = [c for c in preferred if c in contexts]
+        others: list[str] = sorted([c for c in contexts if c not in preferred])
         return ordered + others
 
     for item in active:
