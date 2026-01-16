@@ -67,10 +67,10 @@ class FileGuideCache(GuideCacheProtocol):
                     if isinstance(name, str) and isinstance(url, str):
                         guides.append(GuideInfo(name=name, url=url))
         except (OSError, json.JSONDecodeError) as e:  # pragma: no cover - IO edge
-            logger.warning("Failed to load cache file: %s", e)
+            logger.warning("Failed to load cache file: {}", e)
             return None
         logger.info(
-            "Loaded %d guides from file cache (%d seconds old)",
+            "Loaded {} guides from file cache ({} seconds old)",
             len(guides),
             int(cache_age),
         )
@@ -100,9 +100,9 @@ class FileGuideCache(GuideCacheProtocol):
             with self._cache_path.open("w", encoding="utf-8") as f:
                 json.dump(serialisable, f, indent=2)
                 f.write("\n")
-            logger.info("Saved %d guides to file cache", len(serialisable["guides"]))
+            logger.info("Saved {} guides to file cache", len(serialisable["guides"]))
         except (OSError, TypeError, ValueError) as e:  # pragma: no cover
-            logger.warning("Failed to save cache file: %s", e)
+            logger.warning("Failed to save cache file: {}", e)
 
 
 __all__ = ["FileGuideCache", "GuideInfo"]

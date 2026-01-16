@@ -23,7 +23,7 @@ def main() -> None:
             types.add(item_type)
     logger.info("Unique item types:")
     for item_type in sorted(types):
-        logger.info("- %s", item_type)
+        logger.info("- {}", item_type)
 
 
 if __name__ == "__main__":
