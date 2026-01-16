@@ -124,6 +124,46 @@ def test_build_guides_endpoint_exposes_class_metadata(
     assert {guide["class_name"] for guide in guides} == {"Barbarian", "Wizard"}
 
 
+def test_build_guides_aggregates_planner_builds(
+    api_client: tuple[TestClient, dict[str, Any]], sqlite_test_engine: Engine
+) -> None:
+    """When planner-derived builds exist for the same guide, /build-guides shows a single logical entry."""
+    client, _ = api_client
+    with Session(sqlite_test_engine) as session:
+        b1 = Build(
+            title="Lod Hota Barbarian Guide (planner 495003449)",
+            url="https://planners.maxroll.gg/profiles/load/d3/495003449",
+        )
+        b2 = Build(
+            title="Lod Hota Barbarian Guide (planner 686195983)",
+            url="https://planners.maxroll.gg/profiles/load/d3/686195983",
+        )
+        session.add_all([b1, b2])
+        session.commit()
+
+        # Add profiles to each planner build so class metadata exists
+        session.refresh(b1)
+        session.refresh(b2)
+        b1_id = b1.id
+        assert b1_id is not None
+        b2_id = b2.id
+        assert b2_id is not None
+        p1 = Profile(build_id=b1_id, name="Hota1", class_name="Barbarian")
+        p2 = Profile(build_id=b2_id, name="Hota2", class_name="Barbarian")
+        session.add_all([p1, p2])
+        session.commit()
+
+    response = client.get("/build-guides")
+    assert response.status_code == 200
+    payload = response.json()
+    titles = {g["title"] for g in payload["data"]}
+    assert "Lod Hota Barbarian Guide" in titles
+    # Only one logical entry should exist for the Lod Hota guide
+    assert (
+        sum(1 for g in payload["data"] if "Lod Hota Barbarian Guide" in g["title"]) == 1
+    )
+
+
 def test_build_variants_endpoint_returns_profiles(
     api_client: tuple[TestClient, dict[str, Any]],
 ) -> None:

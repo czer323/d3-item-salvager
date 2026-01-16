@@ -3,6 +3,7 @@
 import re
 from collections import Counter
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
 from sqlalchemy import func
@@ -245,15 +246,15 @@ def list_build_guides_with_classes(
 ) -> Sequence[tuple[Build, str | None]]:
     """Return build guides along with an inferred class name.
 
-    Previous implementation used MIN(Profile.class_name) which could pick a
-    lexicographically small value when a build had profiles from multiple classes
-    (e.g., a stray 'demonhunter' would mask the intended 'Wizard'). This routine
-    now determines the canonical class by inspecting profile values per-build and
-    selecting the most common normalized class name. Returns None when no profiles
-    exist for a build.
+    Aggregation behavior: Multiple persisted Build rows that correspond to the
+    same logical guide (e.g., planner-derived builds titled "Guide Name
+    (planner XXX)") are grouped by their normalized base title. A single
+    representative Build is returned per logical guide, and the canonical class
+    name is chosen by inspecting all profiles across the grouped builds and
+    selecting the most common normalized class.
 
     This implementation performs a single query that outer-joins Build to
-    Profile and groups class names in Python to avoid N+1 queries.
+    Profile and performs grouping in Python to avoid N+1 queries.
     """
     from d3_item_salvager.utility.class_names import normalize_class_name
 
@@ -265,33 +266,52 @@ def list_build_guides_with_classes(
     )
     rows = session.exec(statement).all()
 
-    # Group normalized class names by build id and remember build objects in order.
-    # Build.id is None for transient/unsaved objects, but rows returned from the
-    # database should contain persisted Build records with a non-None id. Add an
-    # assertion to guard against unexpected transient objects and tighten the
-    # local dict key types to `int`.
-    classes_by_build_id: dict[int, list[str]] = {}
-    builds_by_id: dict[int, Build] = {}
+    # Helper to normalize titles by removing trailing "(planner ...)" suffix
+    def _base_title(title: str) -> str:
+        return re.sub(r"\s*\(planner.*\)$", "", title).strip()
+
+    @dataclass
+    class _BuildGroup:
+        builds: list[Build]
+        classes: list[str]
+        rep: Build | None = None
+
+    # Group builds by base title while collecting class names and remembering
+    # a representative Build (prefer a non-planner URL when available)
+    groups: dict[str, _BuildGroup] = {}
 
     for build, class_name in rows:
-        key = build.id
-        # Persisted builds must have an id — fail fast if we encounter a None id.
-        assert key is not None, "Expected persisted Build records with non-None id"
-        # Preserve the first-seen Build for each key to maintain ordering
-        builds_by_id.setdefault(key, build)
+        assert build.id is not None, "Expected persisted Build records with non-None id"
+        key = _base_title(build.title).lower()
+        entry = groups.setdefault(key, _BuildGroup([], []))
+        entry.builds.append(build)
         if class_name:
-            classes_by_build_id.setdefault(key, []).append(
-                normalize_class_name(class_name)
-            )
+            entry.classes.append(normalize_class_name(class_name))
+        # Determine representative build: prefer a non-planner URL if present
+        if entry.rep is None:
+            entry.rep = build
+        else:
+            rep_url = getattr(entry.rep, "url", "") or ""
+            cur_url = getattr(build, "url", "") or ""
+            if ("planners." in rep_url or "/profiles/load/" in rep_url) and (
+                "planners." not in cur_url and "/profiles/load/" not in cur_url
+            ):
+                entry.rep = build
 
     results: list[tuple[Build, str | None]] = []
-    for key, build in builds_by_id.items():
-        normalized_classes = classes_by_build_id.get(key, [])
-        if not normalized_classes:
-            results.append((build, None))
+
+    for key, entry in groups.items():
+        rep = entry.rep
+        assert rep is not None, "Representative build cannot be None"
+        normalized_title = _base_title(rep.title)
+        # Construct a transient Build with normalized title to present to API
+        rep_build = Build(id=rep.id, title=normalized_title, url=rep.url)
+        classes = entry.classes
+        if not classes:
+            results.append((rep_build, None))
             continue
-        most_common_class = Counter(normalized_classes).most_common(1)[0][0]
-        results.append((build, most_common_class))
+        most_common_class = Counter(classes).most_common(1)[0][0]
+        results.append((rep_build, most_common_class))
 
     return results
 
