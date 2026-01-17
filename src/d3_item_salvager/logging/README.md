@@ -50,6 +50,10 @@ from d3_item_salvager.config.base import LoggingConfig
 config = LoggingConfig(enabled=True, level="INFO", metrics_enabled=False, log_file="logs/app.log")
 ```
 
+### SQLAlchemy noise control
+
+To reduce visual noise from SQLAlchemy during import and other bulk operations, set `sqlalchemy_echo` to `False` (the default) in your `LoggingConfig`. You can override via environment using `LOGGING_SQLALCHEMY_ECHO=true` in your `.env` when you need SQL emission for debugging.
+
 ## Metrics & Tracing
 
 Optional metrics/tracing integration is available via Prometheus and OpenTelemetry. Enable via config and ensure dependencies are installed.

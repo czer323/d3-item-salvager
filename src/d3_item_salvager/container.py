@@ -37,7 +37,7 @@ class Container(containers.DeclarativeContainer):  # pylint: disable=too-few-pub
     engine: providers.Provider[Engine] = providers.Singleton(
         create_engine,
         url=config.provided.database.url,  # pylint: disable=no-member
-        echo=True,
+        echo=config.provided.logging.sqlalchemy_echo,
     )
 
     session: providers.Provider[Session] = providers.Factory(
