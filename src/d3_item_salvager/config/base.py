@@ -37,6 +37,9 @@ class LoggingConfig(BaseSettings):
         level: Logging level (e.g., 'INFO', 'DEBUG').
         metrics_enabled: Whether metrics are enabled.
         log_file: Path to the log file.
+        sqlalchemy_echo: When True, SQLAlchemy engine echo is enabled and SQL statements may be
+            emitted to the console. When False (default) SQL emitting is suppressed to reduce
+            console noise; enable when debugging SQL statements.
     """
 
     model_config = SettingsConfigDict(env_prefix="LOGGING_")
@@ -44,6 +47,7 @@ class LoggingConfig(BaseSettings):
     level: str = "INFO"
     metrics_enabled: bool = False
     log_file: str = "logs/app.log"
+    sqlalchemy_echo: bool = False
 
 
 class MaxrollParserConfig(BaseSettings):
