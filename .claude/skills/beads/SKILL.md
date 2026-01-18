@@ -1,9 +1,10 @@
 ---
 name: beads
-description: >
+description: |
   Git-backed issue tracker for multi-session work with dependencies and persistent
   memory across conversation compaction. Use when work spans sessions, has blockers,
   or needs context recovery after compaction.
+  Triggers: "tasks", "beads", "task tracker", "issue tracker", "task memory", "bd", "issues".
 allowed-tools: "Read,Bash(bd:*)"
 version: "0.43.0"
 author: "Steve Yegge <https://github.com/steveyegge>"

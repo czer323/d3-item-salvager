@@ -1,0 +1,24 @@
+{
+    // Consolidated markdownlint CLI2 configuration (single-file).
+    // This is the authoritative config; .markdownlint.json has been renamed/removed.
+    "config": {
+        "default": true,
+        "MD013": false, // Disable rule MD013 (line length)
+        "MD060": false, // Disable rule MD060 (multiple top-level headings)
+        "MD040": false, // Disable rule MD040 (fenced code blocks should have a language specified)
+        "MD024": false, // Disable rule MD024 (multiple headings with the same content)
+        "MD036": false // Disable rule MD036 (emphasis used instead of a header)
+    },
+    // Enable automatic fixing where supported
+    "fix": true,
+    // Lint only markdown files under the plugins-main skills folder
+    "globs": [
+        ".claude/skills/plugins-main/**/*.md"
+    ],
+    // Ignore common noise
+    "ignores": [
+        "node_modules/**",
+        "**/vendor/**"
+    ],
+    "showFound": true
+}
