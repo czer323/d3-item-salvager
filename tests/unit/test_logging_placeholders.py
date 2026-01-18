@@ -69,14 +69,14 @@ def test_build_guide_fetch_logs_count() -> None:
 
         from sqlmodel import Session
 
-        def _session_factory() -> Session:  # type: ignore[return-value]
+        def _session_factory() -> Session:
             msg = "Not used in test"
             raise RuntimeError(msg)
 
         deps: Any = BuildGuideDependencies(
             session_factory=_session_factory,
             guide_fetcher=DummyFetcher(),
-        )  # type: ignore
+        )
 
         from d3_item_salvager.config.settings import AppConfig
 
@@ -84,7 +84,7 @@ def test_build_guide_fetch_logs_count() -> None:
             config=AppConfig(),
             logger=get_loguru_service_logger(),
             dependencies=deps,
-        )  # type: ignore
+        )
 
         guides = svc.fetch_guides()
 

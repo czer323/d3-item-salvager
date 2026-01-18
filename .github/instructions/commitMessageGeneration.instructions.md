@@ -1,34 +1,67 @@
-# Git Commit Standards
+---
+description: 'Prompt and workflow for generating conventional commit messages using a structured XML format. Guides users to create standardized, descriptive commit messages in line with the Conventional Commits specification, including instructions, examples, and validation.'
+---
 
-Follow conventional commit format for consistency:
 
-**Format:**
+### Instructions
 
-```text
-<type>(<scope>): <subject>
-
-<body>
-
-<footer>
+```xml
+	<description>This file contains a prompt template for generating conventional commit messages. It provides instructions, examples, and formatting guidelines to help users write standardized, descriptive commit messages in accordance with the Conventional Commits specification.</description>
+	<note>
 ```
 
-**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+### Workflow
 
-**Examples:**
+**Follow these steps:**
 
-```text
-feat(config): add environment variable loading
-fix(exceptions): correct error code inheritance
-docs(readme): update setup instructions
-test(services): add integration test coverage
-chore(deps): update development dependencies
+1. Run `git status` to review changed files.
+2. Run `git diff` or `git diff --cached` to inspect changes.
+3. Stage your changes with `git add <file>`.
+4. Construct your commit message using the following XML structure.
+5. Return the commit message using the following format: "type(scope): description"
+
+### Commit Message Structure
+
+```xml
+<commit-message>
+	<type>feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert</type>
+	<scope>()</scope>
+	<description>A short, imperative summary of the change</description>
+	<body>(optional: more detailed explanation)</body>
+	<footer>(optional: e.g. BREAKING CHANGE: details, or issue references)</footer>
+</commit-message>
 ```
 
-**Rules:**
+### Examples
 
-- Subject line ≤50 characters
-- No capital letter at start of subject
-- No period at end of subject
-- Use imperative mood ("add" not "added")
-- Body lines ≤72 characters
-- Blank line between subject and body
+```xml
+<examples>
+	<example>feat(parser): add ability to parse arrays</example>
+	<example>fix(ui): correct button alignment</example>
+	<example>docs: update README with usage instructions</example>
+	<example>refactor: improve performance of data processing</example>
+	<example>chore: update dependencies</example>
+	<example>feat!: send email on registration (BREAKING CHANGE: email service required)</example>
+</examples>
+```
+
+### Validation
+
+```xml
+<validation>
+	<type>Must be one of the allowed types. See <reference>https://www.conventionalcommits.org/en/v1.0.0/#specification</reference></type>
+	<scope>Optional, but recommended for clarity.</scope>
+	<description>Required. Use the imperative mood (e.g., "add", not "added").</description>
+	<body>Optional. Use for additional context.</body>
+	<footer>Use for breaking changes or issue references.</footer>
+</validation>
+```
+
+### Final Step
+
+```xml
+<final-step>
+	<Message>type(scope): description</Message>
+	<note>Replace with your constructed message. Include body and footer if needed.</note>
+</final-step>
+```
