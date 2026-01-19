@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, ComputedField, ConfigDict
+from pydantic import BaseModel, ConfigDict, computed_field
 
 from d3_item_salvager.data import queries
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from typing import Any
 
     from sqlmodel import Session
 
@@ -67,7 +66,7 @@ class ItemTableEntry(BaseModel):
     classification: SalvageLabel
     variant_ids: list[int]
 
-    @ComputedField  # type: ignore[misc]
+    @computed_field  # type: ignore[misc]
     @property
     def badge_class(self) -> str:
         """Return details for frontend styling."""
@@ -78,7 +77,7 @@ class ItemTableEntry(BaseModel):
             SalvageLabel.SALVAGE: "badge-error",
         }.get(self.classification, "badge-ghost")
 
-    @ComputedField  # type: ignore[misc]
+    @computed_field  # type: ignore[misc]
     @property
     def usage_label(self) -> str:
         """Return formatted usage string."""
@@ -97,7 +96,7 @@ class UIService:
         Items are deduplicated and classified based on their combined usage.
         """
         # Dictionary to accumulate usage data: item_id -> data
-        accumulator: dict[str, dict] = {}
+        accumulator: dict[str, dict[str, Any]] = {}
 
         for vid in variant_ids:
             # Check if variant exists? Queries might raise or return empty.
@@ -105,9 +104,6 @@ class UIService:
             rows = queries.list_item_usage_with_items(self.session, vid)
 
             for usage, item in rows:
-                if item.id is None:
-                    continue
-
                 item_id = item.id
                 context = (usage.usage_context or "unknown").lower()
 

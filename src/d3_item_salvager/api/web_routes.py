@@ -2,7 +2,7 @@
 
 import json
 from collections import defaultdict
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
@@ -21,7 +21,7 @@ async def dashboard(request: Request, session: SessionDep) -> HTMLResponse:
     rows = queries.list_build_guides_with_classes(session)
 
     # Group builds by class for the UI selector
-    builds_by_class: dict[str, list] = defaultdict(list)
+    builds_by_class: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for build, class_name in rows:
         if not class_name or not build.id:
             continue

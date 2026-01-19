@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-DEFAULT_PORTS = (8000, 8001)
+DEFAULT_PORTS = (8000,)
 
 
 def _run(cmd: str) -> str:
