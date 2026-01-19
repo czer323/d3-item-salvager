@@ -4,9 +4,14 @@ description: Researches and outlines multi-step plans
 argument-hint: Outline the goal or problem to research
 tools: ['execute/testFailure', 'read/problems', 'read/readFile', 'edit/createFile', 'search', 'web', 'context7/*', 'agent']
 handoffs:
-  - label: Add to Beads
+  - label: Add task to Beads
     agent: agent
     prompt: 'Follow instructions in .github\prompts\beads-bd.prompt.md and follow the users guidance to either create or update issues in Beads using the bd CLI.  Use the research you gathered as the basis for the issue content.'
+    showContinueOn: false
+    send: true
+  - label: Add EPIC to Beads
+    agent: agent
+    prompt: 'Follow instructions in .github\prompts\beads-bd.prompt.md and follow the users guidance to either create or update issues in Beads using the bd CLI.  Use the research you gathered as the basis for the issue content.  For the scope of this work, create an issue with the type EPIC outling the overall high level goals and strategy.  After the epic is created, break down the work into smaller tasks.  For each task you identify, create issues as CHILD issues linked to the EPIC.  Each child issue should represent a discrete piece of work that contributes to the overall epic goals.'
     showContinueOn: false
     send: true
 ---

@@ -14,6 +14,7 @@ from d3_item_salvager.services.build_guide_service import (
     BuildGuideDependencies,
     BuildGuideService,
 )
+from d3_item_salvager.services.ui import UIService
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
@@ -55,4 +56,9 @@ class Container(containers.DeclarativeContainer):  # pylint: disable=too-few-pub
         config=config,
         logger=logger,
         dependencies=build_guide_dependencies,
+    )
+
+    ui_service = providers.Factory(
+        UIService,
+        session=session,
     )

@@ -1,0 +1,53 @@
+<div x-data="itemTable({{ items_json }})" class="space-y-4">
+    <div class="flex gap-4 items-center">
+        <input
+            x-model="search"
+            @input.debounce="updateResults"
+            type="text"
+            placeholder="Search items..."
+            class="input input-bordered w-full max-w-md"
+        />
+        <div class="text-sm opacity-70" x-show="items.length > 0">
+            Showing <span x-text="filteredItems.length"></span> of <span x-text="items.length"></span> items
+        </div>
+    </div>
+
+    <div class="overflow-x-auto bg-base-100 rounded-lg shadow">
+        <table class="table table-zebra table-pin-rows">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Slot</th>
+                    <th>Usage</th>
+                    <th>Variants</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="item in filteredItems" :key="item.item_id">
+                    <tr>
+                        <td>
+                            <div class="font-medium" x-text="item.name"></div>
+                        </td>
+                        <td x-text="item.slot"></td>
+                        <td>
+                            <div class="flex items-center gap-2">
+                                <span class="badge badge-sm" :class="item.badge_class" x-text="item.classification"></span>
+                                <span class="text-xs opacity-70" x-text="item.usage_label"></span>
+                            </div>
+                        </td>
+                        <td>
+                             <div class="tooltip" :data-tip="'Variants: ' + item.variant_ids.join(', ')">
+                                <span class="badge badge-ghost" x-text="item.variant_ids.length"></span>
+                            </div>
+                        </td>
+                    </tr>
+                </template>
+                <tr x-show="filteredItems.length === 0">
+                    <td colspan="4" class="text-center py-8 opacity-50">
+                        No items found matching your search.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

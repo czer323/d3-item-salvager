@@ -35,11 +35,18 @@ bd create "feat(config): add environment variable loading" \
   --json
 ```
 
+
 "Use $(...) notation instead of legacy backticks `...`."  We use POSIX-compliant shells that require careful attention when using backticks.
+
+AFter creating a task or multiple tasks, always run:
+
+```bash
+bd lint --json
+```
 
 ### Title Description
 
-**Title types:** `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+**Title types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
 
 **Examples:**
 
@@ -47,8 +54,14 @@ bd create "feat(config): add environment variable loading" \
 feat(config): add environment variable loading
 fix(exceptions): correct error code inheritance
 docs(readme): update setup instructions
+style(lint): apply code formatting rules
+refactor(auth): improve token management logic
+perf(cache): optimize data retrieval speed
 test(services): add integration test coverage
+build(ci): enhance build pipeline efficiency
+ci(tests): integrate automated test reporting
 chore(deps): update development dependencies
+revert(ui): undo recent UI changes
 ```
 
 ---
@@ -87,11 +100,12 @@ bd create -f epic-desc.md --json
 - Search for duplicates before creating a new issue. If one exists, do not create a new issue—notify the user and merge or link details into the canonical ticket.
 - If multiple existing issues cover the same topic, consider if this is really a duplicate issue, or if it s a new aspect that warrants its own ticket.
 - If an issue is related but not duplicate, link using `--related-to` when creating or updating the issue.
-- Use `bd duplicate <id> --of <canonical> --sjon` to mark duplicates.
+- Use `bd duplicate <id> --of <canonical> --json` to mark duplicates.
 
 
 ## Label usage (LLM guidance)
-Use the `label` field sparingly. Prefer at most 2–3 labels: one `mod:<slug>` when applicable plus one area or workflow flag.
+
+Use the `label` field sparingly. Prefer at most 2–3 labels
 
 ```yaml
 label_usage:
@@ -109,15 +123,19 @@ label_usage:
         - name: tooling
           desc: "Formatting, testing, CI, automation, and developer tooling"
         - name: ux
-          desc: "User-facing UI, flows, copy, interaction, and accessibility polish"
+          desc: "User experience, interaction design, and usability work"
         - name: design
           desc: "High-level specs, research, wireframes, and decision records"
+        - name: backend
+          desc: "Server-side, API, database, and performance work"
+        - name: frontend
+          desc: "Client-side, rendering, components, and visual elements"
         - name: docs
           desc: "Documentation, guides, README updates, and in-repo docs"
         - name: research
-          desc: "Spikes, feasibility research, and discovery work"
+          desc: "Exploratory work, spikes, and information gathering"
         - name: refactor
-          desc: "Code cleanup or reorganization that preserves behavior"
+          desc: "Codebase restructuring, cleanup, and technical debt"
         - name: testing
           desc: "Test creation, maintenance, and test infrastructure"
     workflow_meta:
@@ -125,14 +143,8 @@ label_usage:
       items:
         - name: needs-discussion
           desc: "Issue requires design/strategy discussion before work can begin or move forward. This should only be used if the issue is blocked."
-        - name: spike
-          desc: "Issue is a spike or research task to gather information before implementation."
-        - name: needs-qa
-          desc: "Work is complete from implementation side and awaits QA verification/tests."
         - name: needs-review
           desc: "Request for review (code or design) before merge or approval."
-        - name: duplicate
-          desc: "Marked duplicate; should be closed or merged into the canonical ticket."
 ```
 
 ## Acceptance Criteria Writing Guidance

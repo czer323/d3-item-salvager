@@ -2,9 +2,11 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from d3_item_salvager.api.dependencies import ConfigDep, ServiceDep, SessionDep
 from d3_item_salvager.api.endpoints import router as api_router
+from d3_item_salvager.api.web_routes import router as web_router
 
 
 # 'AppConfig' and 'ItemSalvageService' are no longer needed here
@@ -61,5 +63,10 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Mount frontend static files
+    app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+
+    app.include_router(web_router)
     _register_routes(app)
     return app

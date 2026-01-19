@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D3 Item Salvager</title>
+
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+
+    <!-- JS -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.basic.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <style>
+        .ts-control {
+            border: 1px solid hsl(var(--bc) / 0.2);
+            background-color: hsl(var(--b1));
+            color: hsl(var(--bc));
+            border-radius: var(--rounded-btn, 0.5rem);
+            padding: 0.5rem;
+        }
+        .ts-dropdown {
+            background-color: hsl(var(--b1));
+            color: hsl(var(--bc));
+            border: 1px solid hsl(var(--bc) / 0.2);
+        }
+        .ts-dropdown .option {
+            color: hsl(var(--bc));
+        }
+        .ts-dropdown .option:hover, .ts-dropdown .active {
+            background-color: hsl(var(--p));
+            color: hsl(var(--pc));
+        }
+        .ts-control .item {
+            background-color: hsl(var(--n));
+            color: hsl(var(--nc));
+            border-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-base-200 p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto space-y-6">
+        <!-- Header -->
+        <div class="navbar bg-base-100 rounded-box shadow-lg">
+            <div class="flex-1">
+                <a class="btn btn-ghost text-xl">D3 Item Salvager</a>
+            </div>
+             <div class="flex-none">
+                 <button class="btn btn-square btn-ghost">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0 1 1 0 012 0 1 1 0 012-2zm7 0a1 1 0 11-2 0 1 1 0 012 0 1 1 0 012 0 1 1 0 012-2zm7 0a1 1 0 11-2 0 1 1 0 012 0 1 1 0 012 0 1 1 0 012-2z"></path></svg>
+                 </button>
+            </div>
+        </div>
+
+        <!-- Selection Card -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title mb-4">Select Builds</h2>
+
+                <form hx-post="/hx/items" hx-target="#results-area" hx-indicator="#loading">
+                    <div class="form-control w-full">
+                        <label class="label">
+                            <span class="label-text">Select one or more Build Guides</span>
+                        </label>
+                        <select id="build-select" name="build_ids" multiple placeholder="Select builds..." autocomplete="off">
+                            <option value="">Select builds...</option>
+                            {% for cls in sorted_classes %}
+                            <optgroup label="{{ cls }}">
+                                {% for build in builds_by_class[cls] %}
+                                    <option value="{{ build.id }}">{{ build.title }}</option>
+                                {% endfor %}
+                            </optgroup>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="card-actions justify-end mt-4">
+                        <button class="btn btn-primary" type="submit">
+                            Apply Selection
+                            <span id="loading" class="loading loading-spinner loading-sm htmx-indicator pl-2"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results Area -->
+        <div id="results-area">
+            <!-- Items table will be loaded here -->
+            <div class="alert">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>Select builds and click Apply to see the salvage table.</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Init Alpine Data
+        document.addEventListener('alpine:init', () => {
+            // Load global game data for tooltips/reference
+            Alpine.store('gameData', {
+                data: null,
+                init() {
+                    fetch('/static/data.json')
+                        .then(r => r.json())
+                        .then(json => this.data = json)
+                        .catch(e => console.error('Failed to load game data', e));
+                }
+            });
+
+            Alpine.data('itemTable', (initialItems) => ({
+                items: initialItems,
+                filteredItems: initialItems,
+                search: '',
+                fuse: null,
+
+                init() {
+                    // Initialize Fuse.js
+                    const options = {
+                        keys: ['name', 'slot'],
+                        threshold: 0.3
+                    };
+                    this.fuse = new Fuse(this.items, options);
+
+                    // Watch for external data updates if re-initialized
+                    this.$watch('items', (val) => {
+                        this.fuse.setCollection(val);
+                        this.updateResults();
+                    });
+                },
+
+                updateResults() {
+                    if (!this.search) {
+                        this.filteredItems = this.items;
+                        return;
+                    }
+                    const results = this.fuse.search(this.search);
+                    this.filteredItems = results.map(result => result.item);
+                }
+            }));
+        });
+
+        // Init Tom Select
+        new TomSelect("#build-select", {
+            plugins: ['remove_button', 'checkbox_options', 'clear_button'],
+            maxOptions: null,
+            create: false,
+            sortField: {
+                field: "text",
+                direction: "asc"
+            }
+        });
+    </script>
+</body>
+</html>
