@@ -1,0 +1,12 @@
+{
+    "name": "d3-item-salvager-playwright",
+    "private": true,
+    "scripts": {
+        "test:e2e": "playwright test --config src/tests/playwright/playwright.config.ts",
+        "test:e2e:chromium": "playwright test --config src/tests/playwright/playwright.config.ts --project=chromium",
+        "playwright:install": "playwright install"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.57.0"
+    }
+}

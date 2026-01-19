@@ -7,12 +7,8 @@
     <title>D3 Item Salvager</title>
 
     <!-- CSS -->
-    <script src="
-https://cdn.jsdelivr.net/npm/daisyui@5.5.14/index.min.js
-"></script>
-    <link href="
-https://cdn.jsdelivr.net/npm/daisyui@5.5.14/daisyui.min.css
-" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/daisyui@5.5.14/index.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.5.14/daisyui.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.default.min.css">
 
     <!-- JS -->
@@ -116,14 +112,49 @@ https://cdn.jsdelivr.net/npm/daisyui@5.5.14/daisyui.min.css
                 fuse: null,
 
                 init() {
-                    // Initialize Fuse.js
+                    // Initialize Fuse.js for local (build) items
                     const options = {
                         keys: ['name', 'slot'],
-                        threshold: 0.3
+                        threshold: 0.3,
+                        includeScore: true,
+                        minMatchCharLength: 1,
+                        distance: 100
                     };
                     this.fuse = new Fuse(this.items, options);
 
-                    // Watch for external data updates if re-initialized
+                    // Prepare a lightweight gameData index when available (names only)
+                    const setupGameIndex = () => {
+                        const gd = Alpine.store('gameData') && Alpine.store('gameData').data;
+                        if (!gd || !gd.items) return;
+
+                        // Build an array of catalog items with minimal needed fields
+                        this._gameItems = Object.values(gd.items)
+                            .filter(i => i && i.name)
+                            .map(i => ({ id: i.id || i.name, name: i.name, type: i.type || '', quality: i.quality || '' }));
+
+                        const gameOptions = {
+                            keys: ['name'],
+                            threshold: 0.3,
+                            includeScore: true,
+                            minMatchCharLength: 1,
+                            distance: 100
+                        };
+                        this.gameDataFuse = new Fuse(this._gameItems, gameOptions);
+                    };
+
+                    // If game data not yet loaded, poll briefly until available
+                    if (!Alpine.store('gameData') || !Alpine.store('gameData').data) {
+                        const interval = setInterval(() => {
+                            if (Alpine.store('gameData') && Alpine.store('gameData').data) {
+                                setupGameIndex();
+                                clearInterval(interval);
+                            }
+                        }, 100);
+                    } else {
+                        setupGameIndex();
+                    }
+
+                    // Watch for local items updates
                     this.$watch('items', (val) => {
                         this.fuse.setCollection(val);
                         this.updateResults();
@@ -131,12 +162,70 @@ https://cdn.jsdelivr.net/npm/daisyui@5.5.14/daisyui.min.css
                 },
 
                 updateResults() {
-                    if (!this.search) {
+                    const q = (this.search || '').trim();
+
+                    // No query => show original build items
+                    if (!q) {
                         this.filteredItems = this.items;
                         return;
                     }
-                    const results = this.fuse.search(this.search);
-                    this.filteredItems = results.map(result => result.item);
+
+                    // Get local build item matches
+                    const localMatches = this.fuse.search(q, { limit: 100 }).map(r => ({ item: r.item, score: r.score ?? 0, salvage: false }));
+
+                    // Get game DB matches (as Salvage candidates)
+                    let gameMatches = [];
+                    if (this.gameDataFuse) {
+                        gameMatches = this.gameDataFuse.search(q, { limit: 100 }).map(r => ({ item: r.item, score: r.score ?? 0, salvage: true }));
+                    }
+
+                    // Dedupe: prefer build items when name matches
+                    const seen = new Map(); // key -> {item,score,salvage}
+
+                    const normalizeName = (name) => (name || '').toLowerCase().trim();
+
+                    // Add local matches first
+                    for (const m of localMatches) {
+                        const key = normalizeName(m.item.name) || m.item.item_id || m.item.id;
+                        seen.set(key, { item: m.item, score: m.score, salvage: false });
+                    }
+
+                    // Add game matches only if not present in local
+                    for (const m of gameMatches) {
+                        const key = normalizeName(m.item.name) || m.item.id;
+                        if (seen.has(key)) continue;
+
+                        // Build a minimal row shape compatible with the table
+                        const row = {
+                            item_id: m.item.id || m.item.name,
+                            name: m.item.name,
+                            slot: m.item.type || '',
+                            classification: 'Salvage',
+                            badge_class: 'badge-warning'
+                        };
+                        seen.set(key, { item: row, score: m.score, salvage: true });
+                    }
+
+                    // Convert to array and sort by score then name
+                    const combined = Array.from(seen.values()).map(v => v);
+                    combined.sort((a, b) => {
+                        // lower score is better
+                        if (a.score !== b.score) return (a.score ?? 1) - (b.score ?? 1);
+                        // tie-breaker: alphabetical
+                        const an = (a.item.name || '').toLowerCase();
+                        const bn = (b.item.name || '').toLowerCase();
+                        return an < bn ? -1 : an > bn ? 1 : 0;
+                    });
+
+                    // Map into filteredItems with expected fields
+                    this.filteredItems = combined.map(v => {
+                        const it = v.item;
+                        if (v.salvage) {
+                            return Object.assign({}, it, { classification: it.classification || 'Salvage', badge_class: it.badge_class || 'badge badge-sm badge-warning' });
+                        }
+                        // Ensure build items still have their classification/badge
+                        return it;
+                    });
                 }
             }));
         });
