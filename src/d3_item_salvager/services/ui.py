@@ -66,7 +66,7 @@ class ItemTableEntry(BaseModel):
     classification: SalvageLabel
     variant_ids: list[int]
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def badge_class(self) -> str:
         """Return details for frontend styling."""
@@ -77,7 +77,7 @@ class ItemTableEntry(BaseModel):
             SalvageLabel.SALVAGE: "badge-error",
         }.get(self.classification, "badge-ghost")
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def usage_label(self) -> str:
         """Return formatted usage string."""

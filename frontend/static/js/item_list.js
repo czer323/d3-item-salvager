@@ -103,7 +103,8 @@ function renderItems(items) {
     // class on rows ('.p-2' and '.virtual-item') so tests that look for those
     // selectors continue to work.
     const tableWrapper = document.createElement('div');
-    tableWrapper.className = 'overflow-x-auto rounded-lg border border-base-300/80';
+    // Constrain width and center the table to match page layout
+    tableWrapper.className = 'max-w-3xl mx-auto px-4 overflow-x-auto rounded-lg border border-base-300/80';
 
     const table = document.createElement('table');
     table.className = 'table table-zebra w-full';

@@ -27,46 +27,11 @@
             ]
         },
         {
-            "label": "Start Frontend",
+            "label": "Start Servers",
             "type": "shell",
-            "command": "uv run python -m flask --app app run --port 8001",
-            "isBackground": true,
-            "options": {
-                "cwd": "${workspaceFolder}/frontend",
-                "env": {
-                    "FRONTEND_BACKEND_URL": "http://127.0.0.1:8000"
-                }
-            },
+            "command": "python frontend/scripts/start_servers.py --yes",
             "presentation": {
-                "reveal": "silent",
-                "revealProblems": "onProblem",
-                "panel": "shared"
-            },
-            "problemMatcher": [
-                {
-                    "owner": "werkzeug",
-                    "source": "werkzeug",
-                    "pattern": {
-                        "regexp": "^$"
-                    },
-                    "background": {
-                        "activeOnStart": true,
-                        "beginsPattern": "^\\s*\\* Serving Flask app .*",
-                        "endsPattern": "^\\s*\\* Running on .*"
-                    }
-                }
-            ]
-        },
-        {
-            "label": "Start Both",
-            "dependsOn": [
-                "Start Backend",
-                "Start Frontend"
-            ],
-            "dependsOrder": "sequence",
-            "presentation": {
-                "reveal": "silent",
-                "revealProblems": "onProblem",
+                "reveal": "always",
                 "panel": "shared"
             }
         },
