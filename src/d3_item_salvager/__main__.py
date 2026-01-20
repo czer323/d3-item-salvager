@@ -46,13 +46,24 @@ def run_api(app_config: AppConfig = Provide[Container.config]) -> None:
         " Starting FastAPI app..."
     )
 
-    fastapi_app = create_app()
-    uvicorn.run(
-        fastapi_app,
-        host=app_config.api.host,
-        port=app_config.api.port,
-        reload=app_config.api.reload,
-    )
+    # If reload is enabled, pass an import string and use factory=True so
+    # Uvicorn can spawn a watcher process and reload correctly.
+    if app_config.api.reload:
+        uvicorn.run(
+            "d3_item_salvager.api.factory:create_app",
+            host=app_config.api.host,
+            port=app_config.api.port,
+            reload=True,
+            factory=True,
+        )
+    else:
+        fastapi_app = create_app()
+        uvicorn.run(
+            fastapi_app,
+            host=app_config.api.host,
+            port=app_config.api.port,
+            reload=False,
+        )
 
 
 @inject

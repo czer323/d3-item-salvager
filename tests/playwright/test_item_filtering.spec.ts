@@ -4,6 +4,9 @@ test.describe('Item filtering and salvage badge', () => {
     test('shows DB-only item with Salvage badge and spelling message when no match', async ({ page }) => {
         await page.goto('/');
 
+        // Load the items table (submit the form even with no builds selected)
+        await page.click('form button[type="submit"]');
+
         const search = page.locator('input[placeholder="Search items..."]');
         await expect(search).toBeVisible();
 
