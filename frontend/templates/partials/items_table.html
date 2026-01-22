@@ -21,7 +21,18 @@
             <template x-for="item in filteredItems" :key="item.item_id">
                 <tr>
                     <td>
-                        <div class="font-medium" x-text="item.name"></div>
+                        <span>
+                            <span
+                                :class="['d3planner-item', item.d3planner_class || (item.quality ? 'item-' + item.quality.toLowerCase() : '')]">
+                                <span class="d3planner-icon-wrap">
+                                    <!-- Icon will be added later; placeholder prevents layout shift -->
+                                    <span class="d3planner-icon"
+                                        style="display:inline-block;width:1.25rem;height:1.25rem;"
+                                        aria-hidden="true"></span>
+                                </span>
+                                <span :class="['d3planner-name', item.rarity_class]" x-text="item.name"></span>
+                            </span>
+                        </span>
                     </td>
                     <td x-text="item.slot"></td>
                     <td>
@@ -44,5 +55,4 @@
             </tr>
         </tbody>
     </table>
-</div>
 </div>

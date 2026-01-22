@@ -48,7 +48,7 @@ test.describe('Item filtering and salvage badge', () => {
         await page.locator('#results-area table').waitFor({ timeout: 5000 });
 
         // Grab first item name from table
-        const firstName = await page.locator('table tbody tr').first().locator('td div.font-medium').innerText();
+        const firstName = await page.locator('table tbody tr').first().locator('td .d3planner-name').innerText();
         expect(firstName.length).toBeGreaterThan(0);
 
         // Search for exact name
@@ -57,7 +57,7 @@ test.describe('Item filtering and salvage badge', () => {
         await page.waitForTimeout(200);
 
         // Assert top row contains the exact name
-        const topRowName = await page.locator('table tbody tr').first().locator('td div.font-medium').innerText();
+        const topRowName = await page.locator('table tbody tr').first().locator('td .d3planner-name').innerText();
         expect(topRowName).toBe(firstName);
     });
 
@@ -81,7 +81,7 @@ test.describe('Item filtering and salvage badge', () => {
         await page.locator('#results-area table').waitFor({ timeout: 5000 });
 
         const firstRow = page.locator('table tbody tr').first();
-        const name = await firstRow.locator('td div.font-medium').innerText();
+        const name = await firstRow.locator('td .d3planner-name').innerText();
 
         // Create a simple misspelling by removing one character from the name
         const misspelled = name.length > 2 ? name.slice(0, Math.floor(name.length / 2)) + name.slice(Math.floor(name.length / 2) + 1) : name;
@@ -95,7 +95,7 @@ test.describe('Item filtering and salvage badge', () => {
         await expect(table).toContainText(name);
 
         // Ensure the found row does not include 'Salvage' badge (it's an in-build match)
-        const foundRow = page.locator(`table tbody tr:has(td div.font-medium:text("${name}"))`);
+        const foundRow = page.locator(`table tbody tr:has(td .d3planner-name:text("${name}"))`);
         await expect(foundRow).not.toContainText('Salvage');
     });
 });

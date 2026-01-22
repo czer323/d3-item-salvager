@@ -65,6 +65,7 @@ class ItemTableEntry(BaseModel):
     usage_contexts: list[str]
     classification: SalvageLabel
     variant_ids: list[int]
+    quality: str | None = None
 
     @computed_field
     @property
@@ -82,6 +83,22 @@ class ItemTableEntry(BaseModel):
     def usage_label(self) -> str:
         """Return formatted usage string."""
         return ", ".join(ctx.title() for ctx in self.usage_contexts)
+
+    @computed_field
+    @property
+    def rarity_class(self) -> str:
+        """Return a Tailwind text color class for the item's rarity/quality.
+
+        - Legendary -> text-orange-500
+        - Set -> text-green-500
+        - Fallback -> empty string
+        """
+        q = (self.quality or "").lower()
+        if q == "legendary":
+            return "text-orange-500"
+        if q == "set":
+            return "text-green-500"
+        return ""
 
 
 class UIService:

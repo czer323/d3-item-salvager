@@ -1,27 +1,14 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
+{% extends 'layout/base.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>D3 Item Salvager</title>
+{% block title %}D3 Item Salvager{% endblock %}
 
-    <!-- CSS -->
-    <script src="https://cdn.jsdelivr.net/npm/daisyui@5.5.14/index.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.5.14/daisyui.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.default.min.css">
+{% block extra_head %}
+<link rel="icon"
+    href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=">
+{% endblock %}
 
-    <!-- JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://unpkg.com/htmx.org@2.0.8/dist/htmx.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.1.0/dist/fuse.min.js"></script>
-    <script src="//unpkg.com/alpinejs" defer></script>
-</head>
-
-
-
-<body class="min-h-screen bg-base-200 p-4 md:p-8">
+{% block body %}
+<div class="p-4 md:p-8">
 
     <div class="max-w-7xl mx-auto space-y-6">
         <!-- Header -->
@@ -91,6 +78,7 @@
         </div>
     </div>
 
+    {% block extra_scripts %}
     <script>
         // Init Alpine Data
         document.addEventListener('alpine:init', () => {
@@ -110,6 +98,40 @@
                 filteredItems: initialItems,
                 search: '',
                 fuse: null,
+
+                _enrichItem(item) {
+                    if (!item) return item;
+                    // If quality already set, ensure d3planner class is present
+                    if (item.quality) {
+                        const q = String(item.quality).toLowerCase().replace(/\s+/g, '-');
+                        let prefix = '';
+                        if (q === 'ethereal') prefix = 'd3planner-eth ';
+                        if (q === 'sanctified') prefix = 'd3planner-sanctified ';
+                        item.d3planner_class = prefix + 'item-' + q;
+                        return item;
+                    }
+
+                    // Try to find in the game data lookups
+                    let found = null;
+                    if (this._gameItemsById && item.item_id) {
+                        found = this._gameItemsById.get(item.item_id);
+                    }
+                    if (!found && this._gameItemsByName && item.name) {
+                        found = this._gameItemsByName.get(item.name.toLowerCase());
+                    }
+
+                    if (found) {
+                        if (!item.quality && found.quality) item.quality = found.quality;
+                        if (!item.type && found.type) item.type = found.type;
+                    }
+
+                    const q = item.quality ? String(item.quality).toLowerCase().replace(/\s+/g, '-') : '';
+                    let prefix = '';
+                    if (q === 'ethereal') prefix = 'd3planner-eth ';
+                    if (q === 'sanctified') prefix = 'd3planner-sanctified ';
+                    item.d3planner_class = q ? (prefix + 'item-' + q) : '';
+                    return item;
+                },
 
                 init() {
                     // Initialize Fuse.js for local (build) items
@@ -132,6 +154,14 @@
                             .filter(i => i && i.name)
                             .map(i => ({ id: i.id || i.name, name: i.name, type: i.type || '', quality: i.quality || '' }));
 
+                        // Build fast lookup maps for enrichment
+                        this._gameItemsById = new Map();
+                        this._gameItemsByName = new Map();
+                        for (const gi of this._gameItems) {
+                            if (gi.id) this._gameItemsById.set(gi.id, gi);
+                            if (gi.name) this._gameItemsByName.set((gi.name || '').toLowerCase(), gi);
+                        }
+
                         const gameOptions = {
                             keys: ['name'],
                             threshold: 0.3,
@@ -140,6 +170,13 @@
                             distance: 100
                         };
                         this.gameDataFuse = new Fuse(this._gameItems, gameOptions);
+
+                        // Enrich any already-loaded items (build items may lack quality)
+                        this.items = this.items.map(it => { this._enrichItem(it); return it; });
+
+                        // Rebuild search index and refresh results
+                        if (this.fuse) this.fuse.setCollection(this.items);
+                        this.updateResults();
                     };
 
                     // If game data not yet loaded, poll briefly until available
@@ -200,47 +237,56 @@
                             item_id: m.item.id || m.item.name,
                             name: m.item.name,
                             slot: m.item.type || '',
+                            quality: m.item.quality || '',
+                            usage_contexts: m.item.usage_contexts || [],
+                            variant_ids: m.item.variant_ids || [],
                             classification: 'Salvage',
-                            badge_class: 'badge-warning'
+                            badge_class: 'badge badge-sm badge-warning'
                         };
+
                         seen.set(key, { item: row, score: m.score, salvage: true });
                     }
 
                     // Convert to array and sort by score then name
                     const combined = Array.from(seen.values()).map(v => v);
                     combined.sort((a, b) => {
-                        // lower score is better
                         if (a.score !== b.score) return (a.score ?? 1) - (b.score ?? 1);
-                        // tie-breaker: alphabetical
                         const an = (a.item.name || '').toLowerCase();
                         const bn = (b.item.name || '').toLowerCase();
                         return an < bn ? -1 : an > bn ? 1 : 0;
                     });
 
-                    // Map into filteredItems with expected fields
+                    // Map into filteredItems with expected fields and enrich missing metadata
                     this.filteredItems = combined.map(v => {
-                        const it = v.item;
+                        // Clone to avoid mutating original source objects
+                        let it = Object.assign({}, v.item);
+
                         if (v.salvage) {
-                            return Object.assign({}, it, { classification: it.classification || 'Salvage', badge_class: it.badge_class || 'badge badge-sm badge-warning' });
+                            it = Object.assign(it, { classification: it.classification || 'Salvage', badge_class: it.badge_class || 'badge badge-sm badge-warning' });
                         }
-                        // Ensure build items still have their classification/badge
+
+                        // Enrich quality/type and compute d3planner class when possible
+                        this._enrichItem(it);
+
                         return it;
                     });
                 }
             }));
         });
 
-        // Init Tom Select
-        const buildSelect = new TomSelect("#build-select", {
-            plugins: ['remove_button', 'checkbox_options', 'clear_button'],
-            maxOptions: null,
-            create: false,
-            sortField: {
-                field: "text",
-                direction: "asc"
-            }
-        });
+        // Init Tom Select (guard against redeclaration during hot reloads)
+        if (typeof window.buildSelect === 'undefined') {
+            window.buildSelect = new TomSelect("#build-select", {
+                plugins: ['remove_button', 'checkbox_options', 'clear_button'],
+                maxOptions: null,
+                create: false,
+                sortField: {
+                    field: "text",
+                    direction: "asc"
+                }
+            });
+        }
     </script>
-</body>
-
-</html>
+    {% endblock %}
+</div>
+{% endblock %}

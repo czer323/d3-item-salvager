@@ -9,11 +9,20 @@
     <meta name="backend-base" content="{{ frontend_config.backend_base_url }}" />
     {% endif %}
     <title>{% block title %}{{ page_title or "D3 Item Salvager" }}{% endblock %}</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-    <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
+    <!-- UI framework -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.5.14/daisyui.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/components.css" />
+    <!-- Shared D3Planner styles -->
+    <link rel="stylesheet" href="/static/css/embed.css" />
+    <link rel="stylesheet" href="/static/css/tooltips.css" />
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.default.min.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.8/dist/htmx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.1.0/dist/fuse.min.js"></script>
+    <script src="//unpkg.com/alpinejs@3.15.4/dist/cdn.min.js" defer></script>
     {% block extra_head %}{% endblock %}
 </head>
 
@@ -39,8 +48,8 @@
     {% set _preferences_defaults = preferences_payload if preferences_payload is defined else {'version': 2, 'classes':
     [], 'builds': []} %}
     <script id="preferences-defaults" type="application/json">{{ _preferences_defaults | tojson }}</script>
-    <script src="{{ url_for('static', filename='js/preferences.js') }}" defer></script>
-    <script src="{{ url_for('static', filename='js/filtering.js') }}" defer></script>
+    <script src="/static/js/preferences.js" defer></script>
+    <script src="/static/js/filtering.js" defer></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 
