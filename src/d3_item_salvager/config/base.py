@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -10,7 +10,7 @@ from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class AppEnvironment(str, Enum):
+class AppEnvironment(StrEnum):
     """Enumerates supported runtime environments."""
 
     DEVELOPMENT = "development"
