@@ -61,10 +61,12 @@ strict = true
 from typing import TypeVar, Generic
 from collections.abc import Sequence
 
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 def process_items(items: Sequence[str]) -> list[str]:
     return [item.upper() for item in items]
+
 
 class Repository(Generic[T]):
     def get(self, id: int) -> T | None: ...
@@ -77,13 +79,15 @@ class Repository(Generic[T]):
 import asyncio
 from collections.abc import AsyncIterator
 
+
 async def fetch_all(urls: list[str]) -> list[dict]:
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_one(session, url) for url in urls]
         return await asyncio.gather(*tasks)
 
+
 async def stream_data() -> AsyncIterator[bytes]:
-    async with aiofiles.open('large_file.txt', 'rb') as f:
+    async with aiofiles.open("large_file.txt", "rb") as f:
         async for chunk in f:
             yield chunk
 ```
@@ -96,20 +100,20 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
+
 class UserCreate(BaseModel):
     email: str
     name: str
+
 
 class UserResponse(BaseModel):
     id: int
     email: str
     name: str
 
+
 @app.post("/users", response_model=UserResponse)
-async def create_user(
-    user: UserCreate,
-    db: Database = Depends(get_db)
-) -> UserResponse:
+async def create_user(user: UserCreate, db: Database = Depends(get_db)) -> UserResponse:
     result = await db.users.create(user.model_dump())
     return UserResponse(**result)
 ```
@@ -120,11 +124,13 @@ async def create_user(
 import pytest
 from unittest.mock import AsyncMock, patch
 
+
 @pytest.fixture
 def mock_db():
     db = AsyncMock()
     db.users.get.return_value = {"id": 1, "name": "Test"}
     return db
+
 
 @pytest.mark.asyncio
 async def test_get_user(mock_db):

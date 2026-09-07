@@ -61,16 +61,19 @@ All models are defined in `models.py` with type annotations and Field for PKs, F
 from typing import Optional
 from sqlmodel import SQLModel, Field
 
+
 class Build(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str
     url: str
+
 
 class Profile(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     build_id: int = Field(foreign_key="build.id")
     name: str
     class_name: str = Field(index=True)
+
 
 class Item(SQLModel, table=True):
     id: str = Field(primary_key=True)
@@ -80,6 +83,7 @@ class Item(SQLModel, table=True):
 
 
 # Item objects must use consistent attribute naming (e.g., 'type' vs 'slot').
+
 
 class ItemUsage(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
