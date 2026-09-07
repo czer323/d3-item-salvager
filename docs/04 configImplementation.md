@@ -42,9 +42,10 @@ src/d3_item_salvager/config/
 - Remove unused imports and group imports for lint compliance
 
 ```python
-  from d3_item_salvager.config import get_config
-  config = get_config()
-  db_url = config.database.url
+from d3_item_salvager.config import get_config
+
+config = get_config()
+db_url = config.database.url
 ```
 
 - If CLI config is needed, use `typer` for parsing command-line arguments and integrating with Pydantic settings.
@@ -61,6 +62,7 @@ src/d3_item_salvager/config/
 ```python
 from pydantic_settings import BaseSettings
 
+
 class DatabaseConfig(BaseSettings):
     """Database configuration.
 
@@ -68,9 +70,11 @@ class DatabaseConfig(BaseSettings):
         url: Database connection string (e.g., sqlite:///d3_items.db)
         pool_size: Number of connections in the pool
     """
+
     model_config = {"env_prefix": "DATABASE_"}
     url: str = "sqlite:///d3_items.db"
     pool_size: int = 5
+
 
 class ScraperConfig(BaseSettings):
     """Scraper configuration.
@@ -79,9 +83,11 @@ class ScraperConfig(BaseSettings):
         user_agent: HTTP User-Agent string for requests
         timeout: Request timeout in seconds
     """
+
     model_config = {"env_prefix": "SCRAPER_"}
     user_agent: str = "Mozilla/5.0"
     timeout: int = 10
+
 
 class AppConfig(BaseSettings):
     """Main application configuration.
@@ -90,6 +96,7 @@ class AppConfig(BaseSettings):
         database: Database configuration
         scraper: Scraper configuration
     """
+
     database: DatabaseConfig
     scraper: ScraperConfig
 ```

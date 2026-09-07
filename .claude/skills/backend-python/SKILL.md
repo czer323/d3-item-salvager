@@ -78,6 +78,7 @@ tests/
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -85,6 +86,7 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown
     await close_db()
+
 
 app = FastAPI(lifespan=lifespan)
 ```
@@ -96,6 +98,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/users", tags=["users"])
+
 
 @router.get("/{user_id}", response_model=UserOut)
 async def get_user(
@@ -115,9 +118,11 @@ async def get_user(
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 
+
 class UserCreate(BaseModel):
     email: EmailStr
     name: str = Field(min_length=1, max_length=100)
+
 
 class UserOut(BaseModel):
     id: int
@@ -134,12 +139,14 @@ class UserOut(BaseModel):
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
+
 class Settings(BaseSettings):
     database_url: str
     secret_key: str
     debug: bool = False
 
     model_config = {"env_file": ".env"}
+
 
 @lru_cache
 def get_settings() -> Settings:
@@ -161,9 +168,8 @@ engine = create_async_engine(
     max_overflow=10,
 )
 
-AsyncSessionLocal = sessionmaker(
-    engine, class_=AsyncSession, expire_on_commit=False
-)
+AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
 
 class Base(DeclarativeBase):
     pass
@@ -175,6 +181,7 @@ class Base(DeclarativeBase):
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
+
 
 class User(Base):
     __tablename__ = "users"
@@ -191,6 +198,7 @@ class User(Base):
 
 ```python
 from typing import AsyncGenerator
+
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
@@ -232,6 +240,7 @@ from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
     return JSONResponse(
@@ -239,11 +248,13 @@ async def validation_exception_handler(request, exc):
         content={"error": {"code": "VALIDATION_ERROR", "details": exc.errors()}},
     )
 
+
 # Custom exceptions
 class NotFoundError(Exception):
     def __init__(self, resource: str, id: int):
         self.resource = resource
         self.id = id
+
 
 @app.exception_handler(NotFoundError)
 async def not_found_handler(request, exc):

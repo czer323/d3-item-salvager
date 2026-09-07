@@ -88,10 +88,12 @@ from workspace_mcp.tools.drive import get_credentials
 from googleapiclient.discovery import build
 
 creds = get_credentials()
-service = build('drive', 'v3', credentials=creds)
-about = service.about().get(
-    fields='importFormats,exportFormats,folderColorPalette'
-).execute()
+service = build("drive", "v3", credentials=creds)
+about = (
+    service.about()
+    .get(fields="importFormats,exportFormats,folderColorPalette")
+    .execute()
+)
 
 # Returns:
 # - importFormats: dict, 49 entries like {'text/markdown': [...]}

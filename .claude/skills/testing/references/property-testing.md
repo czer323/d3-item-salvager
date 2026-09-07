@@ -265,26 +265,26 @@ pip install hypothesis
 from hypothesis import given, strategies as st
 
 # Primitives
-st.integers()                     # Any integer
+st.integers()  # Any integer
 st.integers(min_value=0, max_value=100)
-st.floats()                       # Floating point
-st.floats(allow_nan=False)        # No NaN
-st.booleans()                     # True/False
-st.text()                         # Unicode strings
+st.floats()  # Floating point
+st.floats(allow_nan=False)  # No NaN
+st.booleans()  # True/False
+st.text()  # Unicode strings
 st.text(min_size=1, max_size=50)  # Constrained
-st.binary()                       # Bytes
+st.binary()  # Bytes
 
 # Collections
-st.lists(st.integers())           # List of ints
-st.lists(st.text(), min_size=1)   # Non-empty
-st.sets(st.integers())            # Set
+st.lists(st.integers())  # List of ints
+st.lists(st.text(), min_size=1)  # Non-empty
+st.sets(st.integers())  # Set
 st.dictionaries(st.text(), st.integers())
 
 # Special types
-st.datetimes()                    # Datetime objects
-st.uuids()                        # UUIDs
-st.emails()                       # Email addresses
-st.from_regex(r'\d{3}-\d{4}')    # Regex pattern
+st.datetimes()  # Datetime objects
+st.uuids()  # UUIDs
+st.emails()  # Email addresses
+st.from_regex(r"\d{3}-\d{4}")  # Regex pattern
 ```
 
 ### Custom Strategies
@@ -293,12 +293,14 @@ st.from_regex(r'\d{3}-\d{4}')    # Regex pattern
 from dataclasses import dataclass
 from hypothesis import strategies as st
 
+
 @dataclass
 class User:
     id: str
     name: str
     email: str
     age: int
+
 
 user_strategy = st.builds(
     User,
@@ -308,19 +310,22 @@ user_strategy = st.builds(
     age=st.integers(min_value=18, max_value=120),
 )
 
+
 # Using composite for complex logic
 @st.composite
 def order_strategy(draw):
     user = draw(user_strategy)
-    items = draw(st.lists(
-        st.builds(
-            OrderItem,
-            product_id=st.uuids().map(str),
-            quantity=st.integers(1, 100),
-            price=st.decimals(min_value=0.01, max_value=10000),
-        ),
-        min_size=1
-    ))
+    items = draw(
+        st.lists(
+            st.builds(
+                OrderItem,
+                product_id=st.uuids().map(str),
+                quantity=st.integers(1, 100),
+                price=st.decimals(min_value=0.01, max_value=10000),
+            ),
+            min_size=1,
+        )
+    )
     return Order(user=user, items=items)
 ```
 
@@ -329,6 +334,7 @@ def order_strategy(draw):
 ```python
 from hypothesis import given, assume, example, settings
 import hypothesis.strategies as st
+
 
 class TestSort:
     @given(st.lists(st.integers()))
@@ -343,7 +349,7 @@ class TestSort:
     def test_ordered(self, xs):
         result = sort(xs)
         for i in range(1, len(result)):
-            assert result[i] >= result[i-1]
+            assert result[i] >= result[i - 1]
 
     @given(st.lists(st.integers()))
     @example([])  # Always test empty list
@@ -378,10 +384,11 @@ class TestDivision:
 ```python
 from hypothesis import given, settings, Verbosity, Phase
 
+
 @given(st.lists(st.integers()))
 @settings(
-    max_examples=500,           # Number of test cases
-    deadline=1000,              # Max time per example (ms)
+    max_examples=500,  # Number of test cases
+    deadline=1000,  # Max time per example (ms)
     verbosity=Verbosity.verbose,
     suppress_health_check=[],
     phases=[Phase.generate, Phase.shrink],
@@ -389,10 +396,12 @@ from hypothesis import given, settings, Verbosity, Phase
 def test_with_settings(xs):
     assert len(xs) >= 0
 
+
 # Profile-based settings
 @settings(settings.get_profile("ci"))  # Use CI profile
 def test_with_profile(xs):
     pass
+
 
 # Register profiles
 settings.register_profile("ci", max_examples=1000)
