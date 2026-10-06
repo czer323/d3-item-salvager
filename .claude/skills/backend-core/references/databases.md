@@ -103,7 +103,7 @@ for user in users:
     print(user.posts)  # Query per user!
 
 # GOOD: Eager load
-users = User.all().prefetch_related('posts')
+users = User.all().prefetch_related("posts")
 ```
 
 ### Pagination

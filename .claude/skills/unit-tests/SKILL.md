@@ -32,13 +32,12 @@ Write the smallest possible test that fails because the functionality doesn't ex
 import pytest
 from student_management.models import Student
 
+
 @pytest.mark.django_db
 def test_student_full_name(mock_site_context):
     """Test that student has a full_name property."""
     student = Student.objects.create(
-        first_name="Jane",
-        last_name="Smith",
-        email="jane@example.com"
+        first_name="Jane", last_name="Smith", email="jane@example.com"
     )
     # This will fail because full_name doesn't exist yet
     assert student.full_name == "Jane Smith"
@@ -121,6 +120,7 @@ Write a test that describes the desired behavior:
 import pytest
 from content_engine.models import Course
 
+
 @pytest.mark.django_db
 def test_course_enrollment_count(mock_site_context):
     """Test that course can count enrolled students."""
@@ -169,8 +169,12 @@ The implementation is too simple. Add another test to drive the real behavior:
 def test_course_enrollment_count_with_students(mock_site_context):
     """Test that course counts enrolled students correctly."""
     course = Course.objects.create(title="Python 101")
-    student1 = Student.objects.create(first_name="Jane", last_name="Doe", email="jane@example.com")
-    student2 = Student.objects.create(first_name="John", last_name="Doe", email="john@example.com")
+    student1 = Student.objects.create(
+        first_name="Jane", last_name="Doe", email="jane@example.com"
+    )
+    student2 = Student.objects.create(
+        first_name="John", last_name="Doe", email="john@example.com"
+    )
 
     StudentCourseRegistration.objects.create(student=student1, course=course)
     StudentCourseRegistration.objects.create(student=student2, course=course)
@@ -211,7 +215,9 @@ When fixing bugs, use TDD to ensure the bug stays fixed.
 def test_student_registration_prevents_duplicates(mock_site_context):
     """Test that students cannot register for the same course twice."""
     course = Course.objects.create(title="Python 101")
-    student = Student.objects.create(first_name="Jane", last_name="Doe", email="jane@example.com")
+    student = Student.objects.create(
+        first_name="Jane", last_name="Doe", email="jane@example.com"
+    )
 
     StudentCourseRegistration.objects.create(student=student, course=course)
 
@@ -241,7 +247,7 @@ class StudentCourseRegistration(SiteAwareModel):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = [['student', 'course', 'site']]  # Fix the bug
+        unique_together = [["student", "course", "site"]]  # Fix the bug
 ```
 
 ### Step 5: Run the Test - It Should PASS
@@ -268,9 +274,7 @@ All models in this project are site-aware. When testing models that require site
 @pytest.mark.django_db
 def test_student_creation(mock_site_context):
     student = Student.objects.create(
-        first_name="John",
-        last_name="Doe",
-        email="john@example.com"
+        first_name="John", last_name="Doe", email="john@example.com"
     )
     assert student.site is not None
 ```
@@ -285,7 +289,7 @@ def test_student_creation(live_server_site):
         first_name="John",
         last_name="Doe",
         email="john@example.com",
-        site=live_server_site.site  # Don't do this
+        site=live_server_site.site,  # Don't do this
     )
 ```
 
@@ -334,11 +338,12 @@ import pytest
 from django.test import Client
 from django.urls import reverse
 
+
 @pytest.mark.django_db
 def test_api_endpoint(client, user, mock_site_context):
     """Test API endpoint returns expected response."""
     client.force_login(user)
-    response = client.get(reverse('app:endpoint-name'))
+    response = client.get(reverse("app:endpoint-name"))
     assert response.status_code == 200
     result = response.json()
     assert result == expected_data  # Always be explicit
@@ -363,9 +368,7 @@ def test_utility_function():
 def test_full_name_with_empty_first_name(mock_site_context):
     """Test full_name when first_name is empty."""
     student = Student.objects.create(
-        first_name="",
-        last_name="Doe",
-        email="doe@example.com"
+        first_name="", last_name="Doe", email="doe@example.com"
     )
     assert student.full_name == " Doe"  # Be explicit about expected behavior
 ```
@@ -381,7 +384,7 @@ def test_registration_requires_student(mock_site_context):
     with pytest.raises(IntegrityError):
         StudentCourseRegistration.objects.create(
             student=None,  # Should fail
-            course=course
+            course=course,
         )
 ```
 
@@ -409,6 +412,7 @@ def test_registration_requires_student(mock_site_context):
 
 ```python
 """Tests for Student model."""
+
 import pytest
 from student_management.models import Student, Cohort
 
@@ -420,9 +424,7 @@ class TestStudentModel:
     def test_student_creation(self, mock_site_context):
         """Test that students can be created with required fields."""
         student = Student.objects.create(
-            first_name="Jane",
-            last_name="Smith",
-            email="jane@example.com"
+            first_name="Jane", last_name="Smith", email="jane@example.com"
         )
         assert student.first_name == "Jane"
         assert student.last_name == "Smith"
@@ -432,9 +434,7 @@ class TestStudentModel:
     def test_student_str_method(self, mock_site_context):
         """Test string representation of Student."""
         student = Student.objects.create(
-            first_name="Jane",
-            last_name="Smith",
-            email="jane@example.com"
+            first_name="Jane", last_name="Smith", email="jane@example.com"
         )
         assert str(student) == "Jane Smith"
 
@@ -442,9 +442,7 @@ class TestStudentModel:
         """Test that students can be added to cohorts."""
         cohort = Cohort.objects.create(name="2024 Cohort")
         student = Student.objects.create(
-            first_name="Jane",
-            last_name="Smith",
-            email="jane@example.com"
+            first_name="Jane", last_name="Smith", email="jane@example.com"
         )
         student.cohorts.add(cohort)
         assert student.cohorts.count() == 1
@@ -540,14 +538,13 @@ class Student(SiteAwareModel):
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}"
 
+
 # Write test for existing method
 @pytest.mark.django_db
 def test_get_full_name(mock_site_context):
     """Test existing get_full_name method."""
     student = Student.objects.create(
-        first_name="Jane",
-        last_name="Smith",
-        email="jane@example.com"
+        first_name="Jane", last_name="Smith", email="jane@example.com"
     )
     assert student.get_full_name() == "Jane Smith"
 ```

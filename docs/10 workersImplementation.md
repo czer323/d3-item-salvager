@@ -52,11 +52,11 @@ src/d3_item_salvager/workers/
     ```python
     def build_scheduler(config: AppConfig, container: Container) -> BackgroundScheduler:
         jobstores = {
-            "default": SQLAlchemyJobStore(url=f"sqlite:///{config.scheduler.job_store_path}")
+            "default": SQLAlchemyJobStore(
+                url=f"sqlite:///{config.scheduler.job_store_path}"
+            )
         }
-        executors = {
-            "default": ThreadPoolExecutor(config.scheduler.max_workers)
-        }
+        executors = {"default": ThreadPoolExecutor(config.scheduler.max_workers)}
         job_defaults = {
             "coalesce": True,
             "max_instances": 1,

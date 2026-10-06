@@ -51,14 +51,17 @@ src/d3_item_salvager/migrations/
 
 ```python
 """Add notes column to items table"""
+
 from alembic import op
 import sqlalchemy as sa
 
+
 def upgrade():
-    op.add_column('items', sa.Column('notes', sa.String(), nullable=True))
+    op.add_column("items", sa.Column("notes", sa.String(), nullable=True))
+
 
 def downgrade():
-    op.drop_column('items', 'notes')
+    op.drop_column("items", "notes")
 ```
 
 ## Summary

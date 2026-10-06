@@ -71,11 +71,10 @@ tests/
 
 ```python
 # Pattern: test_<function>_<scenario>_<expected>
-def test_calculate_total_with_discount_returns_reduced_price():
-    ...
+def test_calculate_total_with_discount_returns_reduced_price(): ...
 
-def test_fetch_user_invalid_id_raises_not_found():
-    ...
+
+def test_fetch_user_invalid_id_raises_not_found(): ...
 ```
 
 ### Structure (AAA Pattern)
@@ -102,8 +101,10 @@ def test_example():
 def user():
     return User(name="Test", email="test@example.com")
 
+
 def test_user_creation(user):
     assert user.name == "Test"
+
 
 # Bad - setup in test
 def test_user_creation():
@@ -124,6 +125,7 @@ def test_send_notification(mocker):
     assert result is True
     mock_email.assert_called_once()
 
+
 # Bad - real external calls in unit tests
 def test_send_notification():
     result = notify_user("real@email.com")  # Actually sends email!
@@ -133,17 +135,22 @@ def test_send_notification():
 
 ```python
 # Good - parametrized
-@pytest.mark.parametrize("input,expected", [
-    ("hello", 5),
-    ("", 0),
-    ("world!", 6),
-])
+@pytest.mark.parametrize(
+    "input,expected",
+    [
+        ("hello", 5),
+        ("", 0),
+        ("world!", 6),
+    ],
+)
 def test_string_length(input, expected):
     assert len(input) == expected
+
 
 # Bad - repeated tests
 def test_string_length_hello():
     assert len("hello") == 5
+
 
 def test_string_length_empty():
     assert len("") == 0
@@ -157,6 +164,7 @@ def test_divide_by_zero():
     with pytest.raises(ZeroDivisionError) as exc_info:
         divide(1, 0)
     assert "division by zero" in str(exc_info.value)
+
 
 # Bad - just check it raises something
 def test_divide_by_zero():
@@ -175,10 +183,12 @@ async def test_async_function():
     result = await fetch_data()
     assert result is not None
 
+
 @pytest.fixture
 async def async_client():
     async with AsyncClient() as client:
         yield client
+
 
 async def test_with_client(async_client):
     response = await async_client.get("/api")
@@ -217,6 +227,7 @@ def test_retry_on_failure(mocker):
 ```python
 from unittest.mock import AsyncMock
 
+
 async def test_async_mock(mocker):
     mock = mocker.patch("module.async_func", new_callable=AsyncMock)
     mock.return_value = {"data": "mocked"}
@@ -244,11 +255,10 @@ def test_file_read(mocker):
 ```python
 import respx
 
+
 @respx.mock
 async def test_api_call():
-    respx.get("https://api.example.com/users/1").respond(
-        json={"id": 1, "name": "John"}
-    )
+    respx.get("https://api.example.com/users/1").respond(json={"id": 1, "name": "John"})
 
     result = await fetch_user(1)
 
@@ -260,12 +270,11 @@ async def test_api_call():
 ```python
 import responses
 
+
 @responses.activate
 def test_api_call():
     responses.add(
-        responses.GET,
-        "https://api.example.com/users/1",
-        json={"id": 1, "name": "John"}
+        responses.GET, "https://api.example.com/users/1", json={"id": 1, "name": "John"}
     )
 
     result = fetch_user(1)
@@ -290,6 +299,7 @@ When generating tests, provide:
 import pytest
 from myapp.database import Database
 
+
 @pytest.fixture
 def db():
     """In-memory test database."""
@@ -297,6 +307,7 @@ def db():
     database.connect()
     yield database
     database.disconnect()
+
 
 @pytest.fixture
 def sample_user():
@@ -309,6 +320,7 @@ import pytest
 from unittest.mock import AsyncMock
 from myapp.services.user import UserService
 from myapp.exceptions import UserNotFoundError
+
 
 class TestUserService:
     """Tests for UserService."""
@@ -339,12 +351,15 @@ class TestUserService:
 
         assert exc_info.value.user_id == 999
 
-    @pytest.mark.parametrize("email,valid", [
-        ("user@example.com", True),
-        ("invalid", False),
-        ("", False),
-        (None, False),
-    ])
+    @pytest.mark.parametrize(
+        "email,valid",
+        [
+            ("user@example.com", True),
+            ("invalid", False),
+            ("", False),
+            (None, False),
+        ],
+    )
     def test_validate_email(self, email, valid):
         service = UserService(repo=None)
 

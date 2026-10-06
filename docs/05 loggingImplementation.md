@@ -42,13 +42,24 @@ from loguru import logger
 from d3_item_salvager.config import get_config
 import sys
 
+
 def setup_logger():
     """Configure Loguru logger for the project."""
     config = get_config().logging
     logger.remove()
-    logger.add(sys.stderr, format="<green>{time}</green> | <level>{message}</level>", colorize=True)
+    logger.add(
+        sys.stderr,
+        format="<green>{time}</green> | <level>{message}</level>",
+        colorize=True,
+    )
     if config.enabled:
-        logger.add(config.log_file, level=config.level, rotation="1 week", retention="10 days", compression="zip")
+        logger.add(
+            config.log_file,
+            level=config.level,
+            rotation="1 week",
+            retention="10 days",
+            compression="zip",
+        )
     # Optionally add metrics/tracing hooks if config.metrics_enabled
     if config.metrics_enabled:
         # Metrics/tracing integration is framework-agnostic. Recommended options:
@@ -56,6 +67,7 @@ def setup_logger():
         # - OpenTelemetry (opentelemetry)
         # Example: Initialize Prometheus metrics server
         from prometheus_client import start_http_server
+
         start_http_server(8000)
         # Example: Setup OpenTelemetry tracing hooks
         # from opentelemetry import trace
@@ -75,6 +87,7 @@ def setup_logger():
 import time
 from loguru import logger
 
+
 def log_timing(func):
     def wrapper(*args, **kwargs):
         start = time.time()
@@ -82,6 +95,7 @@ def log_timing(func):
         result = func(*args, **kwargs)
         logger.info("Finished {} in {:.2f}s", func.__name__, time.time() - start)
         return result
+
     return wrapper
 ```
 
@@ -90,9 +104,9 @@ def log_timing(func):
 ```python
 from loguru import logger
 
+
 @logger.catch
-def my_function():
-    ...
+def my_function(): ...
 ```
 
 ## 7. API Middleware Logging Example
@@ -102,14 +116,19 @@ def my_function():
 ```python
 from loguru import logger
 
+
 def log_api_request(request, response):
     api_logger = logger.bind(
         endpoint=getattr(request, "path", None),
         method=getattr(request, "method", None),
         request_id=getattr(request, "headers", {}).get("X-Request-ID"),
-        status_code=getattr(response, "status_code", None)
+        status_code=getattr(response, "status_code", None),
     )
-    api_logger.info("API request", request_body=getattr(request, "body", None), response_body=getattr(response, "body", None))
+    api_logger.info(
+        "API request",
+        request_body=getattr(request, "body", None),
+        response_body=getattr(response, "body", None),
+    )
     if getattr(response, "status_code", 200) >= 400:
         api_logger.error("API error", error=getattr(response, "body", None))
 ```
