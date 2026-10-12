@@ -38,6 +38,7 @@ src/d3_item_salvager/utils/
 
   ```python
   from d3_item_salvager.utils.string_utils import slugify
+
   slug = slugify("Ancient Legendary Sword")
   ```
 

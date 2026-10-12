@@ -12,6 +12,7 @@ Logger initialization is handled by `setup_logger()` in `src/d3_item_salvager/lo
 
 ```python
 from d3_item_salvager.logging.setup import setup_logger
+
 setup_logger()
 ```
 
@@ -22,9 +23,9 @@ setup_logger()
   ```python
   from d3_item_salvager.logging.setup import log_timing
 
+
   @log_timing
-  def my_function():
-      ...
+  def my_function(): ...
   ```
 
 - **Contextual Decorator:**
@@ -32,9 +33,9 @@ setup_logger()
   ```python
   from d3_item_salvager.logging.setup import log_contextual
 
+
   @log_contextual({"user_id": "abc123"})
-  def my_function():
-      ...
+  def my_function(): ...
   ```
 
 - **Error Capture:** Use Loguru's `@logger.catch` directly on functions.
@@ -47,7 +48,10 @@ Use `log_api_request(request, response)` from `src/d3_item_salvager/logging/midd
 
 ```python
 from d3_item_salvager.config.base import LoggingConfig
-config = LoggingConfig(enabled=True, level="INFO", metrics_enabled=False, log_file="logs/app.log")
+
+config = LoggingConfig(
+    enabled=True, level="INFO", metrics_enabled=False, log_file="logs/app.log"
+)
 ```
 
 ### SQLAlchemy noise control
