@@ -23,12 +23,14 @@ assert len(mock) == 5
 ```python
 from unittest.mock import patch
 
+
 # Patch module function
 @patch("myapp.services.email.send_email")
 def test_signup(mock_send):
     mock_send.return_value = True
     result = signup("test@example.com")
     mock_send.assert_called_once()
+
 
 # Patch with return value
 @patch("myapp.services.payment.charge", return_value={"id": "ch_123"})
@@ -51,6 +53,7 @@ def test_with_context():
 
 ```python
 from unittest.mock import AsyncMock, patch
+
 
 @patch("myapp.services.db.get_user", new_callable=AsyncMock)
 async def test_async_function(mock_get):
@@ -88,10 +91,12 @@ mock.method.assert_not_called()
 assert mock.method.call_count == 3
 
 # All calls
-mock.method.assert_has_calls([
-    call("first"),
-    call("second"),
-])
+mock.method.assert_has_calls(
+    [
+        call("first"),
+        call("second"),
+    ]
+)
 ```
 
 ## TypeScript (Vitest)
