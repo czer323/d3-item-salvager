@@ -398,9 +398,11 @@ class MyService:
 @dataclass(frozen=True)
 class ServiceConfig:
     """Configuration for service behavior."""
+
     timeout: int = 30
     retries: int = 3
     batch_size: int = 100
+
 
 def test_service_with_config():
     """Test service behavior with custom configuration."""
@@ -441,19 +443,23 @@ Benefits:
 # ✅ Good - specific types, no None returns
 from typing import List, Dict, Optional, Union, TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 def process_items(items: List[str], config: d3_item_salvager.Config) -> Dict[str, int]:
     """Process items and return counts."""
     return {item: len(item) for item in items}
 
+
 def get_first_or_default(items: List[T], default: T) -> T:
     """Get first item or return default - never None."""
     return items[0] if items else default
 
+
 # ❌ Avoid - Any types and unclear None returns
 def process_items(items: Any) -> Any:  # Too vague
     return something
+
 
 def get_first(items):  # No return type, unclear None behavior
     return items[0] if items else None
@@ -656,8 +662,8 @@ class TypedDatabaseConnection:
 
        Example:
            >>> config = d3_item_salvager.Config(debug=True)
-           >>> result = process_data(['a', 'b'], config)
-           >>> result['count']
+           >>> result = process_data(["a", "b"], config)
+           >>> result["count"]
            2
        """
    ```
@@ -749,6 +755,7 @@ uv run pre-commit run --all-files              # Standard workflow
 ```python
 class FakeDataStore:
     """Simple in-memory fake for testing."""
+
     def __init__(self):
         self._data = {}
 
@@ -757,6 +764,7 @@ class FakeDataStore:
 
     def set(self, key: str, value: str) -> None:
         self._data[key] = value
+
 
 def test_service_behavior():
     """Test service stores and retrieves data correctly."""
@@ -828,6 +836,7 @@ def load_data(path: str) -> str:
         raise ValueError(f"Cannot access file: {path}") from e
     # Let other exceptions (OSError, etc.) propagate
 
+
 # ❌ Avoid broad catching
 try:
     result = process_data(data)
@@ -842,6 +851,7 @@ except Exception:  # Too broad - hides bugs
 def validate_positive(value: int) -> None:
     if value <= 0:
         raise ValueError("Value must be positive")
+
 
 # Create custom exceptions when you need context/error codes
 class InvalidUserDataError(ValueError):
@@ -859,9 +869,11 @@ class InvalidUserDataError(ValueError):
 @dataclass(frozen=True)
 class ServiceConfig:
     """Configuration for service behavior."""
+
     timeout: int = 30
     retries: int = 3
     batch_size: int = 100
+
 
 def test_service_with_config():
     """Test service behavior with custom configuration."""
@@ -889,9 +901,11 @@ Prefer Python protocols over abstract base classes for flexibility:
 ```python
 from typing import Protocol
 
+
 class DataProcessor(Protocol):
     def process(self, data: str) -> str: ...
     def is_ready(self) -> bool: ...
+
 
 # Any class with these methods automatically satisfies the protocol
 # No inheritance required - enables duck typing and easier testing
@@ -921,6 +935,7 @@ Design for async by default, provide sync compatibility:
 class AsyncDataProcessor(Protocol):
     async def process(self, data: str) -> str: ...
     async def is_ready(self) -> bool: ...
+
 
 # Provide sync wrapper when needed
 class SyncDataProcessor:
@@ -1073,15 +1088,18 @@ def process_user_signup(user_data: Dict[str, Any]) -> User:
     send_welcome_email(user)
     return user
 
+
 def validate_user_data(user_data: Dict[str, Any]) -> None:
     """Validate user registration data."""
-    if not user_data.get('email'):
+    if not user_data.get("email"):
         raise ValueError("Email is required")
     # Additional validation logic
+
 
 def create_user_account(user_data: Dict[str, Any]) -> User:
     """Create user account in database."""
     return User.create(user_data)
+
 
 def send_welcome_email(user: User) -> None:
     """Send welcome email to new user."""
@@ -1096,6 +1114,7 @@ def send_welcome_email(user: User) -> None:
 # ✅ Good - describes intent
 def normalize_url(url: str) -> str: ...
 def save_user_to_database(user: User) -> None: ...
+
 
 # ❌ Avoid - describes mechanics
 def strip_and_lower(url: str) -> str: ...
@@ -1118,6 +1137,7 @@ def process_payment(payment_data: PaymentData) -> PaymentResult:
         return PaymentResult.error("Transaction flagged for review")
 
     return charge_payment(payment_data)
+
 
 # ❌ Avoid - deeply nested
 def process_payment(payment_data: PaymentData) -> PaymentResult:
@@ -1344,11 +1364,13 @@ class DataProcessor:
         # Don't leave this here either!
         return self.process_data(items)
 
+
 # ✅ Good - Clean refactor with no legacy code
 class DataProcessor:
     def process_data(self, items: list[str]) -> dict[str, Any]:
         """Process items and return results."""
         return self._process_items_v2(items)
+
     # That's it - no legacy methods!
 ```
 
@@ -1360,6 +1382,7 @@ class DataProcessor:
 @dataclass(frozen=True)
 class ServiceConfig:
     """Configuration for service behavior."""
+
     timeout: int = 30
     retries: int = 3
     batch_size: int = 100
@@ -1368,6 +1391,7 @@ class ServiceConfig:
     def with_overrides(self, **kwargs) -> "ServiceConfig":
         """Create new config with overrides."""
         return replace(self, **kwargs)
+
 
 # Usage patterns
 config = ServiceConfig.from_env()

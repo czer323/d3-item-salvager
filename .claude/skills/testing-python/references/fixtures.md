@@ -5,10 +5,12 @@
 ```python
 import pytest
 
+
 @pytest.fixture
 def simple_fixture():
     """Returns a value."""
     return {"key": "value"}
+
 
 def test_uses_fixture(simple_fixture):
     assert simple_fixture["key"] == "value"
@@ -32,6 +34,7 @@ def database():
     db.connect()
     yield db
     db.disconnect()
+
 
 @pytest.fixture(scope="session")
 def app():
@@ -69,11 +72,13 @@ def db_transaction(db):
 def user():
     return User(name="Test")
 
+
 @pytest.fixture
 def authenticated_client(client, user):
     """Depends on client and user fixtures."""
     client.login(user)
     return client
+
 
 def test_protected_route(authenticated_client):
     response = authenticated_client.get("/protected")
@@ -90,6 +95,7 @@ def database(request):
     db = create_database(db_type)
     yield db
     db.cleanup()
+
 
 def test_query(database):
     # This test runs 3 times
@@ -180,6 +186,7 @@ def test_output(capsys):
 
 def test_logging(caplog):
     import logging
+
     logging.warning("test warning")
     assert "test warning" in caplog.text
 
