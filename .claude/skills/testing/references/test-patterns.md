@@ -188,6 +188,7 @@ describe('LoginForm', () => {
 import pytest
 from myapp.services import UserService
 
+
 class TestUserService:
     @pytest.fixture
     def user_service(self, mock_repository):
@@ -199,13 +200,13 @@ class TestUserService:
 
     def test_get_user_returns_user_when_found(self, user_service, mock_repository):
         # Arrange
-        mock_repository.find_by_id.return_value = {'id': 1, 'name': 'Alice'}
+        mock_repository.find_by_id.return_value = {"id": 1, "name": "Alice"}
 
         # Act
         result = user_service.get_user(1)
 
         # Assert
-        assert result == {'id': 1, 'name': 'Alice'}
+        assert result == {"id": 1, "name": "Alice"}
         mock_repository.find_by_id.assert_called_once_with(1)
 
     def test_get_user_raises_when_not_found(self, user_service, mock_repository):
@@ -218,15 +219,19 @@ class TestUserService:
 #### Parametrized Tests
 
 ```python
-@pytest.mark.parametrize("input,expected", [
-    (0, 0),
-    (1, 1),
-    (2, 4),
-    (3, 9),
-    (-1, 1),
-])
+@pytest.mark.parametrize(
+    "input,expected",
+    [
+        (0, 0),
+        (1, 1),
+        (2, 4),
+        (3, 9),
+        (-1, 1),
+    ],
+)
 def test_square(input, expected):
     assert square(input) == expected
+
 
 @pytest.mark.parametrize("invalid_input", [None, "", [], {}])
 def test_rejects_invalid_input(invalid_input):
@@ -242,15 +247,18 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-@pytest.fixture(scope='session')
-def engine():
-    return create_engine('sqlite:///:memory:')
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
+def engine():
+    return create_engine("sqlite:///:memory:")
+
+
+@pytest.fixture(scope="session")
 def tables(engine):
     Base.metadata.create_all(engine)
     yield
     Base.metadata.drop_all(engine)
+
 
 @pytest.fixture
 def db_session(engine, tables):
@@ -265,9 +273,10 @@ def db_session(engine, tables):
     transaction.rollback()
     connection.close()
 
+
 @pytest.fixture
 def sample_user(db_session):
-    user = User(email='test@example.com', name='Test User')
+    user = User(email="test@example.com", name="Test User")
     db_session.add(user)
     db_session.commit()
     return user
@@ -278,16 +287,19 @@ def sample_user(db_session):
 ```python
 import pytest
 
+
 @pytest.mark.asyncio
 async def test_async_function():
     result = await async_fetch_data()
     assert result == expected
+
 
 # With pytest-asyncio
 @pytest.fixture
 async def async_client():
     async with AsyncClient(app=app, base_url="http://test") as client:
         yield client
+
 
 @pytest.mark.asyncio
 async def test_endpoint(async_client):

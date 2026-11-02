@@ -493,32 +493,32 @@ High-power tools for HTML - access AJAX, CSS Transitions, WebSockets and Server 
 # Server can control htmx behavior via headers
 
 # Redirect
-response.headers['HX-Redirect'] = '/new-page'
+response.headers["HX-Redirect"] = "/new-page"
 
 # Refresh page
-response.headers['HX-Refresh'] = 'true'
+response.headers["HX-Refresh"] = "true"
 
 # Push URL to history
-response.headers['HX-Push-Url'] = '/new-url'
+response.headers["HX-Push-Url"] = "/new-url"
 
 # Replace URL without history
-response.headers['HX-Replace-Url'] = '/new-url'
+response.headers["HX-Replace-Url"] = "/new-url"
 
 # Retarget the swap
-response.headers['HX-Retarget'] = '#other-element'
+response.headers["HX-Retarget"] = "#other-element"
 
 # Change swap strategy
-response.headers['HX-Reswap'] = 'outerHTML'
+response.headers["HX-Reswap"] = "outerHTML"
 
 # Trigger client-side events
-response.headers['HX-Trigger'] = 'myEvent'
-response.headers['HX-Trigger'] = '{"myEvent": {"key": "value"}}'
+response.headers["HX-Trigger"] = "myEvent"
+response.headers["HX-Trigger"] = '{"myEvent": {"key": "value"}}'
 
 # Trigger after settle
-response.headers['HX-Trigger-After-Settle'] = 'settled'
+response.headers["HX-Trigger-After-Settle"] = "settled"
 
 # Trigger after swap
-response.headers['HX-Trigger-After-Swap'] = 'swapped'
+response.headers["HX-Trigger-After-Swap"] = "swapped"
 ```
 
 ## Events

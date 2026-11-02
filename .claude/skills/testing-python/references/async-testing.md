@@ -25,6 +25,7 @@ async def test_async_function():
 # Explicit marker (if asyncio_mode != "auto")
 import pytest
 
+
 @pytest.mark.asyncio
 async def test_async_explicit():
     result = await fetch_data()
@@ -58,6 +59,7 @@ async def test_with_async_fixtures(async_client, db_connection):
 
 ```python
 from unittest.mock import AsyncMock
+
 
 async def test_async_mock(mocker):
     # Mock async function
@@ -93,11 +95,10 @@ async def test_async_side_effect(mocker):
 import httpx
 import respx
 
+
 @respx.mock
 async def test_api_call():
-    respx.get("https://api.example.com/users/1").respond(
-        json={"id": 1, "name": "John"}
-    )
+    respx.get("https://api.example.com/users/1").respond(json={"id": 1, "name": "John"})
 
     async with httpx.AsyncClient() as client:
         response = await client.get("https://api.example.com/users/1")
@@ -121,11 +122,9 @@ async def test_api_error():
 import httpx
 import pytest
 
+
 async def test_with_httpx_mock(httpx_mock):
-    httpx_mock.add_response(
-        url="https://api.example.com/data",
-        json={"result": "ok"}
-    )
+    httpx_mock.add_response(url="https://api.example.com/data", json={"result": "ok"})
 
     async with httpx.AsyncClient() as client:
         response = await client.get("https://api.example.com/data")
@@ -138,6 +137,7 @@ async def test_with_httpx_mock(httpx_mock):
 ```python
 from aioresponses import aioresponses
 import aiohttp
+
 
 async def test_aiohttp_request():
     with aioresponses() as m:
@@ -171,6 +171,7 @@ async def test_async_generator_with_list():
 ```python
 import asyncio
 import pytest
+
 
 async def test_timeout():
     with pytest.raises(asyncio.TimeoutError):

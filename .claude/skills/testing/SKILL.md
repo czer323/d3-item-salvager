@@ -156,17 +156,21 @@ describe('sort function', () => {
 ```python
 from hypothesis import given, strategies as st
 
+
 @given(st.lists(st.integers()))
 def test_sort_idempotent(xs):
     assert sort(sort(xs)) == sort(xs)
+
 
 @given(st.lists(st.integers()))
 def test_sort_preserves_length(xs):
     assert len(sort(xs)) == len(xs)
 
+
 @given(st.text(), st.text())
 def test_string_concat_associative(a, b):
     assert len(a + b) == len(a) + len(b)
+
 
 # Custom strategies
 @given(st.builds(User, name=st.text(min_size=1), age=st.integers(0, 150)))
