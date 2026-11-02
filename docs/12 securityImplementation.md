@@ -41,6 +41,7 @@ src/d3_item_salvager/security/
 
   ```python
   from d3_item_salvager.security.auth import authenticate_user
+
   user = authenticate_user(token)
   ```
 

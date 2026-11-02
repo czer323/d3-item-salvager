@@ -177,11 +177,11 @@ Server endpoints return HTML, not JSON:
 
 ```python
 # Flask example
-@app.route('/search')
+@app.route("/search")
 def search():
-    q = request.args.get('q', '')
+    q = request.args.get("q", "")
     results = search_database(q)
-    return render_template('_search_results.html', results=results)
+    return render_template("_search_results.html", results=results)
 ```
 
 ### Response Headers
@@ -205,10 +205,10 @@ htmx recognizes special headers:
 Check `HX-Request` header to differentiate htmx from regular requests:
 
 ```python
-if request.headers.get('HX-Request'):
-    return render_template('_partial.html')
+if request.headers.get("HX-Request"):
+    return render_template("_partial.html")
 else:
-    return render_template('full_page.html')
+    return render_template("full_page.html")
 ```
 
 ## Events
@@ -398,6 +398,7 @@ For htmx examples and prototypes, create a simple Python server that:
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
+
 class HtmxHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         path = urlparse(self.path).path
@@ -411,6 +412,7 @@ class HtmxHandler(SimpleHTTPRequestHandler):
         else:
             # Serve static files
             super().do_GET()
+
 
 HTTPServer(("", 8000), HtmxHandler).serve_forever()
 ```

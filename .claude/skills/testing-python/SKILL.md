@@ -90,11 +90,14 @@ project/
 import pytest
 from mypackage.calculator import add, divide
 
+
 def test_add_positive_numbers():
     assert add(2, 3) == 5
 
+
 def test_add_negative_numbers():
     assert add(-1, -1) == -2
+
 
 def test_divide_by_zero_raises():
     with pytest.raises(ZeroDivisionError):
@@ -106,21 +109,28 @@ def test_divide_by_zero_raises():
 ```python
 import pytest
 
-@pytest.mark.parametrize("input,expected", [
-    ("hello", "HELLO"),
-    ("World", "WORLD"),
-    ("", ""),
-    ("123", "123"),
-])
+
+@pytest.mark.parametrize(
+    "input,expected",
+    [
+        ("hello", "HELLO"),
+        ("World", "WORLD"),
+        ("", ""),
+        ("123", "123"),
+    ],
+)
 def test_uppercase(input, expected):
     assert input.upper() == expected
 
 
-@pytest.mark.parametrize("a,b,expected", [
-    (1, 2, 3),
-    (0, 0, 0),
-    (-1, 1, 0),
-])
+@pytest.mark.parametrize(
+    "a,b,expected",
+    [
+        (1, 2, 3),
+        (0, 0, 0),
+        (-1, 1, 0),
+    ],
+)
 def test_add(a, b, expected):
     assert add(a, b) == expected
 ```
@@ -131,6 +141,7 @@ def test_add(a, b, expected):
 # tests/conftest.py
 import pytest
 from mypackage.database import Database
+
 
 @pytest.fixture
 def sample_user():
@@ -161,6 +172,7 @@ def expensive_resource():
 import pytest
 from mypackage.api import fetch_user
 
+
 # With asyncio_mode = "auto", no decorator needed
 async def test_fetch_user():
     user = await fetch_user(1)
@@ -185,6 +197,7 @@ async def test_with_async_client(async_client):
 from unittest.mock import AsyncMock
 import pytest
 
+
 def test_send_email(mocker):
     """Mock external service."""
     mock_send = mocker.patch("mypackage.email.send_email")
@@ -201,7 +214,7 @@ async def test_external_api(mocker):
     mock_fetch = mocker.patch(
         "mypackage.client.fetch_data",
         new_callable=AsyncMock,
-        return_value={"data": "mocked"}
+        return_value={"data": "mocked"},
     )
 
     result = await process_data()
@@ -217,11 +230,10 @@ import pytest
 import httpx
 import respx
 
+
 @respx.mock
 async def test_api_call():
-    respx.get("https://api.example.com/users/1").respond(
-        json={"id": 1, "name": "John"}
-    )
+    respx.get("https://api.example.com/users/1").respond(json={"id": 1, "name": "John"})
 
     async with httpx.AsyncClient() as client:
         response = await client.get("https://api.example.com/users/1")
@@ -247,6 +259,7 @@ async def test_with_fixture(mock_api):
 import pytest
 from mypackage.validator import validate_email
 
+
 def test_invalid_email_raises():
     with pytest.raises(ValueError) as exc_info:
         validate_email("not-an-email")
@@ -266,6 +279,7 @@ def test_specific_exception_attributes():
 
 ```python
 import pytest
+
 
 @pytest.mark.slow
 def test_complex_calculation():
