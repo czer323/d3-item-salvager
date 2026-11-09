@@ -22,8 +22,10 @@ def test_with_mocker(mocker):
 # myapp/service.py
 from myapp.email import send_email  # Imported here
 
+
 def notify_user(email):
     return send_email(email, "Hello")
+
 
 # tests/test_service.py
 def test_notify(mocker):
@@ -45,11 +47,13 @@ mock.return_value = "result"
 # Different returns per call
 mock.side_effect = ["first", "second", "third"]
 
+
 # Conditional returns
 def smart_return(*args, **kwargs):
     if args[0] == 1:
         return "one"
     return "other"
+
 
 mock.side_effect = smart_return
 
@@ -91,6 +95,7 @@ assert mock.call_args_list == [call("a"), call("b")]
 
 ```python
 from unittest.mock import AsyncMock
+
 
 async def test_async(mocker):
     # Mock async function
@@ -145,10 +150,7 @@ def test_mock_method(mocker):
 ```python
 def test_mock_property(mocker):
     mocker.patch.object(
-        MyClass,
-        "my_property",
-        new_callable=mocker.PropertyMock,
-        return_value="mocked"
+        MyClass, "my_property", new_callable=mocker.PropertyMock, return_value="mocked"
     )
 
     obj = MyClass()
@@ -228,9 +230,11 @@ def test_env_clear(mocker):
 ```python
 from freezegun import freeze_time
 
+
 @freeze_time("2024-01-15 12:00:00")
 def test_with_frozen_time():
     from datetime import datetime
+
     assert datetime.now().year == 2024
 
 
