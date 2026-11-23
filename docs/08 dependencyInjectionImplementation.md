@@ -38,6 +38,7 @@ src/d3_item_salvager/api/
 
   ```python
   from d3_item_salvager.api.factory import create_app
+
   app = create_app()
   ```
 
@@ -53,6 +54,7 @@ src/d3_item_salvager/api/
 
 ```python
 from fastapi import Depends
+
 
 def get_db_session():
     """Provide a database session for requests."""
