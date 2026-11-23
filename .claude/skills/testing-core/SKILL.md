@@ -69,6 +69,7 @@ test_get_user_not_found_returns_none()
 def calculate_discount(price: float, percentage: float) -> float:
     return price * (1 - percentage / 100)
 
+
 # Test
 def test_calculate_discount():
     assert calculate_discount(100, 10) == 90
@@ -79,14 +80,17 @@ def test_calculate_discount():
 ### Testing Edge Cases
 
 ```python
-@pytest.mark.parametrize("input,expected", [
-    ("", False),           # Empty
-    ("a@b.c", True),       # Minimal valid
-    ("test@example.com", True),
-    ("invalid", False),    # No @
-    ("@example.com", False), # No local part
-    ("test@", False),      # No domain
-])
+@pytest.mark.parametrize(
+    "input,expected",
+    [
+        ("", False),  # Empty
+        ("a@b.c", True),  # Minimal valid
+        ("test@example.com", True),
+        ("invalid", False),  # No @
+        ("@example.com", False),  # No local part
+        ("test@", False),  # No domain
+    ],
+)
 def test_validate_email(input, expected):
     assert validate_email(input) == expected
 ```
@@ -97,6 +101,7 @@ def test_validate_email(input, expected):
 def test_divide_by_zero_raises():
     with pytest.raises(ZeroDivisionError):
         divide(10, 0)
+
 
 def test_invalid_input_raises_with_message():
     with pytest.raises(ValueError) as exc_info:
@@ -122,6 +127,7 @@ async def db_session():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
+
 async def test_create_and_fetch_user(db_session):
     # Create
     user = User(email="test@example.com", name="Test")
@@ -138,8 +144,7 @@ async def test_create_and_fetch_user(db_session):
 ```python
 async def test_api_create_user(client):
     response = await client.post(
-        "/users",
-        json={"email": "test@example.com", "name": "Test"}
+        "/users", json={"email": "test@example.com", "name": "Test"}
     )
 
     assert response.status_code == 201
@@ -171,11 +176,13 @@ Don't Mock:
 # Python
 from unittest.mock import Mock, patch, AsyncMock
 
+
 @patch("services.email.send_email")
 def test_signup_sends_email(mock_send):
     mock_send.return_value = True
     signup("test@example.com")
     mock_send.assert_called_once_with("test@example.com", subject=ANY)
+
 
 # Async mock
 @patch("services.payment.charge", new_callable=AsyncMock)
@@ -208,10 +215,12 @@ test('signup sends email', async () => {
 def user():
     return User(id=1, email="test@example.com", name="Test")
 
+
 @pytest.fixture
 def admin_user(user):
     user.role = "admin"
     return user
+
 
 def test_with_fixtures(user, admin_user):
     assert user.role != "admin"
@@ -225,9 +234,10 @@ def create_user(**overrides):
     defaults = {
         "email": f"test-{uuid4()}@example.com",
         "name": "Test User",
-        "role": "user"
+        "role": "user",
     }
     return User(**{**defaults, **overrides})
+
 
 def test_with_factory():
     user = create_user(role="admin")

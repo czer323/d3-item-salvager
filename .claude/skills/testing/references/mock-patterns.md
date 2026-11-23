@@ -177,18 +177,19 @@ it('should handle server error', async () => {
 ```python
 import responses
 
+
 @responses.activate
 def test_api_call():
     responses.add(
         responses.GET,
-        'https://api.example.com/users/1',
-        json={'id': 1, 'name': 'Alice'},
-        status=200
+        "https://api.example.com/users/1",
+        json={"id": 1, "name": "Alice"},
+        status=200,
     )
 
     result = api_client.get_user(1)
 
-    assert result == {'id': 1, 'name': 'Alice'}
+    assert result == {"id": 1, "name": "Alice"}
     assert len(responses.calls) == 1
 ```
 
@@ -266,16 +267,17 @@ beforeEach(async () => {
 import pytest
 from django.test import TestCase
 
+
 @pytest.mark.django_db
 class TestUserModel:
     def test_create_user(self):
-        user = User.objects.create(email='test@example.com', name='Test')
+        user = User.objects.create(email="test@example.com", name="Test")
         assert user.id is not None
 
     def test_unique_email(self):
-        User.objects.create(email='test@example.com', name='Test')
+        User.objects.create(email="test@example.com", name="Test")
         with pytest.raises(IntegrityError):
-            User.objects.create(email='test@example.com', name='Test2')
+            User.objects.create(email="test@example.com", name="Test2")
 ```
 
 ---
@@ -336,9 +338,11 @@ clear();
 from freezegun import freeze_time
 from datetime import datetime
 
+
 @freeze_time("2024-01-15 10:00:00")
 def test_timestamp():
     assert datetime.now().year == 2024
+
 
 # Context manager
 def test_time_travel():
@@ -346,17 +350,19 @@ def test_time_travel():
         result = get_current_date()
         assert result == "2024-01-15"
 
+
 # Move time
 @freeze_time("2024-01-15", tick=True)
 def test_with_ticking():
     # Time advances normally from frozen point
     pass
 
+
 # Or use unittest.mock
 from unittest.mock import patch
 from datetime import datetime
 
-with patch('mymodule.datetime') as mock_dt:
+with patch("mymodule.datetime") as mock_dt:
     mock_dt.now.return_value = datetime(2024, 1, 15)
     result = function_using_datetime()
 ```
@@ -406,24 +412,27 @@ describe('FileHandler', () => {
 import pytest
 from pyfakefs.fake_filesystem_unittest import Patcher
 
+
 def test_file_operations():
     with Patcher() as patcher:
         # Create fake files
-        patcher.fs.create_file('/data/config.json', contents='{"key": "value"}')
-        patcher.fs.create_dir('/data/users')
+        patcher.fs.create_file("/data/config.json", contents='{"key": "value"}')
+        patcher.fs.create_dir("/data/users")
 
         # Test code uses fake filesystem
-        result = read_config('/data/config.json')
+        result = read_config("/data/config.json")
         assert result == {"key": "value"}
+
 
 # Or as fixture
 @pytest.fixture
 def fake_fs(fs):  # 'fs' is provided by pytest-pyfakefs
-    fs.create_file('/config.json', contents='{}')
+    fs.create_file("/config.json", contents="{}")
     return fs
 
+
 def test_with_fixture(fake_fs):
-    assert os.path.exists('/config.json')
+    assert os.path.exists("/config.json")
 ```
 
 ---
@@ -462,10 +471,12 @@ describe('Config', () => {
 import os
 from unittest.mock import patch
 
+
 def test_with_env_var():
-    with patch.dict(os.environ, {'API_KEY': 'test-key'}):
+    with patch.dict(os.environ, {"API_KEY": "test-key"}):
         result = get_api_key()
-        assert result == 'test-key'
+        assert result == "test-key"
+
 
 # Or pytest-env
 # pytest.ini:

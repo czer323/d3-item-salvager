@@ -437,9 +437,9 @@ Parameter confusion between old (`from_id/to_id`) and new (`issue_id/depends_on_
 ```python
 # Correct: task-2 depends on task-1
 beads_add_dependency(
-    issue_id="task-2",        # Issue that has dependency
-    depends_on_id="task-1",   # Issue that must complete first
-    dep_type="blocks"
+    issue_id="task-2",  # Issue that has dependency
+    depends_on_id="task-1",  # Issue that must complete first
+    dep_type="blocks",
 )
 ```
 
